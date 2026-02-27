@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABM GENERATOR</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background: #08090d;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+    #root { height: 100%; }
+    input[type=range] { appearance: none; -webkit-appearance: none; }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #8ba3c4; border: 2px solid #4a5d78;
+      cursor: pointer; box-shadow: 0 0 8px rgba(120,160,210,0.3);
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #8ba3c4; border: 2px solid #4a5d78;
+      cursor: pointer; box-shadow: 0 0 8px rgba(120,160,210,0.3);
+      border: none;
+    }
+    /* Per-particle CSS variables drive each particle's unique float path */
+    @keyframes floatParticle {
+      0%   { transform: translate(0, 0) scale(1); opacity: 0.3; }
+      50%  { transform: translate(var(--tx1), var(--ty1)) scale(1.5); opacity: 0.7; }
+      100% { transform: translate(var(--tx2), var(--ty2)) scale(0.8); opacity: 0.2; }
+    }
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .gap-3 { gap: 12px; }
+    .gap-4 { gap: 16px; }
+    .w-full { width: 100%; }
+    .h-full { height: 100%; }
+    .w-16 { width: 64px; }
+    .h-16 { height: 64px; }
+    .w-11 { width: 44px; }
+    .h-11 { height: 44px; }
+    .w-2 { width: 8px; }
+    .h-5 { height: 20px; }
+    .rounded-full { border-radius: 50%; }
+    .rounded-lg { border-radius: 8px; }
+    .rounded-xl { border-radius: 12px; }
+    .text-center { text-align: center; }
+    .text-xs { font-size: 12px; }
+    .text-2xl { font-size: 24px; }
+    .font-bold { font-weight: bold; }
+    .font-light { font-weight: 300; }
+    .uppercase { text-transform: uppercase; }
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    .overflow-hidden { overflow: hidden; }
+    .select-none { user-select: none; }
+    .pointer-events-none { pointer-events: none; }
+    .transition-all { transition: all 0.3s ease; }
+    .duration-200 { transition-duration: 200ms; }
+    .duration-300 { transition-duration: 300ms; }
+    .z-10 { z-index: 10; }
+    .z-30 { z-index: 30; }
+    .z-50 { z-index: 50; }
+    .max-w-lg { max-width: 512px; }
+    .mx-auto { margin-left: auto; margin-right: auto; }
+    .px-4 { padding-left: 16px; padding-right: 16px; }
+    .py-6 { padding-top: 24px; padding-bottom: 24px; }
+    .p-3 { padding: 12px; }
+    .p-4 { padding: 16px; }
+    .mb-2 { margin-bottom: 8px; }
+    .mt-2 { margin-top: 8px; }
+    .flex-col { flex-direction: column; }
+    .flex-wrap { flex-wrap: wrap; }
+    .shrink-0 { flex-shrink: 0; }
+    .min-h-screen { min-height: 100vh; }
+    .bg-transparent { background: transparent; }
+    .opacity-35 { opacity: 0.35; }
+    .cursor-pointer { cursor: pointer; }
+    .cursor-default { cursor: default; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    // Simple React-like component system without external dependencies
+    function createElement(tag, props, ...children) {
+      const element = document.createElement(tag);
+      if (props) {
+        Object.assign(element, props);
+        if (props.className) element.className = props.className;
+        if (props.style) Object.assign(element.style, props.style);
+        if (props.onClick) element.addEventListener('click', props.onClick);
+        if (props.onChange) element.addEventListener('change', props.onChange);
+      }
+      children.forEach(child => {
+        if (typeof child === 'string' || typeof child === 'number') {
+          element.appendChild(document.createTextNode(child));
+        } else if (child && typeof child === 'object') {
+          element.appendChild(child);
+        }
+      });
+      return element;
+    }
+
+    // State management
+    let state = {
+      isPlaying: false,
+      mode: "Boreal Storm",
+      bpm: 172,
+      rootNote: "D",
+      scale: "Natural Minor",
+      progIdx: 1,
+      mix: { guitar: 0.8, bass: 0.65, drums: 0.7, pad: 0.35, wind: 0.2 },
+      tick: 0,
+      particles: []
+    };
+
+    // Musical constants
+    const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+    const SCALES = {
+      "Natural Minor": [0,2,3,5,7,8,10],
+      "Harmonic Minor": [0,2,3,5,7,8,11],
+      "Dorian":         [0,2,3,5,7,9,10],
+      "Phrygian":       [0,1,3,5,7,8,10],
+    };
+    const PROGRESSIONS = [
+      [0,5,2,6],[0,3,6,2],[0,6,5,3],[0,4,5,6],[0,5,3,6],[0,3,5,6],[0,2,5,3],
+    ];
+    const MODES = {
+      "Frozen Tundra":  { bpm:68,  drum:"ambient",  guitar:"arpeggio", prog:5, mixG:0.25, mixB:0.2,  mixD:0.15, mixP:0.8,  mixW:0.7  },
+      "Twilight March": { bpm:115, drum:"halftime",  guitar:"melodic",  prog:0, mixG:0.6,  mixB:0.5,  mixD:0.5,  mixP:0.5,  mixW:0.35 },
+      "Boreal Storm":   { bpm:172, drum:"blast",     guitar:"tremolo",  prog:1, mixG:0.8,  mixB:0.65, mixD:0.7,  mixP:0.35, mixW:0.2  },
+      "Grief Eternal":  { bpm:78,  drum:"doom",      guitar:"doom",     prog:3, mixG:0.7,  mixB:0.7,  mixD:0.45, mixP:0.6,  mixW:0.4  },
+      "Pale Autumn":    { bpm:140, drum:"drive",     guitar:"tremolo",  prog:6, mixG:0.75, mixB:0.55, mixD:0.6,  mixP:0.45, mixW:0.3  },
+    };
+
+    // Initialize particles
+    function initParticles() {
+      state.particles = Array.from({length: 20}, function(_, i) {
+        const signA = Math.random() > 0.5 ? "" : "-";
+        const signB = Math.random() > 0.5 ? "" : "-";
+        return {
+          id: i,
+          x: Math.random() * 100,
+          y: Math.random() * 100,
+          size: 1 + Math.random() * 2,
+          duration: 15 + Math.random() * 25,
+          delay: Math.random() * -30,
+          opacity: 0.05 + Math.random() * 0.12,
+          tx1: signA + (10 + Math.random() * 30).toFixed(1) + "px",
+          ty1: "-" + (20 + Math.random() * 40).toFixed(1) + "px",
+          tx2: signB + (5 + Math.random() * 20).toFixed(1) + "px",
+          ty2: (10 + Math.random() * 20).toFixed(1) + "px",
+        };
+      });
+    }
+
+    // Create particle element
+    function createParticle(p) {
+      return createElement('div', {
+        key: p.id,
+        className: 'absolute rounded-full pointer-events-none',
+        style: {
+          left: p.x + "%",
+          top:  p.y + "%",
+          width:  p.size + "px",
+          height: p.size + "px",
+          background: `radial-gradient(circle, rgba(140,170,210,${p.opacity}) 0%, transparent 70%)`,
+          boxShadow: `0 0 ${p.size * 4}px rgba(120,150,200,${p.opacity * 0.5})`,
+          '--tx1': p.tx1,
+          '--ty1': p.ty1,
+          '--tx2': p.tx2,
+          '--ty2': p.ty2,
+          animation: `floatParticle ${p.duration}s ease-in-out ${p.delay}s infinite alternate`,
+        }
+      });
+    }
+
+    // Create slider component
+    function createSlider(label, icon, value, onChange, min = 0, max = 1, step = 0.01) {
+      const display = (typeof value === "number" && value < 10) ? value.toFixed(2) : String(value);
+      
+      return createElement('div', { className: 'flex items-center gap-3 w-full' },
+        createElement('span', {
+          className: 'text-xs w-20 text-right shrink-0',
+          style: {color:"#8aa0b8", opacity:0.6, letterSpacing:"0.05em"}
+        }, `${icon} ${label}`),
+        createElement('input', {
+          type: 'range',
+          min: min,
+          max: max,
+          step: step,
+          value: value,
+          onChange: (e) => onChange(parseFloat(e.target.value)),
+          className: 'flex-1 h-1 rounded-full appearance-none cursor-pointer',
+          style: {accentColor:"#6b7fa3", background:"linear-gradient(90deg,#2a3444 0%,#4a5d78 100%)"}
+        }),
+        createElement('span', {
+          className: 'text-xs w-10',
+          style: {opacity:0.4, fontFamily:"monospace"}
+        }, display)
+      );
+    }
+
+    // Create button component
+    function createButton(text, onClick, disabled = false, style = {}) {
+      return createElement('button', {
+        onClick: onClick,
+        disabled: disabled,
+        className: disabled ? 'cursor-default' : 'cursor-pointer',
+        style: {
+          ...style,
+          opacity: disabled ? 0.35 : 1,
+          cursor: disabled ? 'default' : 'pointer'
+        }
+      }, text);
+    }
+
+    // Update state and re-render
+    function setState(updates) {
+      Object.assign(state, updates);
+      render();
+    }
+
+    // Main render function
+    function render() {
+      const root = document.getElementById('root');
+      root.innerHTML = '';
+
+      const pulseOpacity = state.isPlaying ? 0.03 + Math.sin(state.tick * 0.15) * 0.02 : 0.02;
+
+      const container = createElement('div', {
+        className: 'min-h-screen w-full relative overflow-hidden select-none',
+        style: {background:"linear-gradient(170deg, #08090d 0%, #0d1117 30%, #101820 60%, #0a0f15 100%)"}
+      });
+
+      // Add particles
+      state.particles.forEach(p => {
+        container.appendChild(createParticle(p));
+      });
+
+      // Atmospheric pulse glow
+      container.appendChild(createElement('div', {
+        className: 'absolute inset-0 pointer-events-none',
+        style: {
+          background: `radial-gradient(ellipse at 50% 80%, rgba(40,70,120,${pulseOpacity}) 0%, transparent 60%)`,
+          transition: "background 0.3s ease",
+        }
+      }));
+
+      // Main content
+      const mainContent = createElement('div', {
+        className: 'relative z-10 max-w-lg mx-auto px-4 py-6 flex flex-col gap-5'
+      });
+
+      // Title
+      const title = createElement('div', { className: 'text-center mb-2' },
+        createElement('div', {
+          className: 'text-xs uppercase mb-2',
+          style: {color:"#7a9cc4", opacity:0.3, letterSpacing:"0.4em", fontFamily:"Georgia, serif"}
+        }, "Procedural"),
+        createElement('h1', {
+          className: 'text-2xl font-bold',
+          style: {
+            color:"#c5d5e8",
+            letterSpacing:"0.05em",
+            fontFamily:"Georgia, serif",
+            textShadow:"0 0 30px rgba(100,140,200,0.15)",
+          }
+        }, "Atmospheric Black Metal"),
+        createElement('div', {
+          className: 'text-xs uppercase mt-1',
+          style: {color:"#7a9cc4", opacity:0.25, letterSpacing:"0.35em", fontFamily:"Georgia, serif"}
+        }, "Generator")
+      );
+
+      // Transport controls
+      const transport = createElement('div', { className: 'flex items-center justify-center gap-4' });
+      
+      // Play/Stop button
+      const playButton = createElement('button', {
+        onClick: togglePlay,
+        className: 'w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300',
+        style: {
+          background: state.isPlaying
+            ? "linear-gradient(135deg, #3a1a1a, #5a2020)"
+            : "linear-gradient(135deg, #1a2a3a, #2a4060)",
+          border: "2px solid " + (state.isPlaying ? "#8a4444" : "#4a6a8a"),
+          boxShadow: state.isPlaying
+            ? "0 0 20px rgba(180,80,80,0.2), inset 0 0 15px rgba(0,0,0,0.3)"
+            : "0 0 20px rgba(80,120,180,0.15), inset 0 0 15px rgba(0,0,0,0.3)",
+          cursor: "pointer",
+        }
+      });
+
+      if (state.isPlaying) {
+        playButton.appendChild(createElement('div', { className: 'flex gap-1.5' },
+          createElement('div', {
+            className: 'w-2 h-5 rounded-sm',
+            style: {background:"#cc6666"}
+          }),
+          createElement('div', {
+            className: 'w-2 h-5 rounded-sm',
+            style: {background:"#cc6666"}
+          })
+        ));
+      } else {
+        playButton.appendChild(createElement('div', {
+          className: 'w-0 h-0 ml-1',
+          style: {borderTop:"10px solid transparent", borderBottom:"10px solid transparent", borderLeft:"16px solid #7aaad4"}
+        }));
+      }
+
+      // Regenerate button
+      const regenerateButton = createElement('button', {
+        onClick: regenerate,
+        disabled: !state.isPlaying,
+        title: !state.isPlaying ? "Start playback to regenerate patterns" : "Regenerate patterns",
+        className: 'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200',
+        style: {
+          background: "linear-gradient(135deg, #151d28, #1d2a38)",
+          border: "1.5px solid #2a3a4a",
+          opacity: state.isPlaying ? 1 : 0.35,
+          cursor: state.isPlaying ? "pointer" : "default",
+        }
+      });
+
+      regenerateButton.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6a8aaa" stroke-width="2" stroke-linecap="round">
+          <path d="M1 4v6h6M23 20v-6h-6"/>
+          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+        </svg>
+      `;
+
+      transport.appendChild(playButton);
+      transport.appendChild(regenerateButton);
+
+      // Mode selector
+      const modeSection = createElement('div', {
+        className: 'rounded-xl p-3',
+        style: {background:"rgba(15,20,30,0.6)", border:"1px solid rgba(60,80,110,0.15)"}
+      });
+
+      modeSection.appendChild(createElement('div', {
+        className: 'text-xs uppercase mb-2.5 text-center',
+        style: {color:"#7a9cc4", opacity:0.3, letterSpacing:"0.25em"}
+      }, "Landscape"));
+
+      const modeButtons = createElement('div', { className: 'flex flex-wrap gap-1.5 justify-center' });
+      
+      Object.keys(MODES).forEach(m => {
+        const active = state.mode === m;
+        const button = createElement('button', {
+          key: m,
+          onClick: () => handleModeChange(m),
+          className: 'px-3 py-1.5 rounded-lg text-xs transition-all duration-200',
+          style: {
+            letterSpacing: "0.05em",
+            background: active
+              ? "linear-gradient(135deg, #1d3050, #2a4a6a)"
+              : "rgba(20,28,40,0.5)",
+            border: "1px solid " + (active ? "#4a7aaa" : "rgba(50,65,85,0.3)"),
+            color: active ? "#b8d0e8" : "#5a7090",
+            fontFamily: "Georgia, serif",
+            boxShadow: active ? "0 0 12px rgba(60,100,160,0.15)" : "none",
+            cursor: "pointer",
+          }
+        }, m);
+        modeButtons.appendChild(button);
+      });
+
+      modeSection.appendChild(modeButtons);
+
+      // Parameters section
+      const paramsSection = createElement('div', {
+        className: 'rounded-xl p-4 flex flex-col gap-3.5',
+        style: {background:"rgba(15,20,30,0.6)", border:"1px solid rgba(60,80,110,0.15)"}
+      });
+
+      paramsSection.appendChild(createElement('div', {
+        className: 'text-xs uppercase mb-1',
+        style: {color:"#7a9cc4", opacity:0.3, letterSpacing:"0.25em"}
+      }, "Parameters"));
+
+      // BPM Slider
+      const bpmSlider = createSlider("BPM", "♩", state.bpm, (v) => setState({bpm: v}), 50, 220, 1);
+      paramsSection.appendChild(bpmSlider);
+
+      // Key and Scale selectors
+      const keyScaleRow = createElement('div', { className: 'flex gap-3 items-center' });
+      
+      keyScaleRow.appendChild(createElement('span', {
+        className: 'text-xs w-20 text-right shrink-0',
+        style: {color:"#8aa0b8", opacity:0.6, letterSpacing:"0.05em"}
+      }, "♯ Key"));
+
+      const keySelect = createElement('select', {
+        value: state.rootNote,
+        onChange: (e) => setState({rootNote: e.target.value}),
+        className: 'flex-1 rounded-lg px-2 py-1.5 text-xs',
+        style: {background:"#151d28", color:"#8aaccc", border:"1px solid #2a3a4a", outline:"none"}
+      });
+
+      NOTE_NAMES.forEach(n => {
+        keySelect.appendChild(createElement('option', {value: n}, n));
+      });
+
+      const scaleSelect = createElement('select', {
+        value: state.scale,
+        onChange: (e) => setState({scale: e.target.value}),
+        className: 'flex-1 rounded-lg px-2 py-1.5 text-xs',
+        style: {background:"#151d28", color:"#8aaccc", border:"1px solid #2a3a4a", outline:"none"}
+      });
+
+      Object.keys(SCALES).forEach(s => {
+        scaleSelect.appendChild(createElement('option', {value: s}, s));
+      });
+
+      keyScaleRow.appendChild(keySelect);
+      keyScaleRow.appendChild(scaleSelect);
+      paramsSection.appendChild(keyScaleRow);
+
+      // Progression selector
+      const progRow = createElement('div', { className: 'flex gap-3 items-center' });
+      
+      progRow.appendChild(createElement('span', {
+        className: 'text-xs w-20 text-right shrink-0',
+        style: {color:"#8aa0b8", opacity:0.6, letterSpacing:"0.05em"}
+      }, "⟲ Prog"));
+
+      const progSelect = createElement('select', {
+        value: state.progIdx,
+        onChange: (e) => setState({progIdx: parseInt(e.target.value)}),
+        className: 'flex-1 rounded-lg px-2 py-1.5 text-xs',
+        style: {background:"#151d28", color:"#8aaccc", border:"1px solid #2a3a4a", outline:"none"}
+      });
+
+      PROGRESSIONS.forEach((p, i) => {
+        const degs = ["i","ii°","III","iv","v","VI","VII"];
+        const label = p.map(d => degs[d]).join(" → ");
+        progSelect.appendChild(createElement('option', {value: i}, label));
+      });
+
+      progRow.appendChild(progSelect);
+      paramsSection.appendChild(progRow);
+
+      // Mix section
+      const mixSection = createElement('div', {
+        className: 'rounded-xl p-4 flex flex-col gap-3',
+        style: {background:"rgba(15,20,30,0.6)", border:"1px solid rgba(60,80,110,0.15)"}
+      });
+
+      mixSection.appendChild(createElement('div', {
+        className: 'text-xs uppercase mb-1',
+        style: {color:"#7a9cc4", opacity:0.3, letterSpacing:"0.25em"}
+      }, "Mix"));
+
+      const guitarSlider = createSlider("Guitar", "🎸", state.mix.guitar, (v) => setState({mix: {...state.mix, guitar: v}}));
+      const bassSlider = createSlider("Bass", "𝄢", state.mix.bass, (v) => setState({mix: {...state.mix, bass: v}}));
+      const drumsSlider = createSlider("Drums", "🥁", state.mix.drums, (v) => setState({mix: {...state.mix, drums: v}}));
+      const padSlider = createSlider("Pad", "🌊", state.mix.pad, (v) => setState({mix: {...state.mix, pad: v}}));
+      const windSlider = createSlider("Wind", "🌬", state.mix.wind, (v) => setState({mix: {...state.mix, wind: v}}));
+
+      mixSection.appendChild(guitarSlider);
+      mixSection.appendChild(bassSlider);
+      mixSection.appendChild(drumsSlider);
+      mixSection.appendChild(padSlider);
+      mixSection.appendChild(windSlider);
+
+      // Status line
+      const status = createElement('div', { className: 'text-center' });
+      status.appendChild(createElement('div', {
+        className: 'text-xs',
+        style: {color:"#6a8aaa", opacity:0.2, letterSpacing:"0.1em", fontFamily:"Georgia, serif"}
+      }, state.isPlaying
+        ? `${state.rootNote} ${state.scale} · ${state.bpm} BPM · ${state.mode}`
+        : "Silence before the storm"
+  ));
+
+      // Footer
+      const footer = createElement('div', {
+        className: 'text-center mt-2 text-xs',
+        style: {color:"#5a7090", opacity:0.15}
+      }, "Inspired by Agalloch · Harakiri for the Sky · Elderwind · Severoth");
+
+      // Assemble main content
+      mainContent.appendChild(title);
+      mainContent.appendChild(transport);
+      mainContent.appendChild(modeSection);
+      mainContent.appendChild(paramsSection);
+      mainContent.appendChild(mixSection);
+      mainContent.appendChild(status);
+      mainContent.appendChild(footer);
+
+      container.appendChild(mainContent);
+      root.appendChild(container);
+    }
+
+    // Audio context and instruments
+    let audioContext = null;
+    let isPlaying = false;
+    let sequencerInterval = null;
+
+    // Simple audio engine using Web Audio API
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function createOscillator(frequency, type = 'sawtooth') {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      return { oscillator, gainNode };
+    }
+
+    function noteToFrequency(note) {
+      const noteMap = {
+        'C': 261.63, 'C#': 277.18, 'D': 293.66, 'D#': 311.13,
+        'E': 329.63, 'F': 349.23, 'F#': 369.99, 'G': 392.00,
+        'G#': 415.30, 'A': 440.00, 'A#': 466.16, 'B': 493.88
+      };
+      
+      const noteName = note.replace(/\d+/, '');
+      const octave = parseInt(note.match(/\d+/)?.[0] || '4');
+      const baseFreq = noteMap[noteName] || 440;
+      
+      return baseFreq * Math.pow(2, octave - 4);
+    }
+
+    function playGuitarPattern() {
+      if (!audioContext || !state.isPlaying) return;
+      
+      const mode = MODES[state.mode];
+      const scale = SCALES[state.scale];
+      const progression = PROGRESSIONS[state.progIdx];
+      const rootFreq = noteToFrequency(state.rootNote + '3');
+      
+      // Simple guitar pattern - play a chord progression
+      const chordNotes = progression.map((degree, index) => {
+        setTimeout(() => {
+          if (!state.isPlaying) return;
+          
+          const rootNoteFreq = rootFreq * Math.pow(2, degree / 12);
+          const thirdFreq = rootFreq * Math.pow(2, (degree + 4) / 12);
+          const fifthFreq = rootFreq * Math.pow(2, (degree + 7) / 12);
+          
+          // Create chord
+          [rootNoteFreq, thirdFreq, fifthFreq].forEach((freq, i) => {
+            const { oscillator, gainNode } = createOscillator(freq, 'sawtooth');
+            gainNode.gain.setValueAtTime(state.mix.guitar * 0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime + i * 0.1);
+            oscillator.stop(audioContext.currentTime + 0.5);
+          });
+        }, index * 1000);
+      });
+    }
+
+    function playBassPattern() {
+      if (!audioContext || !state.isPlaying) return;
+      
+      const mode = MODES[state.mode];
+      const scale = SCALES[state.scale];
+      const progression = PROGRESSIONS[state.progIdx];
+      const rootFreq = noteToFrequency(state.rootNote + '2');
+      
+      // Simple bass pattern
+      progression.forEach((degree, index) => {
+        setTimeout(() => {
+          if (!state.isPlaying) return;
+          
+          const bassFreq = rootFreq * Math.pow(2, degree / 12);
+          const { oscillator, gainNode } = createOscillator(bassFreq, 'triangle');
+          gainNode.gain.setValueAtTime(state.mix.bass * 0.15, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+          
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.8);
+        }, index * 1000);
+      });
+    }
+
+    function playDrumPattern() {
+      if (!audioContext || !state.isPlaying) return;
+      
+      const mode = MODES[state.mode];
+      const drumStyle = mode.drum;
+      
+      // Simple drum pattern
+      const interval = 60000 / state.bpm; // milliseconds per beat
+      
+      const playBeat = () => {
+        if (!state.isPlaying) return;
+        
+        // Kick drum
+        if (Math.random() > 0.3) {
+          const { oscillator, gainNode } = createOscillator(60, 'sine');
+          gainNode.gain.setValueAtTime(state.mix.drums * 0.3, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.1);
+        }
+        
+        // Hi-hat
+        if (Math.random() > 0.5) {
+          const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.05, audioContext.sampleRate);
+          const noiseData = noiseBuffer.getChannelData(0);
+          for (let i = 0; i < noiseData.length; i++) {
+            noiseData[i] = Math.random() * 2 - 1;
+          }
+          
+          const noiseSource = audioContext.createBufferSource();
+          const noiseGain = audioContext.createGain();
+          
+          noiseSource.buffer = noiseBuffer;
+          noiseSource.connect(noiseGain);
+          noiseGain.connect(audioContext.destination);
+          
+          noiseGain.gain.setValueAtTime(state.mix.drums * 0.05, audioContext.currentTime);
+          noiseGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+          
+          noiseSource.start(audioContext.currentTime);
+        }
+      };
+      
+      // Start drum loop
+      sequencerInterval = setInterval(playBeat, interval / 4);
+    }
+
+    // Event handlers
+    function togglePlay() {
+      if (!state.isPlaying) {
+        initAudio();
+        setState({isPlaying: true});
+        startVisualPulse();
+        
+        // Start audio
+        playGuitarPattern();
+        playBassPattern();
+        playDrumPattern();
+        
+        // Loop patterns
+        const patternLength = PROGRESSIONS[state.progIdx].length * 1000;
+        state.patternInterval = setInterval(() => {
+          if (state.isPlaying) {
+            playGuitarPattern();
+            playBassPattern();
+          }
+        }, patternLength);
+        
+      } else {
+        setState({isPlaying: false});
+        
+        // Stop audio
+        if (sequencerInterval) {
+          clearInterval(sequencerInterval);
+          sequencerInterval = null;
+        }
+        
+        if (state.patternInterval) {
+          clearInterval(state.patternInterval);
+          state.patternInterval = null;
+        }
+      }
+    }
+
+    function regenerate() {
+      if (!state.isPlaying) return;
+      
+      console.log("Regenerating patterns...");
+      
+      // Stop current patterns
+      if (sequencerInterval) {
+        clearInterval(sequencerInterval);
+        sequencerInterval = null;
+      }
+      
+      if (state.patternInterval) {
+        clearInterval(state.patternInterval);
+        state.patternInterval = null;
+      }
+      
+      // Restart with new patterns
+      playGuitarPattern();
+      playBassPattern();
+      playDrumPattern();
+      
+      // Restart looping
+      const patternLength = PROGRESSIONS[state.progIdx].length * 1000;
+      state.patternInterval = setInterval(() => {
+        if (state.isPlaying) {
+          playGuitarPattern();
+          playBassPattern();
+        }
+      }, patternLength);
+    }
+
+    function handleModeChange(modeName) {
+      const m = MODES[modeName];
+      if (!m) return;
+      
+      const wasPlaying = state.isPlaying;
+      
+      setState({
+        mode: modeName,
+        bpm: m.bpm,
+        progIdx: m.prog,
+        mix: { guitar: m.mixG, bass: m.mixB, drums: m.mixD, pad: m.mixP, wind: m.mixW }
+      });
+      
+      // Restart audio if it was playing
+      if (wasPlaying) {
+        // Stop current patterns
+        if (sequencerInterval) {
+          clearInterval(sequencerInterval);
+          sequencerInterval = null;
+        }
+        
+        if (state.patternInterval) {
+          clearInterval(state.patternInterval);
+          state.patternInterval = null;
+        }
+        
+        // Restart with new mode settings
+        setTimeout(() => {
+          if (state.isPlaying) {
+            playGuitarPattern();
+            playBassPattern();
+            playDrumPattern();
+            
+            const patternLength = PROGRESSIONS[state.progIdx].length * 1000;
+            state.patternInterval = setInterval(() => {
+              if (state.isPlaying) {
+                playGuitarPattern();
+                playBassPattern();
+              }
+            }, patternLength);
+          }
+        }, 100);
+      }
+    }
+
+    function startVisualPulse() {
+      if (state.visualInterval) clearInterval(state.visualInterval);
+      
+      state.visualInterval = setInterval(() => {
+        if (state.isPlaying) {
+          setState({tick: state.tick + 1});
+        } else {
+          clearInterval(state.visualInterval);
+        }
+      }, 100);
+    }
+
+    // Initialize
+    initParticles();
+    render();
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (sequencerInterval) clearInterval(sequencerInterval);
+      if (state.patternInterval) clearInterval(state.patternInterval);
+      if (state.visualInterval) clearInterval(state.visualInterval);
+      if (audioContext) audioContext.close();
+    });
+  </script>
+</body>
+</html>
