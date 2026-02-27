@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+    <!-- Performance optimizations -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+
+    <!-- Critical font loading -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Theme color -->
+    <meta name="theme-color" content="#e94560">
+
+    <!-- Apple PWA support -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="IBT2">
+
+    <!-- Performance hints -->
+    <link rel="prefetch" href="/src/components/LazyComponents.tsx">
+
+    <title>Imagine Being Trapped 2</title>
+
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+      /* Critical CSS inlined for fastest loading */
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #0f0f23;
+        font-family: 'Orbitron', monospace;
+        height: 100vh;
+        width: 100vw;
+      }
+
+      /* Loading screen optimization */
+      .loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #0f0f23;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+
+      .loading-screen.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Enhanced landscape orientation prompt */
+      @media screen and (max-width: 768px) and (orientation: portrait) {
+        body::before {
+          content: "⚠️ TERROR PROTOCOLS REQUIRE LANDSCAPE MODE ⚠️\A\A Rotate your device for optimal psychological immersion";
+          white-space: pre;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(45deg, #0f0f23, #1a1a2e, #0f0f23);
+          color: #e94560;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          font-size: 16px;
+          font-weight: bold;
+          z-index: 9999;
+          padding: 20px;
+          box-sizing: border-box;
+          animation: loading-atmosphere 3s ease-in-out infinite;
+          text-shadow: 0 0 10px #e94560;
+        }
+
+        #root {
+          display: none;
+        }
+      }
+
+      /* Ensure game always fits in viewport */
+      #root {
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+      }
+
+      /* Performance optimizations */
+      * {
+        box-sizing: border-box;
+      }
+
+      /* Reduce layout shifts */
+      img, video {
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* Optimize animations for performance */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Enhanced Loading screen with terror atmosphere -->
+    <div id="loading-screen" class="loading-screen loading-terror">
+      <div style="text-align: center; color: #e94560; position: relative; z-index: 10;">
+        <div style="font-size: 3rem; margin-bottom: 1.5rem; filter: drop-shadow(0 0 10px #e94560);" class="loading-text-flicker">⚡</div>
+        <div style="font-size: 1.5rem; margin-bottom: 0.8rem; font-weight: bold;" class="loading-text-flicker">INITIALIZING TERROR PROTOCOLS...</div>
+        <div style="font-size: 1rem; opacity: 0.7; margin-bottom: 1rem;">Calibrating psychological systems...</div>
+
+        <!-- Progress indicator -->
+        <div style="width: 200px; height: 4px; background: rgba(233, 69, 96, 0.3); margin: 1rem auto; position: relative; overflow: hidden; border: 1px solid #e94560;">
+          <div id="loading-progress" style="height: 100%; background: linear-gradient(90deg, #e94560, #ff6b7a); width: 0%; transition: width 0.3s ease;"></div>
+        </div>
+
+        <div style="font-size: 0.9rem; opacity: 0.6; font-style: italic; margin-top: 1rem;">"The darkness sees you..."</div>
+        <div id="loading-tips" style="font-size: 0.8rem; opacity: 0.5; margin-top: 1.5rem; max-width: 300px; margin-left: auto; margin-right: auto;">Loading atmospheric terror engine...</div>
+      </div>
+    </div>
+
+    <div id="root"></div>
+
+    <script type="module" src="/ibt2/assets/index-BCB2qpR9.js"></script>
+
+    <!-- Performance monitoring -->
+    <script>
+      // Enhanced loading experience with progress and terror tips
+      window.addEventListener('load', () => {
+        const progressBar = document.getElementById('loading-progress');
+        const tipsElement = document.getElementById('loading-tips');
+
+        const terrorTips = [
+          'Listen carefully... not all sounds are in the game.',
+          'Your sanity affects more than you realize.',
+          'The entities remember your choices.',
+          'Sometimes silence is more terrifying than sound.',
+          'Trust nothing. Question everything.',
+          'The radio plays songs that do not exist.',
+          'Low sanity reveals hidden truths.',
+          'Each location has a memory of its own.',
+          'Some questions have no correct answers.'
+        ];
+
+        let progress = 0;
+        let tipIndex = 0;
+
+        const loadingInterval = setInterval(() => {
+          progress += Math.random() * 15 + 5;
+          if (progress > 100) progress = 100;
+
+          if (progressBar) {
+            progressBar.style.width = progress + '%';
+          }
+
+          // Change tips periodically
+          if (Math.random() < 0.3 && tipsElement) {
+            tipIndex = Math.floor(Math.random() * terrorTips.length);
+            tipsElement.textContent = terrorTips[tipIndex];
+            tipsElement.style.opacity = '0.5';
+          }
+
+          if (progress >= 100) {
+            clearInterval(loadingInterval);
+
+            // Final terror message
+            if (tipsElement) {
+              tipsElement.textContent = 'INITIALIZATION COMPLETE. PREPARE YOURSELF.';
+              tipsElement.style.opacity = '0.8';
+              tipsElement.style.color = '#ff6b7a';
+            }
+
+            setTimeout(() => {
+              const loadingScreen = document.getElementById('loading-screen');
+              if (loadingScreen) {
+                loadingScreen.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                loadingScreen.style.opacity = '0';
+                loadingScreen.style.transform = 'scale(1.05)';
+                setTimeout(() => loadingScreen.remove(), 800);
+              }
+            }, 1200);
+          }
+        }, 200);
+      });
+
+      // Performance monitoring
+      if ('performance' in window) {
+        window.addEventListener('load', () => {
+          setTimeout(() => {
+            const perfData = performance.getEntriesByType('navigation')[0];
+            console.log('Page Load Time:', perfData.loadEventEnd - perfData.fetchStart, 'ms');
+          }, 0);
+        });
+      }
+
+      // Register service worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', async () => {
+          const isLocalDev = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+          if (isLocalDev) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map(registration => registration.unregister()));
+            console.log('SW disabled in local development');
+            return;
+          }
+
+          navigator.serviceWorker.register('/sw.js')
+            .then(() => console.log('SW registered'))
+            .catch(() => console.log('SW registration failed'));
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -265,4 +265,30 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     image: "/images/quantum-ant.svg",
     url: "/quantum-ant.html",
   },
+  {
+    id: "ibt2",
+    title: "IMAGINE BEING TRAPPED 2",
+    version: "v.2.0",
+    description:
+      "An immersive retro-terminal experience with terror protocols and psychological horror. CRT aesthetics meet existential dread.",
+    longDescription: `You are trapped. Not in space, not in time — in the architecture of perception itself.\n\nIMAGINE BEING TRAPPED 2 is a terminal-style psychological horror experience where reality fractures at the edges of your awareness. The interface responds to your presence, but not always in ways you expect. The loading screen warns you: \"The darkness sees you...\"\n\nNavigate through corrupted interfaces, decode fragmented transmissions, and confront entities that remember your choices. The game adapts to your sanity level, revealing hidden truths when you're most vulnerable.\n\nThere is no escape. There is only the protocol. And the protocol is already running.\n\nPress any key to begin. Or don't. The system will wait.`,
+    size: "256 KB",
+    tags: ["Narrative", "Horror", "Interactive"],
+    tech: ["HTML", "CSS", "JavaScript", "React"],
+    image: "/images/ibt2.svg",
+    url: "/ibt2/index.html",
+  },
+  {
+    id: "coding-ants",
+    title: "CODING ANTS",
+    version: "v.1.0",
+    description:
+      "Neural network simulation and AI development environment. Watch digital ants build neural architectures in real-time.",
+    longDescription: `The colony has evolved beyond simple foraging. They now build neural networks.\n\nCODING ANTS is a simulation of emergent intelligence where digital ants collaborate to construct and optimize neural network architectures. Each ant represents a computational unit, and their collective behavior creates complex learning systems.\n\nWatch as they discover optimal activation functions, tune hyperparameters, and evolve network topologies through swarm intelligence. The simulation visualizes the training process in real-time, showing weight updates, gradient flows, and convergence patterns.\n\nThis is not just a simulation — it's a demonstration of how complexity emerges from simple rules. The ants don't understand what they're building. They only know how to build.\n\nClick to interact. Drag to explore. The colony awaits your input.`,
+    size: "184 KB",
+    tags: ["Simulation", "Tool", "Interactive"],
+    tech: ["HTML", "CSS", "JavaScript", "Three.js", "React"],
+    image: "/images/coding-ants.svg",
+    url: "/coding-ants/index.html",
+  }
 ];
