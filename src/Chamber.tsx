@@ -1,5 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { AppEntry } from "./data";
+
+const MAX_LOGS = 100;
+
+function appendLog(
+  prev: LogEntry[],
+  entry: LogEntry,
+): LogEntry[] {
+  const next = [...prev, entry];
+  return next.length > MAX_LOGS ? next.slice(next.length - MAX_LOGS) : next;
+}
+
+type LogEntry = {
+  sender: string;
+  time: string;
+  msg: string;
+  type: "msg" | "warn" | "unknown";
+};
 
 interface ChamberProps {
   app: AppEntry;
@@ -17,14 +34,7 @@ export function Chamber({ app, onBack }: ChamberProps) {
   const [showLogs, setShowLogs] = useState(true);
   const [noiseEnabled, setNoiseEnabled] = useState(true);
   const [hotlinkedImage, setHotlinkedImage] = useState<string | null>(null);
-  const [logs, setLogs] = useState<
-    {
-      sender: string;
-      time: string;
-      msg: string;
-      type: "msg" | "warn" | "unknown";
-    }[]
-  >([
+  const [logs, setLogs] = useState<LogEntry[]>([
     {
       sender: "SYSTEM_MSG",
       time: "14:02:33",
@@ -45,19 +55,39 @@ export function Chamber({ app, onBack }: ChamberProps) {
     },
   ]);
 
+  // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
+  const iframeDocRef = useRef<Document | null>(null);
+  const iframeClickHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
+
+  // Cleanup injected iframe listener on Chamber unmount
+  useEffect(() => {
+    return () => {
+      if (iframeDocRef.current && iframeClickHandlerRef.current) {
+        try {
+          iframeDocRef.current.removeEventListener(
+            "click",
+            iframeClickHandlerRef.current,
+          );
+        } catch {
+          // cross-origin cleanup may throw; safe to ignore
+        }
+      }
+    };
+  }, []);
+
+  // Chain 3 (ChamberInit): idempotent initialization — only react when transitioning to true
   useEffect(() => {
     if (isInitialized) {
       console.log(`[Chamber] Initializing ${app.title}...`);
       const timer = setTimeout(() => {
-        setLogs((prev) => [
-          ...prev,
-          {
+        setLogs((prev) =>
+          appendLog(prev, {
             sender: "SYSTEM_MSG",
             time: new Date().toLocaleTimeString("en-US", { hour12: false }),
             msg: "Rendering shadows...",
             type: "msg",
-          },
-        ]);
+          }),
+        );
       }, 2000);
       return () => clearTimeout(timer);
     }
@@ -65,17 +95,24 @@ export function Chamber({ app, onBack }: ChamberProps) {
 
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
+      // Chain 8 (ImageHotlink): validate origin — only accept from same origin or null (srcdoc iframes)
+      const isSameOrigin = e.origin === window.location.origin || e.origin === "null";
+      if (!isSameOrigin) return;
+
       if (e.data && e.data.type === "IMAGE_CLICKED") {
-        setHotlinkedImage(e.data.src);
-        setLogs((prev) => [
-          ...prev,
-          {
+        // Validate src is a non-empty string before trusting it
+        const src: unknown = e.data.src;
+        if (typeof src !== "string" || src.trim() === "") return;
+
+        setHotlinkedImage(src);
+        setLogs((prev) =>
+          appendLog(prev, {
             sender: "SYSTEM_MSG",
             time: new Date().toLocaleTimeString("en-US", { hour12: false }),
-            msg: `Intercepted image hotlink: ${e.data.src}`,
+            msg: `Intercepted image hotlink: ${src}`,
             type: "warn",
-          },
-        ]);
+          }),
+        );
       }
     };
     window.addEventListener("message", handleMessage);
@@ -91,7 +128,16 @@ export function Chamber({ app, onBack }: ChamberProps) {
         const iframe = e.target as HTMLIFrameElement;
         const doc = iframe.contentDocument || iframe.contentWindow?.document;
         if (doc) {
-          doc.addEventListener("click", function (event) {
+          // Chain 6 (IframeLoad): remove any previously injected handler before re-injecting
+          // to prevent duplicate listeners on iframe navigation / multi-load events.
+          if (iframeDocRef.current && iframeClickHandlerRef.current) {
+            iframeDocRef.current.removeEventListener(
+              "click",
+              iframeClickHandlerRef.current,
+            );
+          }
+
+          const clickHandler = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
             if (target.tagName === "IMG") {
               event.preventDefault();
@@ -100,10 +146,14 @@ export function Chamber({ app, onBack }: ChamberProps) {
                   type: "IMAGE_CLICKED",
                   src: (target as HTMLImageElement).src,
                 },
-                "*",
+                window.location.origin,
               );
             }
-          });
+          };
+
+          doc.addEventListener("click", clickHandler);
+          iframeDocRef.current = doc;
+          iframeClickHandlerRef.current = clickHandler;
         }
       } catch (err) {
         console.warn(
@@ -130,29 +180,21 @@ export function Chamber({ app, onBack }: ChamberProps) {
     console.log(`[Chamber] Fullscreen mode: ${!isFullscreen ? "ON" : "OFF"}`);
   };
 
-  const htmlContentWithScript = app.htmlContent
-    ? app.htmlContent.includes("</body>")
-      ? app.htmlContent.replace(
-          "</body>",
-          `<script>
-        document.addEventListener('click', function(e) {
-          if (e.target.tagName === 'IMG') {
-            e.preventDefault();
-            window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, '*');
-          }
-        });
-      </script></body>`,
-        )
-      : app.htmlContent +
-        `<script>
-        document.addEventListener('click', function(e) {
-          if (e.target.tagName === 'IMG') {
-            e.preventDefault();
-            window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, '*');
-          }
-        });
-      </script>`
-    : "";
+  // Chain 13 (HTMLContentInjection): memoize so string is only built when app.htmlContent changes
+  const htmlContentWithScript = useMemo(() => {
+    if (!app.htmlContent) return "";
+    const script = `<script>
+      document.addEventListener('click', function(e) {
+        if (e.target.tagName === 'IMG') {
+          e.preventDefault();
+          window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, window.location.origin);
+        }
+      });
+    </script>`;
+    return app.htmlContent.includes("</body>")
+      ? app.htmlContent.replace("</body>", `${script}</body>`)
+      : app.htmlContent + script;
+  }, [app.htmlContent]);
 
   return (
     <div className="font-sans bg-black text-white antialiased overflow-hidden h-screen flex flex-col selection:bg-white/20 selection:text-white relative">
@@ -268,7 +310,14 @@ export function Chamber({ app, onBack }: ChamberProps) {
                         Ready to render {app.title}...
                       </p>
                       <button
-                        onClick={() => setIsInitialized(true)}
+                        onClick={() => {
+                          // Chain 3 (ChamberInit): reset error/loading state before initializing
+                          // so a re-enter after an error gets a clean slate
+                          setIframeError(false);
+                          setIframeErrorDetails(null);
+                          setIframeLoading(true);
+                          setIsInitialized(true);
+                        }}
                         className="mt-10 px-8 py-3 bg-white/5 border border-white/10 text-white/70 hover:bg-white hover:text-black transition-all duration-300 uppercase text-[10px] font-light tracking-widest cursor-pointer rounded-full"
                       >
                         Initialize
@@ -295,17 +344,16 @@ export function Chamber({ app, onBack }: ChamberProps) {
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        setLogs((prev) => [
-                          ...prev,
-                          {
+                        setLogs((prev) =>
+                          appendLog(prev, {
                             sender: "SYSTEM",
                             time: new Date().toLocaleTimeString("en-US", {
                               hour12: false,
                             }),
                             msg: "Debugging guide is currently unavailable. Reality anchor is unstable.",
                             type: "warn",
-                          },
-                        ]);
+                          }),
+                        );
                       }}
                       className="inline-block mt-4 text-xs text-primary/70 hover:text-primary underline decoration-primary/30 underline-offset-4"
                     >
@@ -424,17 +472,16 @@ export function Chamber({ app, onBack }: ChamberProps) {
             <div className="p-6 border-t border-white/10 bg-white/5 flex flex-col gap-4">
               <button
                 onClick={() =>
-                  setLogs((prev) => [
-                    ...prev,
-                    {
+                  setLogs((prev) =>
+                    appendLog(prev, {
                       sender: "SYSTEM",
                       time: new Date().toLocaleTimeString("en-US", {
                         hour12: false,
                       }),
                       msg: "Transmission blocked. You have no voice here.",
                       type: "warn",
-                    },
-                  ])
+                    }),
+                  )
                 }
                 className="w-full flex items-center gap-3 text-white/30 hover:text-white/70 transition-colors cursor-pointer"
               >
@@ -445,17 +492,16 @@ export function Chamber({ app, onBack }: ChamberProps) {
               </button>
               <button
                 onClick={() =>
-                  setLogs((prev) => [
-                    ...prev,
-                    {
+                  setLogs((prev) =>
+                    appendLog(prev, {
                       sender: "MANUAL_OVR",
                       time: new Date().toLocaleTimeString("en-US", {
                         hour12: false,
                       }),
                       msg: "Manual override initiated.",
                       type: "msg",
-                    },
-                  ])
+                    }),
+                  )
                 }
                 className="w-full flex items-center gap-3 text-white/30 hover:text-white/70 transition-colors cursor-pointer"
               >

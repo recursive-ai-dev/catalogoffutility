@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 
 interface CatalogProps {
@@ -143,11 +143,24 @@ function Card({
 export function Catalog({ onSelectApp }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("All_Entries");
+  // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
+  const [notification, setNotification] = useState<string | null>(null);
+  const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showNotification = useCallback((msg: string) => {
+    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+    setNotification(msg);
+    notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
+  }, []);
+
+  // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
+  const normalizedQuery = searchQuery.trim().toLowerCase();
 
   const filteredEntries = CATALOG_ENTRIES.filter((entry) => {
     const matchesSearch =
-      entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      entry.description.toLowerCase().includes(searchQuery.toLowerCase());
+      normalizedQuery === "" ||
+      entry.title.toLowerCase().includes(normalizedQuery) ||
+      entry.description.toLowerCase().includes(normalizedQuery);
     const matchesTag =
       selectedTag === "All_Entries" ||
       (entry.tags && entry.tags.includes(selectedTag));
@@ -158,6 +171,15 @@ export function Catalog({ onSelectApp }: CatalogProps) {
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
       {/* Atmospheric Background */}
       <div className="absolute inset-0 z-0 pointer-events-none atmosphere"></div>
+
+      {/* Chain 14 (NavButtonActions): non-blocking notification banner */}
+      {notification && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-black/80 border border-white/15 backdrop-blur-xl rounded-full pointer-events-none">
+          <span className="text-white/70 font-mono text-[11px] tracking-widest uppercase">
+            {notification}
+          </span>
+        </div>
+      )}
 
       {/* Side Navigation */}
       <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
@@ -173,7 +195,7 @@ export function Catalog({ onSelectApp }: CatalogProps) {
         <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => alert("Time is already wasted.")}
+            onClick={() => showNotification("Time is already wasted.")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
               schedule
@@ -184,7 +206,7 @@ export function Catalog({ onSelectApp }: CatalogProps) {
           </button>
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => alert("Memories purged.")}
+            onClick={() => showNotification("Memories purged.")}
           >
             <span className="material-symbols-outlined text-white text-xl font-light">
               delete
@@ -195,7 +217,7 @@ export function Catalog({ onSelectApp }: CatalogProps) {
           </button>
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => alert("Giving up is not an option.")}
+            onClick={() => showNotification("Giving up is not an option.")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
               cancel
@@ -207,7 +229,7 @@ export function Catalog({ onSelectApp }: CatalogProps) {
           <div className="h-px bg-white/10 my-4 w-full"></div>
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => alert("Staring into the void...")}
+            onClick={() => showNotification("Staring into the void...")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
               block
@@ -218,7 +240,7 @@ export function Catalog({ onSelectApp }: CatalogProps) {
           </button>
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => alert("Exit mechanism destroyed.")}
+            onClick={() => showNotification("Exit mechanism destroyed.")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
               warning

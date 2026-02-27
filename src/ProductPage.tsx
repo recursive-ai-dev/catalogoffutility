@@ -16,7 +16,7 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
   }, []);
 
   const paragraphs = app.longDescription
-    ? app.longDescription.split("\\n\\n")
+    ? app.longDescription.split("\n\n").filter(Boolean)
     : [];
 
   return (
