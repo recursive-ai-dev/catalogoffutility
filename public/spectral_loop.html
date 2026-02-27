@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPECTRAL LOOP</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --white: #e8e8e8;
+    --dim: #888;
+    --faint: #444;
+    --ghost: #222;
+    --black: #0a0a0a;
+    --pulse: #fff;
+    --type-speed: 35ms;
+  }
+
+  html, body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Courier Prime', monospace;
+    font-size: 17px;
+    line-height: 1.8;
+    height: 100%;
+    overflow: hidden;
+    cursor: default;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── GRAIN OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+  }
+
+  /* ── SCANLINES ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+  }
+
+  /* ── SCREEN CONTAINER ── */
+  #screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* ── VIGNETTE ── */
+  #vignette {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
+  }
+
+  /* ── TITLE SCREEN ── */
+  #title-screen {
+    text-align: center;
+    animation: fadeInSlow 3s ease-out;
+  }
+
+  #title-screen h1 {
+    font-family: 'Special Elite', cursive;
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    letter-spacing: 0.4em;
+    color: var(--white);
+    text-transform: uppercase;
+    margin-bottom: 0.3em;
+    text-shadow: 0 0 40px rgba(255,255,255,0.1);
+  }
+
+  #title-screen .subtitle {
+    font-size: 0.75rem;
+    letter-spacing: 0.5em;
+    color: var(--faint);
+    text-transform: uppercase;
+    margin-bottom: 3em;
+  }
+
+  #title-screen .begin {
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    color: var(--dim);
+    cursor: pointer;
+    transition: color 0.6s, text-shadow 0.6s;
+    text-transform: uppercase;
+    animation: breathe 3s ease-in-out infinite;
+  }
+
+  #title-screen .begin:hover {
+    color: var(--white);
+    text-shadow: 0 0 20px rgba(255,255,255,0.3);
+  }
+
+  .epigraph {
+    max-width: 480px;
+    margin: 0 auto 3em;
+    font-style: italic;
+    color: var(--faint);
+    font-size: 0.85rem;
+    line-height: 2;
+  }
+
+  /* ── GAME VIEWPORT ── */
+  #game-viewport {
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+  }
+
+  /* ── CYCLE INDICATOR ── */
+  #cycle-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--ghost);
+    z-index: 200;
+  }
+
+  #cycle-progress {
+    height: 100%;
+    width: 0%;
+    background: var(--dim);
+    transition: width 1.5s ease;
+  }
+
+  #cycle-label {
+    position: fixed;
+    top: 12px;
+    right: 20px;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    color: var(--faint);
+    text-transform: uppercase;
+    z-index: 200;
+  }
+
+  #entry-label {
+    position: fixed;
+    top: 12px;
+    left: 20px;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    color: var(--faint);
+    text-transform: uppercase;
+    z-index: 200;
+  }
+
+  /* ── NARRATIVE AREA ── */
+  #narrative-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  #narrative-container::-webkit-scrollbar { display: none; }
+
+  #narrative {
+    max-width: 640px;
+    width: 100%;
+  }
+
+  .entry-header {
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    color: var(--faint);
+    text-transform: uppercase;
+    margin-bottom: 2em;
+    opacity: 0;
+    animation: typeIn 0.8s ease forwards;
+  }
+
+  .narrative-line {
+    margin-bottom: 0.6em;
+    opacity: 0;
+    transform: translateY(8px);
+    color: var(--white);
+  }
+
+  .narrative-line.visible {
+    animation: lineReveal 0.8s ease forwards;
+  }
+
+  .narrative-line.dim {
+    color: var(--dim);
+  }
+
+  .narrative-line.faint {
+    color: var(--faint);
+  }
+
+  .narrative-line.ghost {
+    color: var(--ghost);
+  }
+
+  .narrative-line.whisper {
+    font-style: italic;
+    color: var(--faint);
+    font-size: 0.9em;
+  }
+
+  .narrative-line.memory {
+    color: var(--dim);
+    border-left: 1px solid var(--ghost);
+    padding-left: 1.2em;
+    margin-left: 0.5em;
+  }
+
+  .narrative-line.echo {
+    animation: lineReveal 0.8s ease forwards, flicker 4s ease-in-out infinite;
+  }
+
+  /* ── BLANK / WORD CHOICE ── */
+  .blank {
+    display: inline;
+    color: var(--pulse);
+    border-bottom: 1px solid var(--faint);
+    padding: 0 0.3em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    min-width: 3em;
+    text-align: center;
+  }
+
+  .blank::before {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: var(--white);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+  }
+
+  .blank:hover::before {
+    transform: scaleX(1);
+  }
+
+  .blank:hover {
+    color: #fff;
+    text-shadow: 0 0 12px rgba(255,255,255,0.4);
+  }
+
+  .blank.filled {
+    border-bottom-color: var(--dim);
+    color: var(--white);
+  }
+
+  .blank.locked {
+    cursor: default;
+    border-bottom-color: transparent;
+    color: var(--dim);
+  }
+
+  /* ── WORD SELECTOR POPUP ── */
+  #word-selector {
+    display: none;
+    position: fixed;
+    z-index: 500;
+    background: var(--black);
+    border: 1px solid var(--ghost);
+    padding: 4px;
+    min-width: 160px;
+  }
+
+  .word-option {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.85rem;
+    color: var(--dim);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .word-option:hover {
+    color: var(--white);
+    background: var(--ghost);
+  }
+
+  /* ── ACTION AREA ── */
+  #action-area {
+    padding: 20px 40px 40px;
+    text-align: center;
+    min-height: 80px;
+  }
+
+  .action-btn {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--faint);
+    background: none;
+    border: 1px solid var(--ghost);
+    padding: 10px 30px;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    opacity: 0;
+    animation: fadeInSlow 1s ease forwards;
+  }
+
+  .action-btn:hover {
+    color: var(--white);
+    border-color: var(--dim);
+    text-shadow: 0 0 8px rgba(255,255,255,0.2);
+  }
+
+  .action-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* ── RECONSTRUCTION VIEW ── */
+  .reconstruction-zone {
+    margin: 2em 0;
+    padding: 1.5em;
+    border: 1px solid var(--ghost);
+    position: relative;
+  }
+
+  .reconstruction-zone::before {
+    content: 'RECONSTRUCT';
+    position: absolute;
+    top: -0.6em;
+    left: 1em;
+    background: var(--black);
+    padding: 0 0.5em;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: var(--faint);
+  }
+
+  .drag-fragment {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 4px;
+    border: 1px solid var(--faint);
+    color: var(--dim);
+    cursor: grab;
+    transition: all 0.3s;
+    font-size: 0.9em;
+    user-select: none;
+  }
+
+  .drag-fragment:hover {
+    color: var(--white);
+    border-color: var(--white);
+  }
+
+  .drag-fragment.placed {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .drop-slot {
+    display: inline-block;
+    min-width: 80px;
+    min-height: 1.5em;
+    border-bottom: 1px dashed var(--faint);
+    margin: 0 4px;
+    vertical-align: bottom;
+    transition: all 0.3s;
+    padding: 0 4px;
+    color: var(--dim);
+  }
+
+  .drop-slot.hover {
+    border-bottom-color: var(--white);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .drop-slot.filled {
+    border-bottom-style: solid;
+    color: var(--white);
+  }
+
+  /* ── CYCLE ECHO (repeating text) ── */
+  .cycle-echo {
+    position: fixed;
+    pointer-events: none;
+    z-index: 50;
+    font-size: 0.7rem;
+    color: var(--ghost);
+    letter-spacing: 0.2em;
+    white-space: nowrap;
+    animation: echoFloat 8s linear forwards;
+  }
+
+  /* ── PERSPECTIVE LABEL ── */
+  .perspective-tag {
+    display: inline-block;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: var(--faint);
+    text-transform: uppercase;
+    border: 1px solid var(--ghost);
+    padding: 2px 10px;
+    margin-bottom: 1.5em;
+    opacity: 0;
+    animation: fadeInSlow 1.5s ease 0.5s forwards;
+  }
+
+  /* ── MEMORY THREAD ── */
+  .memory-thread {
+    margin: 2em 0;
+    padding: 1em 0 1em 1.5em;
+    border-left: 1px solid var(--ghost);
+  }
+
+  .memory-thread .thread-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: var(--faint);
+    text-transform: uppercase;
+    margin-bottom: 0.8em;
+  }
+
+  .memory-thread .thread-text {
+    color: var(--dim);
+    font-style: italic;
+    font-size: 0.9em;
+    line-height: 2;
+  }
+
+  /* ── ENDING SCREEN ── */
+  #ending-screen {
+    display: none;
+    text-align: center;
+    max-width: 600px;
+    padding: 40px;
+  }
+
+  #ending-screen h2 {
+    font-family: 'Special Elite', cursive;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    letter-spacing: 0.2em;
+    margin-bottom: 1.5em;
+    color: var(--white);
+  }
+
+  #ending-screen .ending-text {
+    color: var(--dim);
+    line-height: 2.2;
+    margin-bottom: 2em;
+  }
+
+  #ending-screen .restart-link {
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    color: var(--faint);
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: color 0.4s;
+  }
+
+  #ending-screen .restart-link:hover {
+    color: var(--white);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeInSlow {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes lineReveal {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes typeIn {
+    from { opacity: 0; letter-spacing: 0.8em; }
+    to { opacity: 1; letter-spacing: 0.4em; }
+  }
+
+  @keyframes breathe {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+    52% { opacity: 1; }
+    54% { opacity: 0.8; }
+    56% { opacity: 1; }
+  }
+
+  @keyframes echoFloat {
+    from { opacity: 0.15; transform: translateY(0) translateX(0); }
+    to { opacity: 0; transform: translateY(-100px) translateX(30px); }
+  }
+
+  @keyframes glitch {
+    0% { transform: translate(0); }
+    20% { transform: translate(-2px, 1px); }
+    40% { transform: translate(1px, -1px); }
+    60% { transform: translate(-1px, 2px); }
+    80% { transform: translate(2px, -1px); }
+    100% { transform: translate(0); }
+  }
+
+  .glitch-text {
+    animation: glitch 0.3s ease infinite;
+  }
+
+  @keyframes dissolve {
+    from { opacity: 1; filter: blur(0); }
+    to { opacity: 0; filter: blur(4px); }
+  }
+
+  .dissolving {
+    animation: dissolve 1.5s ease forwards;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    body { font-size: 15px; }
+    #narrative-container { padding: 50px 24px; }
+    #action-area { padding: 16px 24px 30px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="vignette"></div>
+<div id="screen">
+
+  <!-- ════ TITLE ════ -->
+  <div id="title-screen">
+    <h1>Spectral Loop</h1>
+    <div class="subtitle">a monochrome text experience</div>
+    <div class="epigraph">
+      "The same hand reaches for the same fire.<br>
+      Each time it believes it will not burn."
+    </div>
+    <div class="begin" onclick="startGame()">Begin</div>
+  </div>
+
+  <!-- ════ GAME ════ -->
+  <div id="game-viewport">
+    <div id="cycle-bar"><div id="cycle-progress"></div></div>
+    <div id="cycle-label">CYCLE I</div>
+    <div id="entry-label">ENTRY #—</div>
+    <div id="narrative-container">
+      <div id="narrative"></div>
+    </div>
+    <div id="action-area"></div>
+  </div>
+
+  <!-- ════ WORD SELECTOR ════ -->
+  <div id="word-selector"></div>
+
+  <!-- ════ ENDING ════ -->
+  <div id="ending-screen">
+    <h2 id="ending-title"></h2>
+    <div id="ending-text" class="ending-text"></div>
+    <div class="restart-link" onclick="restartGame()">The loop begins again</div>
+  </div>
+
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════╗
+// ║  SPECTRAL LOOP — Narrative Engine                       ║
+// ║  Cycles of addiction and transcendence                  ║
+// ╚══════════════════════════════════════════════════════════╝
+
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+// ── GAME STATE ──
+const STATE = {
+  cycle: 1,
+  maxCycles: 3,
+  entryIndex: 0,
+  totalEntries: 0,
+  blanksFilledThisEntry: 0,
+  blanksRequiredThisEntry: 0,
+
+  // Psychological axes (0–100)
+  denial: 50,
+  awareness: 20,
+  surrender: 30,    // surrender to addiction
+  transcendence: 10,
+
+  // Cycle detection
+  choiceHistory: [],      // all choices made
+  cyclePatterns: [],       // detected repeating patterns
+  wordFrequency: {},       // how often each word archetype chosen
+
+  // Memory threads — fragments that persist across cycles
+  memoryThreads: [],
+
+  // Perspective state
+  currentPerspective: 'fractured', // fractured | lucid | drowning | ascending
+
+  // Ending tracking
+  cyclesBroken: 0,
+  cyclesReinforced: 0,
+};
+
+// ── WORD ARCHETYPES ──
+// Each word choice belongs to an archetype that shifts psychological state
+const ARCHETYPES = {
+  deny:        { denial: +8, awareness: -3, surrender: +2, transcendence: -2 },
+  acknowledge: { denial: -6, awareness: +8, surrender: -2, transcendence: +3 },
+  surrender_a: { denial: -2, awareness: +2, surrender: +10, transcendence: -5 },
+  resist:      { denial: +3, awareness: +5, surrender: -6, transcendence: +4 },
+  transcend:   { denial: -5, awareness: +6, surrender: -4, transcendence: +10 },
+  numb:        { denial: +5, awareness: -5, surrender: +5, transcendence: -3 },
+  remember:    { denial: -4, awareness: +7, surrender: +0, transcendence: +5 },
+  forget:      { denial: +6, awareness: -6, surrender: +3, transcendence: -4 },
+};
+
+function applyArchetype(archetype) {
+  const shifts = ARCHETYPES[archetype];
+  if (!shifts) return;
+  for (const [key, val] of Object.entries(shifts)) {
+    STATE[key] = Math.max(0, Math.min(100, STATE[key] + val));
+  }
+}
+
+// ── PERSPECTIVE CALCULATION ──
+function recalcPerspective() {
+  const { denial, awareness, surrender, transcendence } = STATE;
+  if (transcendence > 60 && awareness > 50) {
+    STATE.currentPerspective = 'ascending';
+  } else if (surrender > 60 && denial > 40) {
+    STATE.currentPerspective = 'drowning';
+  } else if (awareness > 55 && denial < 40) {
+    STATE.currentPerspective = 'lucid';
+  } else {
+    STATE.currentPerspective = 'fractured';
+  }
+}
+
+// ── CYCLE DETECTION ──
+function detectCycles() {
+  const history = STATE.choiceHistory;
+  if (history.length < 4) return;
+
+  // Look for repeating archetype patterns (window of 2-3)
+  const recent = history.slice(-6);
+  for (let len = 2; len <= 3; len++) {
+    if (recent.length < len * 2) continue;
+    const pattern = recent.slice(-len);
+    const prior = recent.slice(-len * 2, -len);
+    const match = pattern.every((v, i) => v === prior[i]);
+    if (match) {
+      STATE.cyclePatterns.push(pattern.join('-'));
+      STATE.cyclesReinforced++;
+      return true;
+    }
+  }
+
+  // Check frequency dominance
+  const counts = {};
+  for (const a of history.slice(-8)) {
+    counts[a] = (counts[a] || 0) + 1;
+  }
+  const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  if (dominant && dominant[1] >= 5) {
+    STATE.cyclePatterns.push(`${dominant[0]}-dominant`);
+    return true;
+  }
+
+  return false;
+}
+
+// ══════════════════════════════════════════════════════════
+//  NARRATIVE CONTENT — THE DIARY ENTRIES
+// ══════════════════════════════════════════════════════════
+
+function getEntries(cycle) {
+  // Entries adapt based on cycle number and psychological state
+  const p = STATE.currentPerspective;
+  const cycleLabel = ['I', 'II', 'III', 'IV'][cycle - 1] || cycle;
+
+  // Base entries that shift in language based on perspective
+  const entries = [
+    // ── ENTRY 1: THE CLOCK ──
+    {
+      id: `${cycle}-1`,
+      header: `FRAGMENTED ENTRY #${cycle * 12 + 7}`,
+      lines: [
+        {
+          fragments: [
+            { text: 'THE NUMBERS ON THE CLOCK ' },
+            { blank: true, id: 'clock-verb', options: [
+              { word: 'MELT', archetype: 'surrender_a' },
+              { word: 'DISSOLVE', archetype: 'numb' },
+              { word: 'SHARPEN', archetype: 'resist' },
+              { word: 'HOLD', archetype: 'acknowledge' },
+            ]},
+            { text: ' INTO SHADOWS' },
+          ]
+        },
+        {
+          fragments: [
+            { text: 'I ' },
+            { blank: true, id: 'mirror-verb', options: [
+              { word: 'RECOGNIZE', archetype: 'acknowledge' },
+              { word: 'AVOID', archetype: 'deny' },
+              { word: 'STUDY', archetype: 'resist' },
+              { word: 'FORGET', archetype: 'forget' },
+            ]},
+            { text: ' MYSELF IN THE MIRROR BUT ' },
+            { blank: true, id: 'mirror-result', options: [
+              { word: 'SOMETHING ELSE', archetype: 'deny' },
+              { word: 'THE TRUTH', archetype: 'acknowledge' },
+              { word: 'NOTHING', archetype: 'numb' },
+              { word: 'A STRANGER', archetype: 'surrender_a' },
+            ]},
+            { text: ' STARES BACK' },
+          ]
+        },
+        {
+          fragments: [
+            { text: 'THE NEEDLE CALLS LIKE ' },
+            { blank: true, id: 'needle-simile', options: [
+              { word: 'A PRAYER', archetype: 'surrender_a' },
+              { word: 'A LIE', archetype: 'acknowledge' },
+              { word: 'AN OLD FRIEND', archetype: 'deny' },
+              { word: 'A WOUND', archetype: 'resist' },
+            ]},
+          ]
+        },
+      ],
+      // Perspective-shifted flavor text shown after blanks are filled
+      afterText: {
+        fractured: 'THE TEXT REARRANGES ITSELF\nTIME HAS BECOME LIQUID',
+        lucid:     'YOU SEE THE PATTERN NOW\nTHE WORDS HAVE ALWAYS BEEN THE SAME',
+        drowning:  'THE PAGE IS WET WITH SOMETHING\nYOU CANNOT STOP READING',
+        ascending: 'THE WORDS LIFT FROM THE PAGE\nLETTERS BECOMING LIGHT',
+      },
+    },
+
+    // ── ENTRY 2: THE ROOM ──
+    {
+      id: `${cycle}-2`,
+      header: `FRAGMENTED ENTRY #${cycle * 12 + 23}`,
+      lines: [
+        {
+          fragments: [
+            { text: 'THE ROOM ' },
+            { blank: true, id: 'room-state', options: [
+              { word: 'BREATHES', archetype: 'surrender_a' },
+              { word: 'WAITS', archetype: 'resist' },
+              { word: 'SHRINKS', archetype: 'numb' },
+              { word: 'REMEMBERS', archetype: 'remember' },
+            ]},
+            { text: ' AROUND ME' },
+          ]
+        },
+        {
+          fragments: [
+            { text: 'I HAVE BEEN HERE ' },
+            { blank: true, id: 'been-here', options: [
+              { word: 'BEFORE', archetype: 'remember' },
+              { word: 'ALWAYS', archetype: 'surrender_a' },
+              { word: 'NEVER', archetype: 'deny' },
+              { word: 'TOO LONG', archetype: 'acknowledge' },
+            ]},
+          ]
+        },
+        {
+          fragments: [
+            { text: 'THE WALLS ARE ' },
+            { blank: true, id: 'walls', options: [
+              { word: 'CLOSING IN', archetype: 'numb' },
+              { word: 'PAPER THIN', archetype: 'acknowledge' },
+              { word: 'FAMILIAR', archetype: 'surrender_a' },
+              { word: 'OPENING', archetype: 'transcend' },
+            ]},
+          ]
+        },
+        {
+          fragments: [
+            { text: 'SOMEONE LEFT A ' },
+            { blank: true, id: 'left-object', options: [
+              { word: 'NOTE', archetype: 'remember' },
+              { word: 'MIRROR', archetype: 'acknowledge' },
+              { word: 'NEEDLE', archetype: 'surrender_a' },
+              { word: 'WINDOW', archetype: 'transcend' },
+            ]},
+            { text: ' ON THE TABLE' },
+          ]
+        },
+      ],
+      afterText: {
+        fractured: 'THE ROOM HAS NO DOOR\nOR PERHAPS YOU HAVE NO EYES',
+        lucid:     'YOU BUILT THIS ROOM YOURSELF\nEVERY WALL A DECISION',
+        drowning:  'THE ROOM IS FILLING\nIT HAS ALWAYS BEEN FILLING',
+        ascending: 'THE CEILING IS GONE\nABOVE YOU ONLY SKY',
+      },
+    },
+
+    // ── ENTRY 3: THE MEMORY ──
+    {
+      id: `${cycle}-3`,
+      header: `FRAGMENTED ENTRY #${cycle * 12 + 41}`,
+      lines: [
+        {
+          fragments: [
+            { text: 'YOU REMEMBER THE FIRST TIME — ' },
+          ],
+          class: 'whisper',
+        },
+        {
+          fragments: [
+            { text: 'YOUR HANDS WERE ' },
+            { blank: true, id: 'hands-state', options: [
+              { word: 'CLEAN', archetype: 'remember' },
+              { word: 'SHAKING', archetype: 'acknowledge' },
+              { word: 'STEADY', archetype: 'deny' },
+              { word: 'SOMEONE ELSE\'S', archetype: 'numb' },
+            ]},
+          ]
+        },
+        {
+          fragments: [
+            { text: 'THE PROMISE SOUNDED LIKE ' },
+            { blank: true, id: 'promise', options: [
+              { word: 'MUSIC', archetype: 'surrender_a' },
+              { word: 'STATIC', archetype: 'numb' },
+              { word: 'A DOOR OPENING', archetype: 'transcend' },
+              { word: 'YOUR MOTHER\'S VOICE', archetype: 'remember' },
+            ]},
+          ]
+        },
+        {
+          fragments: [
+            { text: 'AND YOU ' },
+            { blank: true, id: 'you-did', options: [
+              { word: 'BELIEVED IT', archetype: 'deny' },
+              { word: 'KNEW BETTER', archetype: 'acknowledge' },
+              { word: 'DIDN\'T CARE', archetype: 'surrender_a' },
+              { word: 'CHOSE ANYWAY', archetype: 'resist' },
+            ]},
+          ]
+        },
+      ],
+      afterText: {
+        fractured: 'THE MEMORY FRACTURES\nEACH PIECE TELLS A DIFFERENT LIE',
+        lucid:     'YOU SEE IT CLEARLY NOW\nTHE FIRST TIME WAS THE LAST TIME YOU WERE FREE',
+        drowning:  'THE MEMORY IS WARM\nTHAT IS THE CRUELEST PART',
+        ascending: 'THE MEMORY RELEASES YOU\nYOU RELEASE THE MEMORY',
+      },
+    },
+
+    // ── ENTRY 4: THE CYCLE ──
+    {
+      id: `${cycle}-4`,
+      header: `FRAGMENTED ENTRY #${cycle * 12 + 59}`,
+      lines: [
+        {
+          fragments: [
+            { text: 'TODAY I WILL ' },
+            { blank: true, id: 'today-action', options: [
+              { word: 'STOP', archetype: 'resist' },
+              { word: 'TRY', archetype: 'acknowledge' },
+              { word: 'PRETEND', archetype: 'deny' },
+              { word: 'SURRENDER', archetype: 'surrender_a' },
+            ]},
+          ]
+        },
+        {
+          fragments: [
+            { text: 'I HAVE WRITTEN THIS ' },
+            { blank: true, id: 'written-how', options: [
+              { word: 'BEFORE', archetype: 'remember' },
+              { word: 'A THOUSAND TIMES', archetype: 'acknowledge' },
+              { word: 'NEVER', archetype: 'deny' },
+              { word: 'FOR THE LAST TIME', archetype: 'transcend' },
+            ]},
+          ]
+        },
+        {
+          fragments: [
+            { text: 'THE PEN ' },
+            { blank: true, id: 'pen-action', options: [
+              { word: 'TREMBLES', archetype: 'resist' },
+              { word: 'KNOWS THE WAY', archetype: 'surrender_a' },
+              { word: 'BREAKS', archetype: 'transcend' },
+              { word: 'LIES', archetype: 'deny' },
+            ]},
+          ]
+        },
+        {
+          fragments: [
+            { text: 'TOMORROW THE PAGE WILL BE ' },
+            { blank: true, id: 'tomorrow-page', options: [
+              { word: 'BLANK AGAIN', archetype: 'surrender_a' },
+              { word: 'DIFFERENT', archetype: 'transcend' },
+              { word: 'THE SAME', archetype: 'numb' },
+              { word: 'TORN OUT', archetype: 'resist' },
+            ]},
+          ]
+        },
+      ],
+      afterText: {
+        fractured: 'THE INK BLEEDS THROUGH TO THE NEXT PAGE\nAND THE NEXT AND THE NEXT',
+        lucid:     'YOU COUNT THE PAGES\nTHEY ALL SAY THE SAME THING IN DIFFERENT HANDWRITING',
+        drowning:  'THE DIARY IS FULL\nYOU START WRITING IN THE MARGINS OF YOUR SKIN',
+        ascending: 'YOU CLOSE THE BOOK\nTHE BOOK DOES NOT CLOSE YOU',
+      },
+    },
+
+    // ── ENTRY 5: THE THRESHOLD ──
+    {
+      id: `${cycle}-5`,
+      header: `FRAGMENTED ENTRY #${cycle * 12 + 77}`,
+      lines: [
+        {
+          fragments: [
+            { text: 'THERE IS A DOOR YOU HAVE ' },
+            { blank: true, id: 'door-relation', options: [
+              { word: 'NEVER OPENED', archetype: 'deny' },
+              { word: 'OPENED EVERY NIGHT', archetype: 'surrender_a' },
+              { word: 'BEEN BUILDING', archetype: 'acknowledge' },
+              { word: 'BECOME', archetype: 'transcend' },
+            ]},
+          ]
+        },
+        {
+          fragments: [
+            { text: 'BEHIND IT: ' },
+            { blank: true, id: 'behind-door', options: [
+              { word: 'THE SAME ROOM', archetype: 'numb' },
+              { word: 'LIGHT', archetype: 'transcend' },
+              { word: 'YOURSELF, WAITING', archetype: 'acknowledge' },
+              { word: 'NOTHING YOU CAN NAME', archetype: 'surrender_a' },
+            ]},
+          ]
+        },
+        {
+          fragments: [
+            { text: 'YOU ' },
+            { blank: true, id: 'threshold-choice', options: [
+              { word: 'STEP THROUGH', archetype: 'transcend' },
+              { word: 'HESITATE', archetype: 'resist' },
+              { word: 'CLOSE YOUR EYES', archetype: 'surrender_a' },
+              { word: 'TURN AROUND', archetype: 'deny' },
+            ]},
+          ]
+        },
+      ],
+      afterText: {
+        fractured: 'THE DOOR WAS ALWAYS OPEN\nYOU WERE ALWAYS WALKING THROUGH IT',
+        lucid:     'THE DOOR IS YOU\nTHE THRESHOLD IS THE CHOICE TO SEE',
+        drowning:  'THERE IS NO DOOR\nTHERE IS ONLY THE FALLING',
+        ascending: 'YOU ARE THE DOOR\nAND YOU ARE FINALLY OPEN',
+      },
+    },
+  ];
+
+  // In later cycles, add cycle-detection reactive content
+  if (cycle > 1 && STATE.cyclePatterns.length > 0) {
+    entries[0].lines.unshift({
+      fragments: [{ text: `[ THIS ENTRY FEELS FAMILIAR — CYCLE ${cycleLabel} ]` }],
+      class: 'faint',
+    });
+  }
+
+  return entries;
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDERING ENGINE
+// ══════════════════════════════════════════════════════════
+
+let currentEntries = [];
+let activeBlankId = null;
+
+function startGame() {
+  $('#title-screen').style.display = 'none';
+  $('#game-viewport').style.display = 'flex';
+  STATE.cycle = 1;
+  STATE.entryIndex = 0;
+  currentEntries = getEntries(1);
+  STATE.totalEntries = currentEntries.length;
+  renderEntry(currentEntries[0]);
+}
+
+function restartGame() {
+  // Full reset
+  Object.assign(STATE, {
+    cycle: 1, entryIndex: 0, totalEntries: 0,
+    blanksFilledThisEntry: 0, blanksRequiredThisEntry: 0,
+    denial: 50, awareness: 20, surrender: 30, transcendence: 10,
+    choiceHistory: [], cyclePatterns: [], wordFrequency: {},
+    memoryThreads: [], currentPerspective: 'fractured',
+    cyclesBroken: 0, cyclesReinforced: 0,
+  });
+  $('#ending-screen').style.display = 'none';
+  $('#game-viewport').style.display = 'flex';
+  currentEntries = getEntries(1);
+  STATE.totalEntries = currentEntries.length;
+  renderEntry(currentEntries[0]);
+}
+
+function renderEntry(entry) {
+  const narrative = $('#narrative');
+  const actionArea = $('#action-area');
+  narrative.innerHTML = '';
+  actionArea.innerHTML = '';
+
+  // Update labels
+  const cycleNum = ['I', 'II', 'III', 'IV'][STATE.cycle - 1] || STATE.cycle;
+  $('#cycle-label').textContent = `CYCLE ${cycleNum}`;
+  $('#entry-label').textContent = entry.header;
+
+  // Update progress bar
+  const progress = ((STATE.entryIndex) / STATE.totalEntries) * 100;
+  $('#cycle-progress').style.width = `${progress}%`;
+
+  // Count blanks in this entry
+  STATE.blanksFilledThisEntry = 0;
+  STATE.blanksRequiredThisEntry = 0;
+  for (const line of entry.lines) {
+    for (const frag of line.fragments) {
+      if (frag.blank) STATE.blanksRequiredThisEntry++;
+    }
+  }
+
+  // Render perspective tag
+  if (STATE.cycle > 1 || STATE.entryIndex > 1) {
+    const perspNames = {
+      fractured: 'FRACTURED PERSPECTIVE',
+      lucid: 'MOMENT OF CLARITY',
+      drowning: 'SINKING',
+      ascending: 'RISING',
+    };
+    const tag = document.createElement('div');
+    tag.className = 'perspective-tag';
+    tag.textContent = perspNames[STATE.currentPerspective];
+    narrative.appendChild(tag);
+  }
+
+  // Render header
+  const header = document.createElement('div');
+  header.className = 'entry-header';
+  header.textContent = entry.header;
+  narrative.appendChild(header);
+
+  // Render memory thread from previous entries if applicable
+  if (STATE.memoryThreads.length > 0 && STATE.entryIndex > 0) {
+    const lastMemory = STATE.memoryThreads[STATE.memoryThreads.length - 1];
+    const thread = document.createElement('div');
+    thread.className = 'memory-thread';
+    thread.innerHTML = `
+      <div class="thread-label">Memory echo</div>
+      <div class="thread-text">${lastMemory}</div>
+    `;
+    thread.style.opacity = '0';
+    narrative.appendChild(thread);
+    setTimeout(() => {
+      thread.style.transition = 'opacity 1.5s ease';
+      thread.style.opacity = '1';
+    }, 300);
+  }
+
+  // Render lines with staggered reveal
+  entry.lines.forEach((line, lineIdx) => {
+    const lineEl = document.createElement('div');
+    lineEl.className = `narrative-line ${line.class || ''}`;
+    lineEl.dataset.lineIdx = lineIdx;
+
+    for (const frag of line.fragments) {
+      if (frag.blank) {
+        const blankEl = document.createElement('span');
+        blankEl.className = 'blank';
+        blankEl.dataset.blankId = frag.id;
+        blankEl.dataset.options = JSON.stringify(frag.options);
+        blankEl.textContent = '[ ]';
+        blankEl.addEventListener('click', (e) => openWordSelector(e, frag));
+        lineEl.appendChild(blankEl);
+      } else {
+        const textNode = document.createElement('span');
+        textNode.textContent = frag.text;
+        lineEl.appendChild(textNode);
+      }
+    }
+
+    narrative.appendChild(lineEl);
+
+    // Staggered reveal
+    setTimeout(() => {
+      lineEl.classList.add('visible');
+    }, 400 + lineIdx * 350);
+  });
+
+  // Scroll to top
+  $('#narrative-container').scrollTop = 0;
+}
+
+function openWordSelector(event, frag) {
+  const blankEl = event.currentTarget;
+  if (blankEl.classList.contains('locked')) return;
+
+  const selector = $('#word-selector');
+  const rect = blankEl.getBoundingClientRect();
+
+  selector.innerHTML = '';
+  for (const opt of frag.options) {
+    const btn = document.createElement('button');
+    btn.className = 'word-option';
+    btn.textContent = opt.word;
+    btn.addEventListener('click', () => selectWord(blankEl, opt, frag.id));
+    selector.appendChild(btn);
+  }
+
+  // Position selector
+  let top = rect.bottom + 6;
+  let left = rect.left;
+  if (top + 200 > window.innerHeight) top = rect.top - 200;
+  if (left + 160 > window.innerWidth) left = window.innerWidth - 170;
+
+  selector.style.top = `${top}px`;
+  selector.style.left = `${left}px`;
+  selector.style.display = 'block';
+
+  activeBlankId = frag.id;
+
+  // Close on outside click
+  const closeHandler = (e) => {
+    if (!selector.contains(e.target) && e.target !== blankEl) {
+      selector.style.display = 'none';
+      document.removeEventListener('click', closeHandler);
+    }
+  };
+  setTimeout(() => document.addEventListener('click', closeHandler), 10);
+}
+
+function selectWord(blankEl, option, blankId) {
+  // Apply the word
+  blankEl.textContent = option.word;
+  blankEl.classList.add('filled');
+  blankEl.classList.add('locked');
+  $('#word-selector').style.display = 'none';
+
+  // Apply psychological shifts
+  applyArchetype(option.archetype);
+  STATE.choiceHistory.push(option.archetype);
+  STATE.wordFrequency[option.archetype] = (STATE.wordFrequency[option.archetype] || 0) + 1;
+
+  // Recalculate perspective
+  recalcPerspective();
+
+  // Check for cycle detection
+  const cycleDetected = detectCycles();
+  if (cycleDetected) {
+    spawnCycleEcho();
+  }
+
+  // Track blanks filled
+  STATE.blanksFilledThisEntry++;
+
+  // If all blanks filled, show afterText and advance button
+  if (STATE.blanksFilledThisEntry >= STATE.blanksRequiredThisEntry) {
+    onEntryComplete();
+  }
+}
+
+function onEntryComplete() {
+  const entry = currentEntries[STATE.entryIndex];
+  const narrative = $('#narrative');
+  const actionArea = $('#action-area');
+
+  // Store memory thread
+  const filledBlanks = $$('.blank.filled');
+  const memoryWords = Array.from(filledBlanks).map(b => b.textContent).join(' — ');
+  STATE.memoryThreads.push(memoryWords);
+
+  // Show perspective-shifted afterText
+  const afterText = entry.afterText[STATE.currentPerspective];
+  if (afterText) {
+    const afterLines = afterText.split('\n');
+    afterLines.forEach((text, i) => {
+      const line = document.createElement('div');
+      line.className = 'narrative-line dim';
+      line.textContent = text;
+      line.style.marginTop = i === 0 ? '2em' : '0';
+      narrative.appendChild(line);
+      setTimeout(() => line.classList.add('visible'), 600 + i * 400);
+    });
+  }
+
+  // Show advance button
+  setTimeout(() => {
+    const isLastEntry = STATE.entryIndex >= currentEntries.length - 1;
+    const isLastCycle = STATE.cycle >= STATE.maxCycles;
+
+    let btnText = 'Continue';
+    if (isLastEntry && !isLastCycle) {
+      btnText = 'The cycle turns';
+    } else if (isLastEntry && isLastCycle) {
+      btnText = 'The loop closes';
+    }
+
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.textContent = btnText;
+    btn.addEventListener('click', () => advanceEntry());
+    actionArea.appendChild(btn);
+  }, 800 + (afterText ? afterText.split('\n').length * 400 : 0));
+}
+
+function advanceEntry() {
+  const isLastEntry = STATE.entryIndex >= currentEntries.length - 1;
+  const isLastCycle = STATE.cycle >= STATE.maxCycles;
+
+  if (isLastEntry && isLastCycle) {
+    // Game ends
+    showEnding();
+    return;
+  }
+
+  if (isLastEntry) {
+    // Advance to next cycle
+    STATE.cycle++;
+    STATE.entryIndex = 0;
+
+    // Dissolve transition
+    const narrative = $('#narrative');
+    narrative.classList.add('dissolving');
+    setTimeout(() => {
+      narrative.classList.remove('dissolving');
+      recalcPerspective();
+      currentEntries = getEntries(STATE.cycle);
+      STATE.totalEntries = currentEntries.length;
+      renderEntry(currentEntries[0]);
+    }, 1600);
+    return;
+  }
+
+  // Next entry in current cycle
+  STATE.entryIndex++;
+
+  const narrative = $('#narrative');
+  narrative.style.opacity = '0';
+  narrative.style.transition = 'opacity 0.6s ease';
+  setTimeout(() => {
+    renderEntry(currentEntries[STATE.entryIndex]);
+    narrative.style.opacity = '1';
+  }, 700);
+}
+
+// ── CYCLE ECHO VISUAL ──
+function spawnCycleEcho() {
+  const phrases = [
+    'YOU HAVE BEEN HERE BEFORE',
+    'THE PATTERN REPEATS',
+    'NOTHING HAS CHANGED',
+    'THE SAME HAND THE SAME FIRE',
+    'CYCLE DETECTED',
+    'THE LOOP TIGHTENS',
+    'YOU CHOSE THIS BEFORE',
+    'AGAIN AND AGAIN AND AGAIN',
+  ];
+  const text = phrases[Math.floor(Math.random() * phrases.length)];
+  const echo = document.createElement('div');
+  echo.className = 'cycle-echo';
+  echo.textContent = text;
+  echo.style.left = `${10 + Math.random() * 60}%`;
+  echo.style.top = `${20 + Math.random() * 50}%`;
+  document.body.appendChild(echo);
+  setTimeout(() => echo.remove(), 8500);
+}
+
+// ══════════════════════════════════════════════════════════
+//  ENDINGS
+// ══════════════════════════════════════════════════════════
+
+function showEnding() {
+  const { denial, awareness, surrender, transcendence } = STATE;
+
+  let title, text;
+
+  if (transcendence >= 55 && awareness >= 45) {
+    // TRANSCENDENCE ENDING
+    title = 'THE LOOP OPENS';
+    text = `The diary is closed. Not because the pages ran out, but because the hand that held the pen finally understood that the story was never about the words.\n\nYou chose to see. Not once, not perfectly, but enough.\n\nThe clock on the wall still ticks. The room still has four walls. The needle still exists somewhere in a drawer you could find if you wanted to.\n\nBut you are not the person who wrote these entries.\n\nYou are the one who read them and understood.\n\nThe loop does not break. You simply step outside it, and watch it turn without you.\n\nAnd in the silence after—\n\nsomething like peace.`;
+  } else if (surrender >= 55 && denial >= 40) {
+    // SURRENDER ENDING
+    title = 'THE LOOP TIGHTENS';
+    text = `The diary continues. It has always continued.\n\nThe handwriting changes — sometimes steady, sometimes not — but the words remain the same. Different ink, different dates, the same sentences wearing new masks.\n\nYou did not choose this. You chose a thousand small things that all meant this.\n\nThe room is warm. The needle is patient. The clock has no numbers anymore because you stopped needing them a long time ago.\n\nSomewhere, in an entry you haven't written yet, there is a version of you that remembers what it felt like before.\n\nThat version is still writing.\n\nThe loop does not end.\nThe loop does not end.\nThe loop does not end.`;
+  } else if (awareness >= 55 && surrender < 45) {
+    // LUCIDITY ENDING
+    title = 'THE LOOP PAUSES';
+    text = `You see the pattern. Every thread, every repetition, every word you wrote in the dark thinking no one would read it.\n\nYou read it.\n\nThe knowing is not enough — you understand that now. Seeing the trap does not free you from it. But it gives you something the loop cannot take: the ability to choose with your eyes open.\n\nThe diary sits on the table. Tomorrow you may write in it again. Tomorrow the hand may reach for what it has always reached for.\n\nBut tonight, you are awake.\n\nAnd that is not nothing.\nThat is not nothing at all.`;
+  } else if (denial >= 55) {
+    // DENIAL ENDING
+    title = 'THE LOOP HIDES';
+    text = `There is no loop. There never was a loop.\n\nYou close the diary and put it in a drawer where it will stay until you forget where you put it, which will be soon, which will be easy, because you have practiced forgetting the way musicians practice scales.\n\nThe clock shows a normal time. The mirror shows a normal face. The room is just a room. Everything is fine.\n\nEverything has always been fine.\n\nSomewhere underneath the floorboards, the diary writes itself in your handwriting.\n\nYou do not hear it.\nYou have never heard it.\nYou are fine.`;
+  } else {
+    // FRACTURED ENDING (mixed/uncertain)
+    title = 'THE LOOP WAVERS';
+    text = `The diary is open to a page you don't remember writing.\n\nThe words are half yours and half someone else's — someone who wears your face and shares your hands but makes different choices in the dark.\n\nYou are between. Not healed, not broken. Not awake, not asleep. Suspended in the moment before the needle or the moment after the prayer — you cannot tell which.\n\nThe loop does not know what to do with you.\n\nSo it waits.\n\nAnd you wait inside it, turning pages, filling blanks, wondering if the next word you choose will be the one that changes everything.\n\nOr if you've already chosen it and didn't notice.`;
+  }
+
+  $('#game-viewport').style.display = 'none';
+  const endScreen = $('#ending-screen');
+  endScreen.style.display = 'block';
+  endScreen.style.animation = 'fadeInSlow 2s ease';
+
+  $('#ending-title').textContent = title;
+
+  // Render ending text with line breaks, staggered
+  const endTextEl = $('#ending-text');
+  endTextEl.innerHTML = '';
+  const paragraphs = text.split('\n\n');
+  paragraphs.forEach((para, i) => {
+    const p = document.createElement('p');
+    p.style.marginBottom = '1.2em';
+    p.style.opacity = '0';
+    p.style.transition = 'opacity 1s ease';
+    p.textContent = para;
+    endTextEl.appendChild(p);
+    setTimeout(() => { p.style.opacity = '1'; }, 800 + i * 600);
+  });
+
+  // Show stats after a delay
+  setTimeout(() => {
+    const stats = document.createElement('div');
+    stats.style.cssText = 'margin: 2em 0; font-size: 0.65rem; letter-spacing: 0.2em; color: var(--faint); opacity: 0; transition: opacity 1.5s ease;';
+    stats.innerHTML = `
+      DENIAL: ${denial} · AWARENESS: ${awareness} · SURRENDER: ${surrender} · TRANSCENDENCE: ${transcendence}<br>
+      CYCLES REINFORCED: ${STATE.cyclesReinforced} · PATTERNS DETECTED: ${STATE.cyclePatterns.length}<br>
+      WORDS CHOSEN: ${STATE.choiceHistory.length}
+    `;
+    endTextEl.appendChild(stats);
+    setTimeout(() => { stats.style.opacity = '1'; }, 300);
+  }, 800 + paragraphs.length * 600 + 1000);
+}
+
+// ── KEYBOARD SUPPORT ──
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    $('#word-selector').style.display = 'none';
+  }
+});
+</script>
+</body>
+</html>
