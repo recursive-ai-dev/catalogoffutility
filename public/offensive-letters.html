@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VERBAL ASSAULT: The Typing of the Dead Letters</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'VT323', monospace;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+        }
+        .crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 40;
+        }
+        .glitch-text {
+            position: relative;
+            color: #fff;
+            text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff;
+            animation: glitch 1s infinite linear alternate-reverse;
+        }
+        @keyframes glitch {
+            0% { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffff; transform: translate(0,0); }
+            20% { text-shadow: -2px 2px #ff00ff, 2px -2px #00ffff; transform: translate(-2px, 2px); }
+            40% { text-shadow: 2px -2px #ff00ff, -2px 2px #00ffff; transform: translate(2px, -2px); }
+            60% { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffff; transform: translate(0,0); }
+            80% { text-shadow: 1px 1px #ff00ff, -1px -1px #00ffff; transform: translate(1px, 1px); }
+            100% { text-shadow: -1px -1px #ff00ff, 1px 1px #00ffff; transform: translate(-1px, -1px); }
+        }
+        #start-screen, #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
+        }
+        .hidden { display: none !important; }
+        
+        .hud-text {
+            font-size: 2rem;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        
+        .btn {
+            background: transparent;
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 15px 40px;
+            font-family: 'VT323', monospace;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-top: 20px;
+        }
+        .btn:hover {
+            background: #fff;
+            color: #000;
+            box-shadow: 0 0 20px #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CRT Effect Overlay -->
+    <div class="crt-overlay"></div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI Layer -->
+    <div class="ui-layer">
+        <div class="flex justify-between items-start w-full">
+            <div class="text-left">
+                <div class="hud-text">SCORE: <span id="scoreDisplay">0</span></div>
+                <div class="text-red-500 text-2xl mt-1" style="text-shadow: 0 0 10px red;">INSULTS DEFLECTED: <span id="insultDisplay">0</span></div>
+            </div>
+            <div class="text-right">
+                <div class="hud-text text-blue-400" style="text-shadow: 0 0 10px blue;">SHIELD: <span id="healthDisplay">100%</span></div>
+                <div class="text-yellow-400 text-xl mt-1">WAVE: <span id="waveDisplay">1</span></div>
+            </div>
+        </div>
+        
+        <!-- Typing Buffer Display -->
+        <div class="w-full flex justify-center mb-10">
+            <div id="typingBuffer" class="text-6xl text-white font-bold tracking-widest h-20 flex items-center justify-center" style="text-shadow: 0 0 15px white;">
+                <!-- Typed letters appear here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <h1 class="text-8xl font-bold mb-2 glitch-text text-center">VERBAL ASSAULT</h1>
+        <p class="text-2xl text-gray-300 mb-8 max-w-2xl text-center leading-relaxed">
+            The alphabet has declared war on your feelings.<br>
+            Type the <span class="text-red-500 font-bold">LETTERS</span> to destroy the incoming insults before they hit your fragile ego.
+        </p>
+        <div class="flex flex-col gap-4 text-center">
+            <div class="text-green-400 text-xl">CONTROLS:</div>
+            <div class="text-white text-lg">[WASD] or [ARROWS] to Move</div>
+            <div class="text-white text-lg">[TYPE] the Red Letters to Shoot</div>
+        </div>
+        <button class="btn" onclick="startGame()">INITIALIZE DEFENSE</button>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="hidden">
+        <h1 class="text-8xl font-bold mb-4 text-red-600" style="text-shadow: 0 0 20px red;">EGO SHATTERED</h1>
+        <p class="text-3xl text-white mb-4">FINAL SCORE: <span id="finalScore">0</span></p>
+        <p class="text-xl text-gray-400 mb-8 italic">"Sticks and stones may break my bones, but words... words killed me."</p>
+        <button class="btn" onclick="resetGame()">TRY AGAIN</button>
+    </div>
+
+    <script>
+        // --- Audio System (Web Audio API) ---
+        const AudioSys = {
+            ctx: null,
+            init: function() {
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+            },
+            playTone: function(freq, type, duration, vol = 0.1) {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            },
+            playShoot: function() {
+                this.playTone(800, 'square', 0.1, 0.05);
+                this.playTone(400, 'sawtooth', 0.1, 0.05);
+            },
+            playExplosion: function() {
+                this.playTone(100, 'sawtooth', 0.3, 0.1);
+                this.playTone(50, 'sawtooth', 0.3, 0.1);
+            },
+            playHit: function() {
+                this.playTone(150, 'square', 0.2, 0.1);
+            },
+            playType: function() {
+                this.playTone(1200, 'sine', 0.05, 0.05);
+            }
+        };
+
+        // --- Game Constants & Setup ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- Game State ---
+        const STATE = {
+            START: 0,
+            PLAYING: 1,
+            GAMEOVER: 2
+        };
+        
+        let gameState = STATE.START;
+        let score = 0;
+        let wave = 1;
+        let insultsDeflected = 0;
+        let frameCount = 0;
+        let shake = 0;
+
+        // --- Entities ---
+        const player = {
+            x: 0, y: 0,
+            radius: 20,
+            angle: 0,
+            speed: 5,
+            vx: 0, vy: 0,
+            friction: 0.92,
+            health: 100,
+            maxHealth: 100,
+            color: '#00ffff'
+        };
+
+        let bullets = [];
+        let enemies = [];
+        let particles = [];
+        let stars = [];
+        let floatingTexts = [];
+
+        // --- Input Handling ---
+        const keys = {};
+        let currentWord = ""; // The word we are currently typing
+        let targetEnemy = null; // The enemy we are locked onto
+
+        window.addEventListener('keydown', (e) => {
+            if (gameState !== STATE.PLAYING) return;
+
+            // Movement
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
+                keys[e.key] = true;
+            }
+
+            // Typing Logic
+            if (e.key.length === 1 && e.key.match(/[a-z]/i)) {
+                const letter = e.key.toUpperCase();
+                
+                // 1. Check if we are currently typing a word
+                if (targetEnemy && currentWord.length > 0) {
+                    const nextLetter = targetEnemy.word[targetEnemy.wordProgress];
+                    if (letter === nextLetter) {
+                        // Correct letter in sequence
+                        targetEnemy.wordProgress++;
+                        currentWord += letter;
+                        AudioSys.playType();
+                        createFloatingText(letter, player.x, player.y - 30, '#fff');
+                        
+                        // Check if word complete
+                        if (targetEnemy.wordProgress >= targetEnemy.word.length) {
+                            shootBullet(targetEnemy);
+                            resetTyping();
+                        }
+                    } else {
+                        // Wrong letter in sequence - Penalty?
+                        AudioSys.playHit(); // Error sound
+                        shake = 5;
+                    }
+                } else {
+                    // 2. Look for a new enemy starting with this letter
+                    // Prioritize closest enemy
+                    let candidates = enemies.filter(en => en.word[0] === letter && en.active);
+                    if (candidates.length > 0) {
+                        // Sort by distance to player
+                        candidates.sort((a, b) => {
+                            const da = Math.hypot(a.x - player.x, a.y - player.y);
+                            const db = Math.hypot(b.x - player.x, b.y - player.y);
+                            return da - db;
+                        });
+                        
+                        targetEnemy = candidates[0];
+                        targetEnemy.locked = true;
+                        currentWord = letter;
+                        targetEnemy.wordProgress = 1;
+                        AudioSys.playType();
+                        createFloatingText(letter, player.x, player.y - 30, '#fff');
+                        
+                        // Check if word is just 1 letter long (rare but possible)
+                        if (targetEnemy.word.length === 1) {
+                            shootBullet(targetEnemy);
+                            resetTyping();
+                        }
+                    }
+                }
+                updateTypingUI();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
+                keys[e.key] = false;
+            }
+        });
+
+        function resetTyping() {
+            currentWord = "";
+            if (targetEnemy) {
+                targetEnemy.locked = false;
+                targetEnemy = null;
+            }
+            updateTypingUI();
+        }
+
+        function updateTypingUI() {
+            const el = document.getElementById('typingBuffer');
+            if (targetEnemy) {
+                // Show typed part in white, rest in red
+                const typed = targetEnemy.word.substring(0, targetEnemy.wordProgress);
+                const remaining = targetEnemy.word.substring(targetEnemy.wordProgress);
+                el.innerHTML = `<span class="text-white">${typed}</span><span class="text-red-500 animate-pulse">${remaining}</span>`;
+            } else {
+                el.innerHTML = '<span class="text-gray-600">...</span>';
+            }
+        }
+
+        // --- Classes ---
+
+        class Star {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.z = Math.random() * 2 + 0.5;
+                this.size = Math.random() * 1.5;
+            }
+            update() {
+                this.x -= this.z * 0.5; // Parallax drift
+                if (this.x < 0) this.x = width;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.5 + 0.2})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color, speed) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = Math.random() * speed;
+                this.vx = Math.cos(angle) * velocity;
+                this.vy = Math.sin(angle) * velocity;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.03 + 0.01;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+            draw() {
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        class FloatingText {
+            constructor(text, x, y, color) {
+                this.text = text;
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.life = 1.0;
+                this.vy = -1;
+            }
+            update() {
+                this.y += this.vy;
+                this.life -= 0.02;
+            }
+            draw() {
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.font = "bold 20px VT323";
+                ctx.fillText(this.text, this.x, this.y);
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        class Bullet {
+            constructor(target) {
+                this.x = player.x;
+                this.y = player.y;
+                this.target = target;
+                this.speed = 15;
+                this.active = true;
+                this.radius = 4;
+                
+                // Calculate angle to target
+                const angle = Math.atan2(target.y - player.y, target.x - player.x);
+                this.vx = Math.cos(angle) * this.speed;
+                this.vy = Math.sin(angle) * this.speed;
+                
+                // Add some inaccuracy based on distance
+                this.vx += (Math.random() - 0.5) * 2;
+                this.vy += (Math.random() - 0.5) * 2;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Check collision with target
+                if (this.target && this.target.active) {
+                    const dist = Math.hypot(this.x - this.target.x, this.y - this.target.y);
+                    if (dist < this.target.radius + this.radius) {
+                        this.target.hit();
+                        this.active = false;
+                    }
+                }
+
+                // Out of bounds
+                if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
+                    this.active = false;
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffff00';
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Enemy {
+            constructor() {
+                // Spawn at edge
+                if (Math.random() < 0.5) {
+                    this.x = Math.random() < 0.5 ? -50 : width + 50;
+                    this.y = Math.random() * height;
+                } else {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() < 0.5 ? -50 : height + 50;
+                }
+
+                // Difficulty scaling
+                const wordList = [
+                    "HATE", "LOSER", "FAIL", "UGLY", "DUMB", "WEAK", "PATHETIC", 
+                    "TRASH", "WORTHLESS", "STUPID", "IDIOT", "SCUM", "VILE", 
+                    "GROSS", "AWFUL", "TERRIBLE", "BAD", "SAD", "ANGRY", "RAGE",
+                    "BURN", "DIE", "PAIN", "HURT", "CRY", "TEARS", "BROKEN", "LIES"
+                ];
+                
+                // Higher waves = longer words
+                const minLen = Math.min(3 + Math.floor(wave / 3), 8);
+                const candidates = wordList.filter(w => w.length >= minLen);
+                this.word = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : "BAD";
+                
+                this.wordProgress = 0;
+                this.radius = 25 + (this.word.length * 3);
+                this.active = true;
+                this.locked = false;
+                this.speed = 1 + (wave * 0.2) + Math.random();
+                
+                // Movement vector (towards center initially, then tracks player loosely)
+                const angle = Math.atan2(height/2 - this.y, width/2 - this.x);
+                this.vx = Math.cos(angle) * this.speed;
+                this.vy = Math.sin(angle) * this.speed;
+                
+                this.rotation = 0;
+                this.rotSpeed = (Math.random() - 0.5) * 0.1;
+            }
+
+            update() {
+                // Drift towards player
+                const angleToPlayer = Math.atan2(player.y - this.y, player.x - this.x);
+                // Lerp velocity towards player
+                this.vx += Math.cos(angleToPlayer) * 0.05;
+                this.vy += Math.sin(angleToPlayer) * 0.05;
+                
+                // Cap speed
+                const currentSpeed = Math.hypot(this.vx, this.vy);
+                if (currentSpeed > this.speed) {
+                    this.vx = (this.vx / currentSpeed) * this.speed;
+                    this.vy = (this.vy / currentSpeed) * this.speed;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.rotation += this.rotSpeed;
+
+                // Collision with player
+                const dist = Math.hypot(this.x - player.x, this.y - player.y);
+                if (dist < this.radius + player.radius) {
+                    this.explode(false); // Hit player
+                    player.health -= 20;
+                    shake = 20;
+                    AudioSys.playHit();
+                    resetTyping(); // Break typing chain on hit
+                    if (player.health <= 0) endGame();
+                }
+            }
+
+            hit() {
+                this.explode(true);
+            }
+
+            explode(shotDown) {
+                this.active = false;
+                AudioSys.playExplosion();
+                
+                // Particles
+                for(let i=0; i<10; i++) {
+                    particles.push(new Particle(this.x, this.y, '#ff0000', 5));
+                }
+                
+                if (shotDown) {
+                    score += this.word.length * 100;
+                    insultsDeflected++;
+                    createFloatingText("+" + (this.word.length * 100), this.x, this.y, '#00ff00');
+                    updateHUD();
+                } else {
+                    createFloatingText("OUCH!", player.x, player.y - 50, '#ff0000');
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                
+                // Draw Asteroid Body
+                ctx.strokeStyle = this.locked ? '#ffff00' : '#ff0000';
+                ctx.lineWidth = this.locked ? 3 : 2;
+                ctx.shadowBlur = this.locked ? 20 : 10;
+                ctx.shadowColor = this.locked ? '#ffff00' : '#ff0000';
+                
+                ctx.beginPath();
+                const sides = 6;
+                for (let i = 0; i < sides; i++) {
+                    const angle = (i / sides) * Math.PI * 2;
+                    const r = this.radius + (i % 2 === 0 ? 5 : -5);
+                    const px = Math.cos(angle) * r;
+                    const py = Math.sin(angle) * r;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.stroke();
+                
+                // Draw Word
+                ctx.rotate(-this.rotation); // Keep text upright
+                ctx.fillStyle = '#fff';
+                ctx.font = `bold ${this.radius}px VT323`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Highlight progress
+                const typed = this.word.substring(0, this.wordProgress);
+                const remaining = this.word.substring(this.wordProgress);
+                
+                const totalWidth = ctx.measureText(this.word).width;
+                const typedWidth = ctx.measureText(typed).width;
+                
+                ctx.fillStyle = '#555'; // Background text
+                ctx.fillText(this.word, 0, 0);
+                
+                ctx.fillStyle = '#fff'; // Typed text
+                ctx.fillText(typed, -totalWidth/2 + typedWidth/2, 0); // Rough centering logic fix needed? 
+                // Actually simpler: just draw the remaining part in red on top? No, draw typed in white.
+                
+                // Re-draw strategy for text:
+                // Clear rect? No, just draw.
+                ctx.fillStyle = '#ff0000';
+                ctx.fillText(remaining, 2, 2); // Shadow/Offset
+                
+                ctx.fillStyle = '#fff';
+                ctx.fillText(typed, 0, 0);
+                
+                // If locked, draw indicator
+                if (this.locked) {
+                    ctx.strokeStyle = '#00ffff';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius + 10, 0, Math.PI*2);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // --- Game Functions ---
+
+        function init() {
+            // Create stars
+            for(let i=0; i<100; i++) stars.push(new Star());
+            
+            // Reset Player
+            player.x = width/2;
+            player.y = height/2;
+            player.health = 100;
+            player.vx = 0;
+            player.vy = 0;
+            
+            score = 0;
+            wave = 1;
+            insultsDeflected = 0;
+            bullets = [];
+            enemies = [];
+            particles = [];
+            floatingTexts = [];
+            resetTyping();
+            
+            updateHUD();
+        }
+
+        function startGame() {
+            AudioSys.init();
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            gameState = STATE.PLAYING;
+            init();
+            loop();
+        }
+
+        function resetGame() {
+            startGame();
+        }
+
+        function endGame() {
+            gameState = STATE.GAMEOVER;
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            document.getElementById('finalScore').innerText = score;
+        }
+
+        function createFloatingText(text, x, y, color) {
+            floatingTexts.push(new FloatingText(text, x, y, color));
+        }
+
+        function shootBullet(target) {
+            bullets.push(new Bullet(target));
+            AudioSys.playShoot();
+            
+            // Recoil
+            const angle = Math.atan2(target.y - player.y, target.x - player.x);
+            player.vx -= Math.cos(angle) * 2;
+            player.vy -= Math.sin(angle) * 2;
+        }
+
+        function updateHUD() {
+            document.getElementById('scoreDisplay').innerText = score;
+            document.getElementById('healthDisplay').innerText = Math.max(0, player.health) + '%';
+            document.getElementById('waveDisplay').innerText = wave;
+            document.getElementById('insultDisplay').innerText = insultsDeflected;
+        }
+
+        function updatePlayer() {
+            // Input
+            if (keys['ArrowUp'] || keys['w']) player.vy -= 0.5;
+            if (keys['ArrowDown'] || keys['s']) player.vy += 0.5;
+            if (keys['ArrowLeft'] || keys['a']) player.vx -= 0.5;
+            if (keys['ArrowRight'] || keys['d']) player.vx += 0.5;
+
+            // Physics
+            player.vx *= player.friction;
+            player.vy *= player.friction;
+            player.x += player.vx;
+            player.y += player.vy;
+
+            // Boundaries
+            if (player.x < player.radius) player.x = player.radius;
+            if (player.x > width - player.radius) player.x = width - player.radius;
+            if (player.y < player.radius) player.y = player.radius;
+            if (player.y > height - player.radius) player.y = height - player.radius;
+
+            // Rotation based on movement
+            if (Math.abs(player.vx) > 0.1 || Math.abs(player.vy) > 0.1) {
+                player.angle = Math.atan2(player.vy, player.vx);
+            }
+        }
+
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.rotate(player.angle);
+            
+            // Shield/Glow
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = player.color;
+            
+            // Ship Body
+            ctx.fillStyle = '#000';
+            ctx.strokeStyle = player.color;
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(15, 0);
+            ctx.lineTo(-10, 10);
+            ctx.lineTo(-5, 0);
+            ctx.lineTo(-10, -10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Engine Flame
+            if (Math.abs(player.vx) > 0.5 || Math.abs(player.vy) > 0.5) {
+                ctx.fillStyle = `rgba(0, 255, 255, ${Math.random()})`;
+                ctx.beginPath();
+                ctx.moveTo(-10, 5);
+                ctx.lineTo(-20 - Math.random()*10, 0);
+                ctx.lineTo(-10, -5);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+
+        function spawnEnemies() {
+            // Spawn logic based on wave
+            const maxEnemies = 3 + wave;
+            if (enemies.length < maxEnemies && Math.random() < 0.02 + (wave * 0.005)) {
+                enemies.push(new Enemy());
+            }
+            
+            // Wave progression
+            if (insultsDeflected > wave * 5) {
+                wave++;
+                createFloatingText("WAVE " + wave, width/2, height/2, '#ffff00');
+                updateHUD();
+            }
+        }
+
+        function loop() {
+            if (gameState !== STATE.PLAYING) return;
+            requestAnimationFrame(loop);
+            frameCount++;
+
+            // Clear Screen with trail effect
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.3)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Screen Shake
+            if (shake > 0) {
+                ctx.save();
+                const dx = (Math.random() - 0.5) * shake;
+                const dy = (Math.random() - 0.5) * shake;
+                ctx.translate(dx, dy);
+                shake *= 0.9;
+                if (shake < 0.5) shake = 0;
+            }
+
+            // Update & Draw Stars
+            stars.forEach(star => { star.update(); star.draw(); });
+
+            // Update Player
+            updatePlayer();
+            drawPlayer();
+
+            // Update Bullets
+            bullets = bullets.filter(b => b.active);
+            bullets.forEach(b => { b.update(); b.draw(); });
+
+            // Update Enemies
+            // Check if target is still alive
+            if (targetEnemy && !targetEnemy.active) resetTyping();
+            
+            enemies = enemies.filter(e => e.active);
+            enemies.forEach(e => { e.update(); e.draw(); });
+
+            // Update Particles
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => { p.update(); p.draw(); });
+
+            // Update Floating Text
+            floatingTexts = floatingTexts.filter(t => t.life > 0);
+            floatingTexts.forEach(t => { t.update(); t.draw(); });
+
+            spawnEnemies();
+
+            if (shake > 0) ctx.restore();
+        }
+
+        // Initial Render for background
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, width, height);
+        
+    </script>
+</body>
+</html>
