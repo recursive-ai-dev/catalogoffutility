@@ -1,0 +1,35 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#1a1a2e"/>
+  <!-- Mirror -->
+  <rect x="200" y="150" width="400" height="300" fill="#2d2d44" rx="8" ry="8"/>
+  <!-- Reflection -->
+  <g opacity="0.7">
+    <circle cx="400" cy="300" r="80" fill="#4a90e2"/>
+    <circle cx="400" cy="300" r="60" fill="#2d2d44"/>
+    <circle cx="400" cy="300" r="40" fill="#4a90e2"/>
+    <circle cx="400" cy="300" r="20" fill="#2d2d44"/>
+  </g>
+  <!-- Symbols -->
+  <g fill="#c0c0e0">
+    <text x="150" y="200" font-family="Space Grotesk" font-size="18">A</text>
+    <text x="150" y="250" font-family="Space Grotesk" font-size="18">B</text>
+    <text x="150" y="300" font-family="Space Grotesk" font-size="18">C</text>
+    <text x="150" y="350" font-family="Space Grotesk" font-size="18">D</text>
+    <text x="150" y="400" font-family="Space Grotesk" font-size="18">E</text>
+    <text x="650" y="200" font-family="Space Grotesk" font-size="18">F</text>
+    <text x="650" y="250" font-family="Space Grotesk" font-size="18">G</text>
+    <text x="650" y="300" font-family="Space Grotesk" font-size="18">H</text>
+    <text x="650" y="350" font-family="Space Grotesk" font-size="18">I</text>
+    <text x="650" y="400" font-family="Space Grotesk" font-size="18">J</text>
+  </g>
+  <!-- Concept labels -->
+  <text x="150" y="220" font-family="Courier New" font-size="12" fill="#ffffff" opacity="0.8">Agency</text>
+  <text x="150" y="270" font-family="Courier New" font-size="12" fill="#ffffff" opacity="0.8">Balance</text>
+  <text x="150" y="320" font-family="Courier New" font-size="12" fill="#ffffff" opacity="0.8">Connection</text>
+  <text x="150" y="370" font-family="Courier New" font-size="12" fill="#ffffff" opacity="0.8">Discovery</text>
+  <text x="150" y="420" font-family="Courier New" font-size="12" fill="#ffffff" opacity="0.8">Existence</text>
+  <!-- Title -->
+  <text x="400" y="550" text-anchor="middle" font-family="Space Grotesk" font-size="28" fill="#c0c0e0" opacity="0.9">SOUL MIRROR</text>
+  <!-- Reflection text -->
+  <text x="400" y="310" text-anchor="middle" font-family="Space Grotesk" font-size="24" fill="#4a90e2" opacity="0.8">REFLECT</text>
+</svg>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOUL MIRROR</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #fafafa;
+      --surface: #f5f5f5;
+      --text-primary: #171717;
+      --text-dim: #737373;
+      --border: #e5e5e5;
+      --accent: #525252;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      overflow: auto;
+    }
+    #root { height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-type="module">
+    const { useState, useEffect, useCallback, useMemo, useRef } = React;
+
+    // Core symbolic system
+    const CORE_CONCEPTS = [
+      'Agency', 'Balance', 'Connection', 'Discovery', 'Empathy', 'Freedom', 'Growth', 'Hope',
+      'Identity', 'Joy', 'Knowledge', 'Love', 'Memory', 'Nature', 'Order', 'Peace',
+      'Questions', 'Resilience', 'Spirit', 'Time', 'Understanding', 'Vitality', 'Wisdom',
+      'eXperience', 'Yearning', 'Zen'
+    ];
+
+    const shadeMap = {
+      'Agency': ['autonomy', 'choice', 'control', 'decision', 'empowerment'],
+      'Balance': ['harmony', 'equilibrium', 'stability', 'centeredness', 'proportion'],
+      'Connection': ['bonding', 'relationship', 'unity', 'intimacy', 'communication'],
+      'Discovery': ['exploration', 'revelation', 'insight', 'finding', 'uncovering'],
+      'Empathy': ['compassion', 'understanding', 'sympathy', 'sensitivity', 'care'],
+      'Freedom': ['liberation', 'independence', 'autonomy', 'release', 'openness'],
+      'Growth': ['development', 'progress', 'expansion', 'evolution', 'improvement'],
+      'Hope': ['optimism', 'aspiration', 'expectation', 'possibility', 'anticipation'],
+      'Identity': ['self', 'individuality', 'character', 'essence', 'personhood'],
+      'Joy': ['happiness', 'delight', 'pleasure', 'bliss', 'contentment'],
+      'Knowledge': ['wisdom', 'understanding', 'insight', 'learning', 'awareness'],
+      'Love': ['affection', 'devotion', 'passion', 'tenderness', 'adoration'],
+      'Memory': ['recollection', 'remembrance', 'nostalgia', 'retention', 'recall'],
+      'Nature': ['environment', 'ecology', 'organic', 'wilderness', 'natural'],
+      'Order': ['structure', 'organization', 'system', 'arrangement', 'pattern'],
+      'Peace': ['tranquility', 'calm', 'serenity', 'harmony', 'stillness'],
+      'Questions': ['inquiry', 'curiosity', 'wonder', 'doubt', 'exploration'],
+      'Resilience': ['endurance', 'perseverance', 'strength', 'tenacity', 'fortitude'],
+      'Spirit': ['soul', 'essence', 'animating', 'ethereal', 'transcendent'],
+      'Time': ['duration', 'moment', 'temporal', 'chronology', 'eternity'],
+      'Understanding': ['comprehension', 'grasp', 'insight', 'perception', 'awareness'],
+      'Vitality': ['energy', 'life', 'vigor', 'animation', 'aliveness'],
+      'Wisdom': ['sagacity', 'insight', 'judgment', 'prudence', 'enlightenment'],
+      'eXperience': ['encounter', 'undergoing', 'adventure', 'involvement', 'participation'],
+      'Yearning': ['longing', 'desire', 'craving', 'ache', 'aspiration'],
+      'Zen': ['meditation', 'peace', 'mindfulness', 'enlightenment', 'stillness']
+    };
+
+    const generateShades = (concept) => {
+      const shades = shadeMap[concept] || ['essence', 'manifestation', 'expression'];
+      return shades;
+    };
+
+    // Main App Component
+    function SoulMirror() {
+      const [selectedConcept, setSelectedConcept] = useState(null);
+      const [reflection, setReflection] = useState([]);
+      const [isReflecting, setIsReflecting] = useState(false);
+
+      const handleReflection = useCallback((concept) => {
+        setSelectedConcept(concept);
+        setIsReflecting(true);
+        const shades = generateShades(concept);
+        setReflection([]);
+        
+        // Animate shades appearing
+        shades.forEach((shade, i) => {
+          setTimeout(() => {
+            setReflection(prev => [...prev, shade]);
+          }, 200 * (i + 1));
+        });
+        
+        setTimeout(() => setIsReflecting(false), shades.length * 200 + 500);
+      }, []);
+
+      return (
+        <div style={{
+          minHeight: '100%',
+          padding: '2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center'
+        }}>
+          <header style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h1 style={{
+              fontSize: '2.5rem',
+              fontWeight: 300,
+              letterSpacing: '0.2em',
+              marginBottom: '0.5rem'
+            }}>SOUL MIRROR</h1>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.875rem' }}>
+              Reflect on the core concepts of existence
+            </p>
+          </header>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+            gap: '0.75rem',
+            maxWidth: '800px',
+            width: '100%'
+          }}>
+            {CORE_CONCEPTS.map(concept => (
+              <button
+                key={concept}
+                onClick={() => handleReflection(concept)}
+                style={{
+                  padding: '1rem',
+                  background: selectedConcept === concept ? 'var(--text-primary)' : 'var(--surface)',
+                  color: selectedConcept === concept ? 'var(--bg)' : 'var(--text-primary)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  letterSpacing: '0.1em',
+                  transition: 'all 0.2s ease',
+                  textTransform: 'uppercase'
+                }}
+              >
+                {concept}
+              </button>
+            ))}
+          </div>
+
+          {selectedConcept && (
+            <div style={{
+              marginTop: '3rem',
+              padding: '2rem',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              maxWidth: '600px',
+              width: '100%',
+              textAlign: 'center'
+            }}>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: 400,
+                marginBottom: '1.5rem',
+                letterSpacing: '0.15em'
+              }}>
+                {selectedConcept}
+              </h2>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center' }}>
+                {reflection.map((shade, i) => (
+                  <span key={i} style={{
+                    padding: '0.5rem 1rem',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '999px',
+                    fontSize: '0.75rem',
+                    animation: 'fadeIn 0.3s ease'
+                  }}>
+                    {shade}
+                  </span>
+                ))}
+                {isReflecting && (
+                  <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>
+                    reflecting...
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<SoulMirror />);
+  </script>
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#0a0a1a"/>
+  <!-- Frost effect -->
+  <g fill="#4ade80" opacity="0.1">
+    <rect x="0" y="0" width="800" height="600"/>
+    <circle cx="100" cy="100" r="50"/>
+    <circle cx="700" cy="100" r="50"/>
+    <circle cx="100" cy="500" r="50"/>
+    <circle cx="700" cy="500" r="50"/>
+    <circle cx="400" cy="300" r="100"/>
+  </g>
+  <!-- Audio waveform -->
+  <g stroke="#4ade80" stroke-width="3">
+    <path d="M100,300 Q150,200 200,300 Q250,400 300,300 Q350,200 400,300 Q450,400 500,300 Q550,200 600,300 Q650,400 700,300"/>
+  </g>
+  <!-- Guitar strings -->
+  <g stroke="#ffcc00" stroke-width="1" opacity="0.3">
+    <line x1="100" y1="250" x2="700" y2="250"/>
+    <line x1="100" y1="270" x2="700" y2="270"/>
+    <line x1="100" y1="290" x2="700" y2="290"/>
+    <line x1="100" y1="310" x2="700" y2="310"/>
+    <line x1="100" y1="330" x2="700" y2="330"/>
+    <line x1="100" y1="350" x2="700" y2="350"/>
+  </g>
+  <!-- Tremolo effect -->
+  <g fill="#ff3333" opacity="0.2">
+    <rect x="200" y="280" width="20" height="40"/>
+    <rect x="250" y="260" width="20" height="80"/>
+    <rect x="300" y="240" width="20" height="120"/>
+    <rect x="350" y="260" width="20" height="80"/>
+    <rect x="400" y="280" width="20" height="40"/>
+    <rect x="450" y="260" width="20" height="80"/>
+    <rect x="500" y="240" width="20" height="120"/>
+    <rect x="550" y="260" width="20" height="80"/>
+    <rect x="600" y="280" width="20" height="40"/>
+  </g>
+  <!-- Title -->
+  <text x="400" y="550" text-anchor="middle" font-family="Space Grotesk" font-size="28" fill="#4ade80" opacity="0.9">ABM GENERATOR</text>
+  <!-- Mode indicator -->
+  <text x="400" y="100" text-anchor="middle" font-family="Courier New" font-size="18" fill="#ffffff" opacity="0.8">MODE: FROZEN TUNDRA</text>
+  <!-- Scale indicator -->
+  <text x="400" y="130" text-anchor="middle" font-family="Courier New" font-size="16" fill="#ffffff" opacity="0.8">SCALE: NATURAL MINOR</text>
+</svg>

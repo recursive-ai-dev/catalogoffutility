@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QUANTUM ANT</title>
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+    }
+    #info {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      color: #888;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #title {
+      position: absolute;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #555;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="info">
+    <div>QUANTUM STATE: <span id="phase">0.00</span></div>
+    <div>COHERENCE: <span id="coherence">1.00</span></div>
+    <div>ENTANGLEMENT: <span id="entangle">0</span></div>
+  </div>
+  <div id="title">Quantum Ant Visualization</div>
+  <div id="canvas-container"></div>
+
+  <script>
+    // Quantum Ant Visualization - Three.js Implementation
+    const container = document.getElementById('canvas-container');
+    const phaseEl = document.getElementById('phase');
+    const coherenceEl = document.getElementById('coherence');
+    const entangleEl = document.getElementById('entangle');
+
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050508);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 15, 25);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    // Controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.5;
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x222233, 0.5);
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0x6688ff, 1, 100);
+    pointLight.position.set(10, 10, 10);
+    scene.add(pointLight);
+
+    // Quantum Ant (particle system)
+    const antGeometry = new THREE.BufferGeometry();
+    const antCount = 500;
+    const antPositions = new Float32Array(antCount * 3);
+    const antColors = new Float32Array(antCount * 3);
+
+    for (let i = 0; i < antCount; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      const r = 3 + Math.random() * 5;
+      
+      antPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      antPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      antPositions[i * 3 + 2] = r * Math.cos(phi);
+      
+      antColors[i * 3] = 0.3 + Math.random() * 0.3;
+      antColors[i * 3 + 1] = 0.5 + Math.random() * 0.3;
+      antColors[i * 3 + 2] = 0.8 + Math.random() * 0.2;
+    }
+
+    antGeometry.setAttribute('position', new THREE.BufferAttribute(antPositions, 3));
+    antGeometry.setAttribute('color', new THREE.BufferAttribute(antColors, 3));
+
+    const antMaterial = new THREE.PointsMaterial({
+      size: 0.15,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+
+    const antParticles = new THREE.Points(antGeometry, antMaterial);
+    scene.add(antParticles);
+
+    // Quantum field grid
+    const gridHelper = new THREE.GridHelper(30, 30, 0x222244, 0x111122);
+    gridHelper.position.y = -5;
+    scene.add(gridHelper);
+
+    // Central nucleus
+    const nucleusGeometry = new THREE.SphereGeometry(1, 32, 32);
+    const nucleusMaterial = new THREE.MeshPhongMaterial({
+      color: 0x4466aa,
+      emissive: 0x223355,
+      transparent: true,
+      opacity: 0.6
+    });
+    const nucleus = new THREE.Mesh(nucleusGeometry, nucleusMaterial);
+    scene.add(nucleus);
+
+    // Quantum state
+    let quantumPhase = 0;
+    let coherence = 1.0;
+    let entanglementDepth = 0;
+
+    // Animation
+    function animate() {
+      requestAnimationFrame(animate);
+
+      quantumPhase += 0.02;
+      coherence = 0.5 + 0.5 * Math.sin(quantumPhase * 0.5);
+      entanglementDepth = Math.floor(Math.abs(Math.sin(quantumPhase * 0.3)) * 10);
+
+      // Update UI
+      phaseEl.textContent = (quantumPhase % (Math.PI * 2)).toFixed(2);
+      coherenceEl.textContent = coherence.toFixed(2);
+      entangleEl.textContent = entanglementDepth;
+
+      // Animate particles
+      const positions = antGeometry.attributes.position.array;
+      for (let i = 0; i < antCount; i++) {
+        const i3 = i * 3;
+        const x = positions[i3];
+        const y = positions[i3 + 1];
+        const z = positions[i3 + 2];
+        
+        // Quantum jitter
+        positions[i3] += (Math.random() - 0.5) * 0.05;
+        positions[i3 + 1] += (Math.random() - 0.5) * 0.05;
+        positions[i3 + 2] += (Math.random() - 0.5) * 0.05;
+        
+        // Pull toward center based on coherence
+        const dist = Math.sqrt(x*x + y*y + z*z);
+        if (dist > 8) {
+          positions[i3] *= 0.99;
+          positions[i3 + 1] *= 0.99;
+          positions[i3 + 2] *= 0.99;
+        }
+      }
+      antGeometry.attributes.position.needsUpdate = true;
+
+      // Rotate nucleus
+      nucleus.rotation.x += 0.01;
+      nucleus.rotation.y += 0.02;
+      nucleus.scale.setScalar(1 + 0.1 * Math.sin(quantumPhase));
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+  </script>
+</body>
+</html>

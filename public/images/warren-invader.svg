@@ -1,0 +1,46 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#0a0a1a"/>
+  <!-- Arcade cabinet -->
+  <rect x="200" y="100" width="400" height="400" fill="#1a1a2e" rx="12" ry="12"/>
+  <!-- Screen -->
+  <rect x="220" y="120" width="360" height="320" fill="#0d0d1a"/>
+  <!-- Invaders -->
+  <g fill="#ff3333">
+    <rect x="250" y="150" width="40" height="30"/>
+    <rect x="300" y="150" width="40" height="30"/>
+    <rect x="350" y="150" width="40" height="30"/>
+    <rect x="400" y="150" width="40" height="30"/>
+    <rect x="450" y="150" width="40" height="30"/>
+    <rect x="250" y="200" width="40" height="30"/>
+    <rect x="300" y="200" width="40" height="30"/>
+    <rect x="350" y="200" width="40" height="30"/>
+    <rect x="400" y="200" width="40" height="30"/>
+    <rect x="450" y="200" width="40" height="30"/>
+    <rect x="250" y="250" width="40" height="30"/>
+    <rect x="300" y="250" width="40" height="30"/>
+    <rect x="350" y="250" width="40" height="30"/>
+    <rect x="400" y="250" width="40" height="30"/>
+    <rect x="450" y="250" width="40" height="30"/>
+  </g>
+  <!-- Player ship -->
+  <polygon points="400,350 380,380 420,380" fill="#4ade80"/>
+  <!-- Bullets -->
+  <g fill="#4ade80">
+    <rect x="400" y="320" width="2" height="10"/>
+    <rect x="390" y="300" width="2" height="10"/>
+    <rect x="410" y="300" width="2" height="10"/>
+  </g>
+  <!-- CRT scan lines -->
+  <g stroke="#ffcc00" stroke-opacity="0.1" stroke-width="1">
+    <line x1="220" y1="120" x2="580" y2="120"/>
+    <line x1="220" y1="122" x2="580" y2="122"/>
+    <line x1="220" y1="124" x2="580" y2="124"/>
+    <line x1="220" y1="126" x2="580" y2="126"/>
+    <line x1="220" y1="128" x2="580" y2="128"/>
+  </g>
+  <!-- Title -->
+  <text x="400" y="80" text-anchor="middle" font-family="Space Grotesk" font-size="24" fill="#ff3333" opacity="0.9">WARREN: INVASION PROTOCOL</text>
+  <!-- Score display -->
+  <text x="240" y="140" font-family="Courier New" font-size="16" fill="#4ade80">SCORE: 1250</text>
+  <text x="540" y="140" font-family="Courier New" font-size="16" fill="#4ade80">AMMO: 23</text>
+</svg>

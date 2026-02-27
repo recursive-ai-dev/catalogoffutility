@@ -1,0 +1,33 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#0a0a1a"/>
+  <!-- CRT scan lines -->
+  <g stroke="#ff3333" stroke-opacity="0.1" stroke-width="1">
+    <line x1="0" y1="0" x2="800" y2="0"/>
+    <line x1="0" y1="2" x2="800" y2="2"/>
+    <line x1="0" y1="4" x2="800" y2="4"/>
+    <line x1="0" y1="6" x2="800" y2="6"/>
+    <line x1="0" y1="8" x2="800" y2="8"/>
+    <line x1="0" y1="10" x2="800" y2="10"/>
+    <line x1="0" y1="590" x2="800" y2="590"/>
+    <line x1="0" y1="592" x2="800" y2="592"/>
+    <line x1="0" y1="594" x2="800" y2="594"/>
+    <line x1="0" y1="596" x2="800" y2="596"/>
+    <line x1="0" y1="598" x2="800" y2="598"/>
+  </g>
+  <!-- Hostile letters -->
+  <g fill="#ff3333" opacity="0.8">
+    <text x="100" y="150" font-family="Courier New" font-size="24" transform="rotate(-10 100,150)">YOU ARE A FAILURE</text>
+    <text x="200" y="250" font-family="Courier New" font-size="24" transform="rotate(5 200,250)">YOUR EXISTENCE IS MEANINGLESS</text>
+    <text x="300" y="350" font-family="Courier New" font-size="24" transform="rotate(-15 300,350)">THE SYSTEM HAS REJECTED YOU</text>
+    <text x="400" y="450" font-family="Courier New" font-size="24" transform="rotate(10 400,450)">NO ONE CARES</text>
+  </g>
+  <!-- Typing interface -->
+  <rect x="100" y="500" width="600" height="60" fill="#1a1a2e" rx="4" ry="4"/>
+  <text x="120" y="530" font-family="Courier New" font-size="18" fill="#4ade80">TYPE TO DESTROY: _</text>
+  <!-- Accuracy indicator -->
+  <rect x="100" y="570" width="200" height="20" fill="#2d2d44" rx="4" ry="4"/>
+  <rect x="100" y="570" width="120" height="20" fill="#4ade80" rx="4" ry="4"/>
+  <text x="110" y="585" font-family="Courier New" font-size="12" fill="#ffffff">ACCURACY: 60%</text>
+  <!-- Title -->
+  <text x="400" y="80" text-anchor="middle" font-family="Space Grotesk" font-size="28" fill="#ff3333" opacity="0.9">OFFENSIVE LETTERS</text>
+</svg>

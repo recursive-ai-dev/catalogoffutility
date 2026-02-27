@@ -1,0 +1,40 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#0d0d1a"/>
+  <!-- Planet -->
+  <radialGradient id="planetGradient" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#4ade80"/>
+    <stop offset="50%" stop-color="#2d7b4e"/>
+    <stop offset="100%" stop-color="#1a3a2a"/>
+  </radialGradient>
+  <circle cx="400" cy="300" r="120" fill="url(#planetGradient)"/>
+  <!-- Continents -->
+  <g fill="#3a5a40">
+    <path d="M350,250 Q400,200 450,250 Q480,280 450,320 Q400,360 350,320 Q320,290 350,250 Z"/>
+    <path d="M280,350 Q320,320 360,350 Q380,370 360,400 Q320,430 280,400 Q260,380 280,350 Z"/>
+    <path d="M480,380 Q520,350 560,380 Q580,400 560,430 Q520,460 480,430 Q460,410 480,380 Z"/>
+  </g>
+  <!-- Atmosphere -->
+  <circle cx="400" cy="300" r="140" fill="none" stroke="#4ade80" stroke-width="2" opacity="0.3"/>
+  <circle cx="400" cy="300" r="160" fill="none" stroke="#4ade80" stroke-width="1" opacity="0.2"/>
+  <!-- Stars -->
+  <g fill="#ffffff" opacity="0.7">
+    <circle cx="100" cy="100" r="1"/>
+    <circle cx="200" cy="150" r="2"/>
+    <circle cx="300" cy="100" r="1"/>
+    <circle cx="400" cy="50" r="2"/>
+    <circle cx="500" cy="100" r="1"/>
+    <circle cx="600" cy="150" r="2"/>
+    <circle cx="700" cy="100" r="1"/>
+    <circle cx="150" cy="200" r="1"/>
+    <circle cx="250" cy="250" r="2"/>
+    <circle cx="350" cy="200" r="1"/>
+    <circle cx="450" cy="150" r="2"/>
+    <circle cx="550" cy="200" r="1"/>
+    <circle cx="650" cy="250" r="2"/>
+    <circle cx="750" cy="200" r="1"/>
+  </g>
+  <!-- Title -->
+  <text x="400" y="550" text-anchor="middle" font-family="Space Grotesk" font-size="28" fill="#4ade80" opacity="0.9">GENESIS ENGINE</text>
+  <!-- Parameters -->
+  <text x="100" y="50" font-family="Courier New" font-size="12" fill="#ffffff" opacity="0.6">PARAMETERS: [RESOURCE=78%, HOSTILITY=42%, COGNITION=65%]</text>
+</svg>

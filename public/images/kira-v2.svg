@@ -1,0 +1,24 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#1a1a2e"/>
+  <!-- Chat bubbles -->
+  <g fill="#2d2d44" opacity="0.8">
+    <rect x="100" y="150" width="500" height="80" rx="12" ry="12"/>
+    <rect x="200" y="280" width="400" height="60" rx="12" ry="12"/>
+    <rect x="100" y="400" width="500" height="80" rx="12" ry="12"/>
+  </g>
+  <!-- Chat text -->
+  <text x="120" y="180" font-family="Space Grotesk" font-size="16" fill="#e6e6ff" opacity="0.9">KIRA: Hey there. How's it going?</text>
+  <text x="220" y="310" font-family="Space Grotesk" font-size="16" fill="#ffffff" opacity="0.8">You: Just thinking about the void.</text>
+  <text x="120" y="430" font-family="Space Grotesk" font-size="16" fill="#e6e6ff" opacity="0.9">KIRA: The void is always thinking about you too.</text>
+  <!-- Online indicator -->
+  <circle cx="700" cy="100" r="8" fill="#4ade80"/>
+  <text x="720" y="105" font-family="Space Grotesk" font-size="14" fill="#c0c0e0" opacity="0.8">Online</text>
+  <!-- Typing indicator -->
+  <g fill="#c0c0e0" opacity="0.7">
+    <circle cx="120" cy="480" r="3"/>
+    <circle cx="135" cy="480" r="3"/>
+    <circle cx="150" cy="480" r="3"/>
+  </g>
+  <!-- Title -->
+  <text x="400" y="550" text-anchor="middle" font-family="Space Grotesk" font-size="28" fill="#e6e6ff" opacity="0.9">KIRA</text>
+</svg>

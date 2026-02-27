@@ -1,0 +1,25 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#0a0a1a"/>
+  <!-- Thermometer -->
+  <rect x="350" y="100" width="100" height="300" fill="#1a1a2e" rx="8" ry="8"/>
+  <rect x="360" y="110" width="80" height="280" fill="#2d2d44" rx="4" ry="4"/>
+  <!-- Entropy level -->
+  <rect x="360" y="110" width="80" height="200" fill="#ff6666" opacity="0.7"/>
+  <!-- Order budget -->
+  <rect x="360" y="310" width="80" height="80" fill="#4ade80" opacity="0.7"/>
+  <!-- Labels -->
+  <text x="400" y="90" text-anchor="middle" font-family="Space Grotesk" font-size="16" fill="#ffffff" opacity="0.8">ENTROPY</text>
+  <text x="400" y="410" text-anchor="middle" font-family="Space Grotesk" font-size="16" fill="#ffffff" opacity="0.8">ORDER</text>
+  <!-- Counter -->
+  <text x="400" y="460" text-anchor="middle" font-family="Courier New" font-size="24" fill="#ff6666" opacity="0.9">ENTROPY: 78%</text>
+  <text x="400" y="490" text-anchor="middle" font-family="Courier New" font-size="24" fill="#4ade80" opacity="0.9">ORDER: 22%</text>
+  <!-- Thermodynamic symbols -->
+  <g fill="#ffffff" opacity="0.4">
+    <text x="200" y="200" font-family="Space Grotesk" font-size="20">ΔS > 0</text>
+    <text x="600" y="200" font-family="Space Grotesk" font-size="20">Q = mcΔT</text>
+    <text x="200" y="300" font-family="Space Grotesk" font-size="20">S = k ln Ω</text>
+    <text x="600" y="300" font-family="Space Grotesk" font-size="20">E = mc²</text>
+  </g>
+  <!-- Title -->
+  <text x="400" y="550" text-anchor="middle" font-family="Space Grotesk" font-size="28" fill="#ff6666" opacity="0.9">ENTROPY BUDGET</text>
+</svg>

@@ -1,0 +1,50 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#0a0a1a"/>
+  <!-- Grid -->
+  <g stroke="#222233" stroke-width="1" opacity="0.3">
+    <!-- Vertical lines -->
+    <line x1="100" y1="0" x2="100" y2="600"/>
+    <line x1="200" y1="0" x2="200" y2="600"/>
+    <line x1="300" y1="0" x2="300" y2="600"/>
+    <line x1="400" y1="0" x2="400" y2="600"/>
+    <line x1="500" y1="0" x2="500" y2="600"/>
+    <line x1="600" y1="0" x2="600" y2="600"/>
+    <line x1="700" y1="0" x2="700" y2="600"/>
+    <!-- Horizontal lines -->
+    <line x1="0" y1="100" x2="800" y2="100"/>
+    <line x1="0" y1="200" x2="800" y2="200"/>
+    <line x1="0" y1="300" x2="800" y2="300"/>
+    <line x1="0" y1="400" x2="800" y2="400"/>
+    <line x1="0" y1="500" x2="800" y2="500"/>
+  </g>
+  <!-- Entities -->
+  <g fill="#4a90e2">
+    <circle cx="150" cy="150" r="8"/>
+    <circle cx="350" cy="250" r="8"/>
+    <circle cx="550" cy="350" r="8"/>
+    <circle cx="250" cy="450" r="8"/>
+    <circle cx="450" cy="550" r="8"/>
+    <circle cx="650" cy="150" r="8"/>
+    <circle cx="150" cy="350" r="8"/>
+    <circle cx="350" cy="450" r="8"/>
+  </g>
+  <!-- Weather effects -->
+  <g fill="#ffffff" opacity="0.2">
+    <!-- Rain -->
+    <rect x="100" y="100" width="2" height="20"/>
+    <rect x="200" y="150" width="2" height="20"/>
+    <rect x="300" y="200" width="2" height="20"/>
+    <rect x="400" y="250" width="2" height="20"/>
+    <rect x="500" y="300" width="2" height="20"/>
+    <rect x="600" y="350" width="2" height="20"/>
+    <rect x="700" y="400" width="2" height="20"/>
+    <!-- Fog -->
+    <rect x="0" y="500" width="800" height="50" fill="#333344" opacity="0.4"/>
+  </g>
+  <!-- Title -->
+  <text x="400" y="550" text-anchor="middle" font-family="Space Grotesk" font-size="28" fill="#4a90e2" opacity="0.9">THE WORLD THAT DOESN'T CARE</text>
+  <!-- Log entries -->
+  <text x="100" y="50" font-family="Courier New" font-size="10" fill="#ffffff" opacity="0.6">[00:01:23] Entity_7 moved from (150,150) to (160,160)</text>
+  <text x="100" y="70" font-family="Courier New" font-size="10" fill="#ffffff" opacity="0.6">[00:01:24] Weather system updated: RAIN (intensity: 0.7)</text>
+  <text x="100" y="90" font-family="Courier New" font-size="10" fill="#ffffff" opacity="0.6">[00:01:25] Entity_3 entered state: IDLE</text>
+</svg>

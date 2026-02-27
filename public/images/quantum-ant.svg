@@ -1,0 +1,55 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#0a0a1a"/>
+  <!-- Quantum field -->
+  <g opacity="0.3">
+    <circle cx="400" cy="300" r="200" fill="#4ade80"/>
+    <circle cx="400" cy="300" r="150" fill="#2d7b4e"/>
+    <circle cx="400" cy="300" r="100" fill="#1a3a2a"/>
+  </g>
+  <!-- Particles -->
+  <g fill="#ffffff">
+    <circle cx="350" cy="250" r="8"/>
+    <circle cx="450" cy="250" r="8"/>
+    <circle cx="400" cy="200" r="8"/>
+    <circle cx="300" cy="300" r="8"/>
+    <circle cx="500" cy="300" r="8"/>
+    <circle cx="400" cy="400" r="8"/>
+    <circle cx="350" cy="350" r="8"/>
+    <circle cx="450" cy="350" r="8"/>
+    <circle cx="300" cy="350" r="8"/>
+    <circle cx="500" cy="350" r="8"/>
+  </g>
+  <!-- Coherence states -->
+  <g stroke="#4ade80" stroke-width="2" opacity="0.5">
+    <circle cx="350" cy="250" r="20"/>
+    <circle cx="450" cy="250" r="20"/>
+    <circle cx="400" cy="200" r="20"/>
+    <circle cx="300" cy="300" r="20"/>
+    <circle cx="500" cy="300" r="20"/>
+    <circle cx="400" cy="400" r="20"/>
+  </g>
+  <!-- Entanglement lines -->
+  <g stroke="#ff6666" stroke-width="1" opacity="0.4">
+    <line x1="350" y1="250" x2="450" y2="250"/>
+    <line x1="400" y1="200" x2="300" y2="300"/>
+    <line x1="400" y1="200" x2="500" y2="300"/>
+    <line x1="300" y1="300" x2="400" y2="400"/>
+    <line x1="500" y1="300" x2="400" y2="400"/>
+    <line x1="350" y1="350" x2="450" y2="350"/>
+  </g>
+  <!-- Probability clouds -->
+  <g fill="#4ade80" opacity="0.2">
+    <ellipse cx="350" cy="250" rx="30" ry="15"/>
+    <ellipse cx="450" cy="250" rx="30" ry="15"/>
+    <ellipse cx="400" cy="200" rx="15" ry="30"/>
+    <ellipse cx="300" cy="300" rx="25" ry="25"/>
+    <ellipse cx="500" cy="300" rx="25" ry="25"/>
+    <ellipse cx="400" cy="400" rx="25" ry="25"/>
+  </g>
+  <!-- Title -->
+  <text x="400" y="550" text-anchor="middle" font-family="Space Grotesk" font-size="28" fill="#4ade80" opacity="0.9">QUANTUM ANT</text>
+  <!-- Quantum state indicators -->
+  <text x="400" y="100" text-anchor="middle" font-family="Courier New" font-size="14" fill="#ffffff" opacity="0.8">COHERENCE: 78%</text>
+  <text x="400" y="120" text-anchor="middle" font-family="Courier New" font-size="14" fill="#ffffff" opacity="0.8">ENTANGLEMENT: 65%</text>
+  <text x="400" y="140" text-anchor="middle" font-family="Courier New" font-size="14" fill="#ffffff" opacity="0.8">PROBABILITY: COLLAPSED</text>
+</svg>

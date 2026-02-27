@@ -6,8 +6,6 @@
 
 A brutalist web application for hosting and curating single-file HTML apps and games. Features an atmospheric void-themed UI with CRT effects, parallax card animations, and an immersive "Chamber" viewport for running embedded experiences.
 
-**Live Demo:** [View in AI Studio](https://ai.studio/apps/25d0ccd9-b443-4954-a0b5-a7a51a8e05ce)
-
 ---
 
 ## Features
@@ -54,16 +52,15 @@ A brutalist web application for hosting and curating single-file HTML apps and g
    npm install
    ```
 
-3. **Configure environment variables**
+3. **Configure environment variables (optional)**
    
-   Copy `.env.example` to `.env.local` and add your API keys:
+   Copy `.env.example` to `.env.local`:
    ```bash
    cp .env.example .env.local
    ```
    
    Edit `.env.local`:
    ```env
-   GEMINI_API_KEY="your-gemini-api-key"
    APP_URL="http://localhost:3000"
    ```
 
@@ -81,13 +78,35 @@ A brutalist web application for hosting and curating single-file HTML apps and g
 ```
 catalogoffutility/
 ├── public/                     # Static assets (HTML files for embedded apps)
-│   └── when-the-sun-died.html
+│   ├── 235am_v2.html
+│   ├── abm-generator.html
+│   ├── aria-terminal-v2.html
+│   ├── chatgg.html
+│   ├── entropy-budget.html
+│   ├── genesis.html
+│   ├── kira-v2.html
+│   ├── ludic-strata.html
+│   ├── narrative-beat-graph.html
+│   ├── nexus-war.html
+│   ├── offensive-letters.html
+│   ├── quantum-ant.html
+│   ├── soul-mirror.html
+│   ├── space-time-curvature.html
+│   ├── spectral_loop.html
+│   ├── warren-invader.html
+│   ├── when-the-sun-died.html
+│   └── world-that-doesnt-care.html
 ├── src/
 │   ├── App.tsx                # Root component with routing logic
 │   ├── Catalog.tsx            # Main catalog grid with search & filters
 │   ├── Chamber.tsx            # Viewport component for running embedded apps
+│   ├── ProductPage.tsx        # Product detail page
 │   ├── data.ts                # App entries registry & types
-│   └── main.tsx               # Entry point
+│   ├── index.css              # Global styles
+│   ├── main.tsx               # Entry point
+│   └── test/
+│       ├── chains.test.tsx    # Logic chain tests
+│       └── setup.ts           # Test configuration
 ├── index.html                 # HTML template
 ├── vite.config.ts             # Vite configuration
 ├── tsconfig.json              # TypeScript configuration
@@ -145,6 +164,9 @@ Provide the raw HTML string directly in the `htmlContent` property:
 | `htmlContent` | string | ✗ | Inline HTML string |
 | `version` | string | ✗ | Version badge (e.g., `"v1.0"`) |
 | `size` | string | ✗ | File size metadata |
+| `tags` | string[] | ✗ | Filter tags (e.g., `["Narrative", "Interactive"]`) |
+| `tech` | string[] | ✗ | Technologies used (e.g., `["HTML", "Canvas"]`) |
+| `longDescription` | string | ✗ | Extended description for product page |
 | `missing` | boolean | ✗ | Shows locked state if `true` |
 
 > **Note:** For security reasons, users cannot upload HTML files through the UI. All apps must be added by editing `src/data.ts` and placing files in `public/`.
@@ -200,12 +222,78 @@ The "Void Logs" sidebar in `Chamber.tsx` displays atmospheric messages. Customiz
 
 ---
 
-## Included Example
+## Included Apps (18 Total)
 
-**WHEN THE SUN DIED** (`v1.0`)
-- A cosmic tragedy terminal experience
-- Located at: `/public/when-the-sun-died.html`
-- Demonstrates iframe embedding with hotlink interception
+| App | Tags | Description |
+|-----|------|-------------|
+| **WHEN THE SUN DIED** | Narrative, Endless | Cosmic tragedy terminal experience |
+| **ARIA // TERMINAL** | Pointless, Interactive | Remote session with something listening |
+| **KIRA** | Narrative, Endless, Interactive | She texts back. Always. |
+| **NARRATIVE BEAT GRAPH** | Tool, Pointless | Map story structure visually |
+| **2:35 AM** | Endless, Corrupted | 3D walk through the hour of dread |
+| **THE WORLD THAT DOESN'T CARE** | Simulation, Endless, Pointless | A simulation running without you |
+| **CHATGG** | Interactive, Pointless | Conversation with something from the void |
+| **ENTROPY BUDGET** | Simulation, Endless | Spend your finite order wisely |
+| **GENESIS ENGINE** | Simulation, Interactive | World-building simulation |
+| **LUDIC STRATA** | Narrative, Interactive | Deterministic conversational engine |
+| **OFFENSIVE LETTERS** | Interactive, Corrupted | Typing game for the damned |
+| **CURVATURE CARTOGRAPHER** | Tool, Simulation | Spacetime visualization |
+| **SPECTRAL LOOP** | Narrative, Endless, Corrupted | A transmission that repeats |
+| **WARREN: INVASION PROTOCOL** | Interactive, Endless | Arcade defense game |
+| **SOUL MIRROR** | Tool, Interactive | Reflect on core concepts of existence |
+| **ABM GENERATOR** | Tool, Interactive | Atmospheric Black Metal generator |
+| **NEXUS WAR** | Interactive, Strategy | Strategic board game |
+| **QUANTUM ANT** | Simulation, Endless | Quantum consciousness visualization |
+
+---
+
+## Logic Chains
+
+This application is built around **15 deterministic logic chains** — each a self-contained state machine with explicit triggers, transitions, invariants, and resolution states. Chains are tested in `src/test/chains.test.tsx`.
+
+### Chain Index
+
+| Chain | Name | Location | Trigger | Invariant |
+|-------|------|----------|---------|-----------|
+| 1 | BrowseFilter | `Catalog.tsx` | Search input / tag click | Search trims whitespace; tag filter is deterministic and pure |
+| 2 | AppSelection | `App.tsx` + `Catalog.tsx` | Card click | Missing entries are never navigated to; single authoritative guard in App |
+| 3 | ProductReveal | `ProductPage.tsx` | Component mount | Revealed becomes true after ~80ms; before that opacity-0 |
+| 4 | ParagraphSplit | `ProductPage.tsx` | Render with longDescription | Paragraphs split on actual `\n\n`, not literal `\\n\\n` |
+| 5 | ChamberInit | `Chamber.tsx` | Initialize button click | Resets error+loading state; log appears after 2000ms; idempotent |
+| 6 | IframeLoad | `Chamber.tsx` | iframe `onLoad` event | Loading spinner shown; no duplicate listeners (dedup via ref) |
+| 7 | IframeError | `Chamber.tsx` | iframe `onError` event | Initial logs present; debug guide logs warning not promise |
+| 8 | ImageHotlink | `Chamber.tsx` | `postMessage` from iframe | Origin validated; empty src rejected; valid src shows modal |
+| 9 | EnterChamber | `App.tsx` | "Enter Chamber" button | Chamber only entered when selectedApp is non-null |
+| 9b | FullscreenToggle | `Chamber.tsx` | Fullscreen button click | Button appears only post-init; toggle is its own inverse |
+| 10 | NoiseToggle | `Chamber.tsx` | NOISE button click | Noise enabled by default; toggle changes button appearance |
+| 11 | LogAppend | `Chamber.tsx` | Inject Log / Transmission Blocked | Log array capped at MAX_LOGS=100; oldest entries evicted |
+| 12 | BackNavigation | `App.tsx` | Back/Cease button | Back from chamber → product; back from product → catalog (selectedApp cleared) |
+| 13 | HTMLContentInjection | `Chamber.tsx` | Render with htmlContent | Script inserted before `</body>`; appended when no `</body>` |
+| 14 | NavButtonActions | `Catalog.tsx` | Sidebar nav buttons | Nav buttons emit non-blocking notifications; `alert()` must never fire |
+
+### Chain Architecture
+
+Each chain follows the pattern:
+
+```
+Trigger → ordered state transitions → terminal resolution (± side effects)
+```
+
+**Key principles:**
+
+- **Deterministic transitions** — No hidden state or race conditions
+- **Invariants enforced at correct layer** — Presenter guards in `App.tsx`, domain logic in components
+- **Failures typed and observable** — Error states surface in UI with details
+- **Side effects isolated** — postMessage validation, log capping, notification auto-dismiss
+- **Tests prove the contract** — Each chain has dedicated test suite
+
+### Running Chain Tests
+
+```bash
+npm run test
+# or
+npx vitest run src/test/chains.test.tsx
+```
 
 ---
 

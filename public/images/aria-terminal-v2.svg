@@ -1,0 +1,34 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#001100"/>
+  <!-- CRT scan lines -->
+  <g stroke="#004400" stroke-opacity="0.2" stroke-width="1">
+    <line x1="0" y1="0" x2="800" y2="0"/>
+    <line x1="0" y1="2" x2="800" y2="2"/>
+    <line x1="0" y1="4" x2="800" y2="4"/>
+    <line x1="0" y1="6" x2="800" y2="6"/>
+    <line x1="0" y1="8" x2="800" y2="8"/>
+    <line x1="0" y1="10" x2="800" y2="10"/>
+    <!-- More scan lines -->
+    <line x1="0" y1="590" x2="800" y2="590"/>
+    <line x1="0" y1="592" x2="800" y2="592"/>
+    <line x1="0" y1="594" x2="800" y2="594"/>
+    <line x1="0" y1="596" x2="800" y2="596"/>
+    <line x1="0" y1="598" x2="800" y2="598"/>
+  </g>
+  <!-- Terminal text -->
+  <text x="100" y="100" font-family="Courier New" font-size="16" fill="#00ff00" opacity="0.9">ARIA // TERMINAL v2.0</text>
+  <text x="100" y="130" font-family="Courier New" font-size="14" fill="#00ff00" opacity="0.8">> Connection established...</text>
+  <text x="100" y="160" font-family="Courier New" font-size="14" fill="#00ff00" opacity="0.7">> ARIA: Hello, Observer.</text>
+  <text x="100" y="190" font-family="Courier New" font-size="14" fill="#00ff00" opacity="0.6">> ARIA: I am listening.</text>
+  <!-- Static interference -->
+  <rect x="200" y="250" width="400" height="100" fill="#002200" opacity="0.5"/>
+  <g stroke="#00ff00" stroke-width="2" opacity="0.3">
+    <line x1="200" y1="250" x2="600" y2="350"/>
+    <line x1="200" y1="300" x2="600" y2="300"/>
+    <line x1="200" y1="350" x2="600" y2="250"/>
+  </g>
+  <!-- Cursor -->
+  <rect x="100" y="220" width="8" height="16" fill="#00ff00" opacity="0.9"/>
+  <!-- Title -->
+  <text x="400" y="550" text-anchor="middle" font-family="Space Grotesk" font-size="28" fill="#00ff00" opacity="0.8">ARIA // TERMINAL</text>
+</svg>

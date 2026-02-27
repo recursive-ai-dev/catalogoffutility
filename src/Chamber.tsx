@@ -245,7 +245,7 @@ export function Chamber({ app, onBack }: ChamberProps) {
               className="bg-center bg-no-repeat bg-cover rounded border border-[#233f48] size-8 grayscale opacity-70"
               style={{
                 backgroundImage:
-                  'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAxGlVb-P9yuZMu5b-rkirG5Tr2wUYgu8SVxIN75ykMPjNwm2JceZpli_TCCHOnD4tVg7IwWu2ZA8xTj-t0NbQw3l4G8qqwwhaNdyAgqAw602Mu57_UdaTW3o1ajrtCcVePrvYytR6N03tsSgYCiJArp-DqvfRNcVQWDeRqrWUCzSJowvJs-9Z13XoWAwT31-ezsr8DG_BhvoO1IYe7gljLWva-S9gv5qivwSrZmzrtm14Sq3IT9Ls19dM3fIQ8_mSKgJeWjS9-J75J")',
+                  'url("https://images.unsplash.com/photo-1535713875002-d1d0cf925346?w=64&h=64&fit=crop&auto=format")',
               }}
             ></div>
           </div>

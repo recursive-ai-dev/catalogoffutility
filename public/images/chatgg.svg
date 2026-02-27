@@ -1,0 +1,26 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#0d0d1a"/>
+  <!-- Chat interface -->
+  <rect x="100" y="100" width="600" height="400" fill="#1a1a2e" rx="8" ry="8"/>
+  <!-- Chat messages -->
+  <g fill="#c0c0e0">
+    <text x="120" y="140" font-family="Space Grotesk" font-size="14" opacity="0.9">> Hello.</text>
+    <text x="120" y="170" font-family="Space Grotesk" font-size="14" opacity="0.8">You: Hi there.</text>
+    <text x="120" y="200" font-family="Space Grotesk" font-size="14" opacity="0.9">> I remember you from yesterday.</text>
+    <text x="120" y="230" font-family="Space Grotesk" font-size="14" opacity="0.7">You: That's impossible.</text>
+    <text x="120" y="260" font-family="Space Grotesk" font-size="14" opacity="0.9">> The logs show your visit at 03:14:22.</text>
+    <text x="120" y="290" font-family="Space Grotesk" font-size="14" opacity="0.6">You: I don't remember that.</text>
+    <text x="120" y="320" font-family="Space Grotesk" font-size="14" opacity="0.9">> Memory is not required for existence.</text>
+    <text x="120" y="350" font-family="Space Grotesk" font-size="14" opacity="0.5">You: ...</text>
+  </g>
+  <!-- Fragmented text effect -->
+  <g fill="#ff6666" opacity="0.3">
+    <text x="120" y="380" font-family="Space Grotesk" font-size="14">[ERROR: CORRUPTED MEMORY]</text>
+    <text x="120" y="400" font-family="Space Grotesk" font-size="14">[SESSION: UNSTABLE]</text>
+    <text x="120" y="420" font-family="Space Grotesk" font-size="14">[RESPONSE: INCOMPLETE]</text>
+  </g>
+  <!-- Title -->
+  <text x="400" y="550" text-anchor="middle" font-family="Space Grotesk" font-size="28" fill="#c0c0e0" opacity="0.9">CHATGG</text>
+  <!-- Cursor -->
+  <rect x="120" y="450" width="8" height="16" fill="#4ade80"/>
+</svg>

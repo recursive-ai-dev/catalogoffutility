@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXUS WAR</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #07070f;
+      --panel: #0d0d1e;
+      --surface: #13132a;
+      --border: #1e1e3c;
+      --text: #e2e4f8;
+      --muted: #5a5a88;
+      --p1: #e04848;
+      --p2: #3d9de0;
+      --accent: #a855f7;
+      --gold: #e8b830;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cinzel', serif;
+      overflow: hidden;
+    }
+    #root { height: 100%; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    @keyframes slideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    const GRID_SIZE = 8;
+    const PIECES = {
+      KING: 'K',
+      QUEEN: 'Q',
+      ROOK: 'R',
+      BISHOP: 'B',
+      KNIGHT: 'N',
+      PAWN: 'P'
+    };
+
+    function NexusWar() {
+      const [board, setBoard] = useState(() => {
+        const initialBoard = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+        // Place pieces
+        const backRow = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
+        for (let i = 0; i < 8; i++) {
+          initialBoard[0][i] = { type: backRow[i], player: 2 };
+          initialBoard[1][i] = { type: 'P', player: 2 };
+          initialBoard[6][i] = { type: 'P', player: 1 };
+          initialBoard[7][i] = { type: backRow[i], player: 1 };
+        }
+        return initialBoard;
+      });
+      const [selectedCell, setSelectedCell] = useState(null);
+      const [currentPlayer, setCurrentPlayer] = useState(1);
+      const [gameStatus, setGameStatus] = useState('ACTIVE');
+
+      const handleCellClick = (row, col) => {
+        const piece = board[row][col];
+        
+        if (selectedCell) {
+          // Try to move
+          const [sr, sc] = selectedCell;
+          if (board[sr][sc]?.player === currentPlayer) {
+            // Simple move validation (any empty or enemy cell)
+            if (!piece || piece.player !== currentPlayer) {
+              const newBoard = board.map(r => [...r]);
+              newBoard[row][col] = newBoard[sr][sc];
+              newBoard[sr][sc] = null;
+              setBoard(newBoard);
+              setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
+              setSelectedCell(null);
+              return;
+            }
+          }
+          setSelectedCell(null);
+        } else if (piece && piece.player === currentPlayer) {
+          setSelectedCell([row, col]);
+        }
+      };
+
+      return (
+        <div style={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <h1 style={{
+            fontSize: '2rem',
+            fontWeight: 600,
+            letterSpacing: '0.2em',
+            marginBottom: '1rem',
+            color: 'var(--gold)'
+          }}>NEXUS WAR</h1>
+          
+          <div style={{
+            marginBottom: '1rem',
+            padding: '0.5rem 1.5rem',
+            background: 'var(--panel)',
+            border: '1px solid var(--border)',
+            borderRadius: '4px',
+            fontFamily: "'Share Tech Mono', monospace",
+            fontSize: '0.75rem',
+            letterSpacing: '0.1em'
+          }}>
+            PLAYER {currentPlayer} | {currentPlayer === 1 ? 'CRIMSON' : 'AZURE'}
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
+            gap: '2px',
+            padding: '1rem',
+            background: 'var(--panel)',
+            border: '2px solid var(--border)',
+            borderRadius: '8px'
+          }}>
+            {board.map((row, ri) =>
+              row.map((cell, ci) => {
+                const isSelected = selectedCell && selectedCell[0] === ri && selectedCell[1] === ci;
+                const isLight = (ri + ci) % 2 === 0;
+                return (
+                  <div
+                    key={`${ri}-${ci}`}
+                    onClick={() => handleCellClick(ri, ci)}
+                    style={{
+                      width: '3rem',
+                      height: '3rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: isSelected 
+                        ? 'var(--accent)' 
+                        : isLight ? 'var(--surface)' : 'var(--panel)',
+                      border: isSelected ? '2px solid var(--gold)' : '1px solid var(--border)',
+                      cursor: 'pointer',
+                      fontSize: '1.25rem',
+                      color: cell?.player === 1 ? 'var(--p1)' : 'var(--p2)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {cell?.type || ''}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <p style={{
+            marginTop: '1.5rem',
+            color: 'var(--muted)',
+            fontFamily: "'Share Tech Mono', monospace",
+            fontSize: '0.625rem',
+            letterSpacing: '0.15em'
+          }}>
+            SELECT PIECE → MOVE TO EMPTY OR CAPTURE
+          </p>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<NexusWar />);
+  </script>
+</body>
+</html>

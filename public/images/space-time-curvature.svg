@@ -1,0 +1,44 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#0a0a1a"/>
+  <!-- Spacetime grid -->
+  <g stroke="#333344" stroke-width="1" opacity="0.3">
+    <!-- Horizontal lines -->
+    <line x1="0" y1="100" x2="800" y2="100"/>
+    <line x1="0" y1="200" x2="800" y2="200"/>
+    <line x1="0" y1="300" x2="800" y2="300"/>
+    <line x1="0" y1="400" x2="800" y2="400"/>
+    <line x1="0" y1="500" x2="800" y2="500"/>
+    <!-- Vertical lines -->
+    <line x1="100" y1="0" x2="100" y2="600"/>
+    <line x1="200" y1="0" x2="200" y2="600"/>
+    <line x1="300" y1="0" x2="300" y2="600"/>
+    <line x1="400" y1="0" x2="400" y2="600"/>
+    <line x1="500" y1="0" x2="500" y2="600"/>
+    <line x1="600" y1="0" x2="600" y2="600"/>
+    <line x1="700" y1="0" x2="700" y2="600"/>
+  </g>
+  <!-- Gravitational well -->
+  <defs>
+    <radialGradient id="wellGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="50%" stop-color="#2d7b4e"/>
+      <stop offset="100%" stop-color="#1a3a2a"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="400" cy="300" rx="150" ry="80" fill="url(#wellGradient)" opacity="0.3"/>
+  <!-- Light paths -->
+  <g stroke="#4ade80" stroke-width="2" opacity="0.7">
+    <path d="M100,100 Q200,200 300,250 Q400,300 500,250 Q600,200 700,100"/>
+    <path d="M100,500 Q200,400 300,350 Q400,300 500,350 Q600,400 700,500"/>
+    <path d="M100,300 Q200,300 300,300 Q400,300 500,300 Q600,300 700,300"/>
+  </g>
+  <!-- Event horizon -->
+  <circle cx="400" cy="300" r="100" fill="none" stroke="#ff6666" stroke-width="2" opacity="0.5"/>
+  <!-- Mass object -->
+  <circle cx="400" cy="300" r="20" fill="#ff6666"/>
+  <!-- Labels -->
+  <text x="400" y="280" text-anchor="middle" font-family="Space Grotesk" font-size="14" fill="#ffffff" opacity="0.8">MASS OBJECT</text>
+  <text x="400" y="420" text-anchor="middle" font-family="Space Grotesk" font-size="14" fill="#ffffff" opacity="0.8">EVENT HORIZON</text>
+  <!-- Title -->
+  <text x="400" y="550" text-anchor="middle" font-family="Space Grotesk" font-size="28" fill="#4ade80" opacity="0.9">CURVATURE CARTOGRAPHER</text>
+</svg>
