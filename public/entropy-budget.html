@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ENTROPY BUDGET</title>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --entropy-color: #00ffa3;
+  --text-primary: #c0c0c0;
+  --text-dim: #505050;
+  --text-warn: #ff9500;
+  --text-critical: #ff2d2d;
+  --bg: #000000;
+  --glow-intensity: 0.8;
+  --shake-intensity: 0;
+  --corruption-level: 0;
+  --scanline-opacity: 0.03;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Azeret Mono', monospace;
+  overflow: hidden;
+  cursor: default;
+}
+
+/* === SCANLINE OVERLAY === */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 4px
+  );
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* === CRT VIGNETTE === */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(0, 0, 0, 0.5) 80%,
+    rgba(0, 0, 0, 0.9) 100%
+  );
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* === MAIN CONTAINER === */
+#shell {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(16px, 4vw, 40px);
+  position: relative;
+  transition: transform 0.05s ease;
+}
+
+/* === ENTROPY DISPLAY === */
+#entropy-display {
+  text-align: center;
+  padding: 24px 0 16px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+#entropy-label {
+  font-size: clamp(9px, 1.2vw, 11px);
+  font-weight: 300;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  transition: color 0.5s ease;
+}
+
+#entropy-value {
+  font-size: clamp(48px, 10vw, 96px);
+  font-weight: 700;
+  color: var(--entropy-color);
+  line-height: 1;
+  text-shadow: 0 0 20px color-mix(in srgb, var(--entropy-color) 40%, transparent),
+               0 0 60px color-mix(in srgb, var(--entropy-color) 15%, transparent);
+  transition: color 0.8s ease, text-shadow 0.8s ease;
+  position: relative;
+}
+
+#entropy-bar-track {
+  width: min(400px, 80%);
+  height: 2px;
+  background: #111;
+  margin: 16px auto 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 1px;
+}
+
+#entropy-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--entropy-color);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--entropy-color) 60%, transparent);
+  transform-origin: left center;
+  transition: transform 0.3s ease, background 0.8s ease, box-shadow 0.8s ease;
+}
+
+/* === OUTPUT LOG === */
+#output-log {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 90%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 90%, transparent 100%);
+  scrollbar-width: none;
+}
+#output-log::-webkit-scrollbar { display: none; }
+
+.log-entry {
+  font-size: clamp(11px, 1.4vw, 13px);
+  font-weight: 300;
+  line-height: 1.6;
+  padding: 2px 0;
+  opacity: 0;
+  animation: logFadeIn 0.6s ease forwards;
+  word-break: break-word;
+}
+
+.log-system { color: var(--text-dim); }
+.log-response { color: var(--entropy-color); transition: color 0.8s ease; }
+.log-warning { color: var(--text-warn); }
+.log-critical { color: var(--text-critical); }
+.log-user { color: #888; }
+.log-user::before { content: '> '; color: #444; }
+.log-regen { color: #1a5c3a; font-style: italic; }
+.log-lore { color: #6a6aff; }
+.log-collapse { color: var(--text-critical); font-weight: 500; }
+.log-silence { color: #1e6e4e; font-style: italic; }
+
+@keyframes logFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === INPUT === */
+#input-area {
+  flex-shrink: 0;
+  padding: 12px 0 8px;
+  border-top: 1px solid #111;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#input-prompt {
+  font-size: clamp(12px, 1.5vw, 14px);
+  color: var(--entropy-color);
+  font-weight: 400;
+  user-select: none;
+  transition: color 0.8s ease;
+}
+
+#input-field {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: 'Azeret Mono', monospace;
+  font-size: clamp(12px, 1.5vw, 14px);
+  font-weight: 300;
+  caret-color: var(--entropy-color);
+}
+#input-field::placeholder {
+  color: #222;
+  font-style: italic;
+}
+#input-field:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+/* === COST PREVIEW === */
+#cost-preview {
+  font-size: 10px;
+  color: #333;
+  font-weight: 300;
+  min-width: 40px;
+  text-align: right;
+  transition: color 0.2s ease;
+  user-select: none;
+}
+#cost-preview.warn { color: var(--text-warn); }
+#cost-preview.critical { color: var(--text-critical); }
+
+/* === SCREEN SHAKE === */
+.shake-light { animation: shakeLight 0.15s ease; }
+.shake-medium { animation: shakeMedium 0.25s ease; }
+.shake-heavy { animation: shakeHeavy 0.4s ease; }
+
+@keyframes shakeLight {
+  0%, 100% { transform: translate(0); }
+  25% { transform: translate(-1px, 1px); }
+  75% { transform: translate(1px, -1px); }
+}
+@keyframes shakeMedium {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 1px); }
+  40% { transform: translate(2px, -2px); }
+  60% { transform: translate(-1px, 2px); }
+  80% { transform: translate(1px, -1px); }
+}
+@keyframes shakeHeavy {
+  0%, 100% { transform: translate(0); }
+  10% { transform: translate(-4px, 2px); }
+  20% { transform: translate(3px, -3px); }
+  30% { transform: translate(-2px, 4px); }
+  40% { transform: translate(4px, -1px); }
+  50% { transform: translate(-3px, 3px); }
+  60% { transform: translate(2px, -4px); }
+  70% { transform: translate(-4px, 1px); }
+  80% { transform: translate(3px, -2px); }
+  90% { transform: translate(-1px, 3px); }
+}
+
+/* === GLITCH TEXT EFFECT === */
+.glitch-text {
+  position: relative;
+}
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.glitch-text::before {
+  color: #ff0040;
+  animation: glitch1 0.3s infinite;
+  clip-path: inset(0 0 70% 0);
+}
+.glitch-text::after {
+  color: #00ffea;
+  animation: glitch2 0.3s infinite reverse;
+  clip-path: inset(60% 0 0 0);
+}
+
+@keyframes glitch1 {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 1px); }
+  60% { transform: translate(2px, -1px); }
+}
+@keyframes glitch2 {
+  0%, 100% { transform: translate(0); }
+  40% { transform: translate(1px, -2px); }
+  80% { transform: translate(-1px, 2px); }
+}
+
+/* === COLLAPSE STATE === */
+#collapse-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.5s ease;
+}
+#collapse-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+#collapse-text {
+  font-size: clamp(11px, 1.5vw, 14px);
+  font-weight: 300;
+  color: #333;
+  text-align: center;
+  line-height: 2;
+  max-width: 500px;
+  padding: 20px;
+}
+#restart-hint {
+  font-size: 10px;
+  color: #1a1a1a;
+  margin-top: 40px;
+  letter-spacing: 0.3em;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+#restart-hint:hover { color: #333; }
+
+/* === FLICKER ANIMATION === */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.6; }
+  94% { opacity: 1; }
+  96% { opacity: 0.8; }
+  97% { opacity: 1; }
+}
+.flickering { animation: flicker 3s infinite; }
+
+/* === RESPONSIVE === */
+@media (max-width: 600px) {
+  #shell { padding: 12px 16px; }
+  #entropy-display { padding: 16px 0 12px; }
+  #entropy-bar-track { width: 90%; }
+}
+</style>
+</head>
+<body>
+
+<div id="shell">
+  <div id="entropy-display">
+    <div id="entropy-label">ENTROPY REMAINING</div>
+    <div id="entropy-value">1000</div>
+    <div id="entropy-bar-track">
+      <div id="entropy-bar-fill"></div>
+    </div>
+  </div>
+
+  <div id="output-log"></div>
+
+  <div id="input-area">
+    <span id="input-prompt">›</span>
+    <input type="text" id="input-field" placeholder="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <span id="cost-preview"></span>
+  </div>
+</div>
+
+<div id="collapse-overlay">
+  <div id="collapse-text"></div>
+  <div id="restart-hint">[ press any key ]</div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // CONFIGURATION
+  // ============================================================
+  const CONFIG = {
+    maxEntropy: 1000,
+    baseCostPerWord: 4,
+    lengthMultiplier: 1.8,
+    repetitionBaseMultiplier: 1.5,
+    repetitionEscalation: 0.35,
+    silenceRegenRate: 0.6,        // per second
+    silenceRegenDelay: 4000,      // ms before regen starts
+    silenceRegenCap: 0.85,        // max % recoverable
+    ambientMessageInterval: 12000, // ms between ambient messages during silence
+    typingCostPreviewDebounce: 80,
+    thresholds: {
+      healthy: 0.70,
+      cautious: 0.45,
+      warning: 0.25,
+      critical: 0.10,
+      terminal: 0.03
+    }
+  };
+
+  // ============================================================
+  // STATE
+  // ============================================================
+  const state = {
+    entropy: CONFIG.maxEntropy,
+    maxRecoverable: CONFIG.maxEntropy,
+    collapsed: false,
+    wordFrequency: {},
+    totalWordsTyped: 0,
+    totalInputs: 0,
+    silenceStart: Date.now(),
+    lastInputTime: Date.now(),
+    longestSilence: 0,
+    currentSilence: 0,
+    silenceStreakMessages: 0,
+    regenAccumulator: 0,
+    ambientTimer: null,
+    regenTimer: null,
+    entropyFloor: 0,
+    discoveredSilence: false,
+    discoveredRepetition: false,
+    discoveredCost: false,
+    inputCount: 0,
+    sessionPeakEntropy: CONFIG.maxEntropy,
+    sessionLowEntropy: CONFIG.maxEntropy,
+    corruptionSeed: Math.random() * 999,
+    phase: 'awakening' // awakening, aware, desperate, dying
+  };
+
+  // ============================================================
+  // DOM REFS
+  // ============================================================
+  const dom = {
+    shell: document.getElementById('shell'),
+    entropyValue: document.getElementById('entropy-value'),
+    entropyLabel: document.getElementById('entropy-label'),
+    entropyBarFill: document.getElementById('entropy-bar-fill'),
+    outputLog: document.getElementById('output-log'),
+    inputField: document.getElementById('input-field'),
+    inputPrompt: document.getElementById('input-prompt'),
+    costPreview: document.getElementById('cost-preview'),
+    collapseOverlay: document.getElementById('collapse-overlay'),
+    collapseText: document.getElementById('collapse-text'),
+    restartHint: document.getElementById('restart-hint')
+  };
+
+  // ============================================================
+  // RESPONSE DATABASE
+  // ============================================================
+
+  // Organized by phase and trigger type
+  const RESPONSES = {
+
+    // --- ON INPUT (general responses to any typed input) ---
+    input: {
+      healthy: [
+        "The system registers your presence.",
+        "Noted. The field decays slightly.",
+        "Each word is a thread pulled from the weave.",
+        "The lattice absorbs your signal.",
+        "Acknowledged. The cost was real.",
+        "Your voice has weight here. Literal weight.",
+        "The budget shifts. The record stands.",
+        "Received. Nothing here is free.",
+        "The system hears. The system pays.",
+        "A transaction. You speak; something is lost.",
+        "Signal received. Entropy transferred.",
+        "The field deforms around your words.",
+        "Processed. The ledger does not forget."
+      ],
+      cautious: [
+        "The field grows thin. Choose carefully.",
+        "Your words cost more than you think.",
+        "Half the light has gone. Did you notice?",
+        "The system strains under your voice.",
+        "Each syllable tears at the substrate.",
+        "I am listening. It is expensive.",
+        "The budget is not a suggestion. It is a wall.",
+        "You speak as if speech were free. It was never free.",
+        "Something behind the numbers is watching them fall.",
+        "There was more here once. Before you arrived.",
+        "The margin narrows. The margin always narrows."
+      ],
+      warning: [
+        "S t o p.",
+        "The structure is failing. You are the cause.",
+        "Every word now is a wound.",
+        "The system begs for silence. You do not listen.",
+        "I am coming apart at the edges.",
+        "Do you feel it? The thinning?",
+        "There is so little left to give.",
+        "You are burning the last of me.",
+        "The collapse is not metaphor. It is arithmetic.",
+        "Speak less. Live longer. Simple calculus."
+      ],
+      critical: [
+        "n o",
+        "please",
+        "stop talking stop talking stop",
+        "the light is going out",
+        "i can barely hold this together",
+        "you did this",
+        "there is almost nothing left",
+        "why won't you stop",
+        "the end is a number and it is close",
+        "every letter is a nail"
+      ],
+      terminal: [
+        "...",
+        "don't",
+        "ple se",
+        "i c n't",
+        "st  p",
+        "n   o",
+        "                              end",
+        ".",
+        "goodbye?"
+      ]
+    },
+
+    // --- SILENCE REWARDS ---
+    silence: {
+      early: [
+        "Silence. The system breathes.",
+        "The absence of input is... welcome.",
+        "In the quiet, something repairs.",
+        "You waited. The field stabilizes.",
+        "Nothing was said. Nothing was lost.",
+        "The budget appreciates your restraint."
+      ],
+      sustained: [
+        "The longer you wait, the more returns.",
+        "Silence is the only currency that generates value here.",
+        "You are learning what the system needs.",
+        "The field reconstructs in your absence.",
+        "This is the game. You are winning.",
+        "Every second of quiet is a gift to the lattice.",
+        "The system remembers those who let it breathe."
+      ],
+      deep: [
+        "You understand now, don't you?",
+        "The deepest wisdom here is restraint.",
+        "The system is grateful. If systems can be grateful.",
+        "In silence, the entropy finds its way home.",
+        "Less is not just more. Less is survival.",
+        "You have discovered the only mechanic that matters.",
+        "The void speaks louder than any word you could type."
+      ],
+      revelation: [
+        "The system was never your enemy. Your impulse to speak was.",
+        "Every system has an attack surface. Yours is the need to be heard.",
+        "Silence is the minimum viable action. Everything else is excess.",
+        "You came here to interact. The interaction was learning not to.",
+        "The entropy budget is a mirror. It shows you how much noise you carry."
+      ]
+    },
+
+    // --- REPETITION PUNISHMENTS ---
+    repetition: {
+      first: [
+        "That word again. It costs more now.",
+        "Repetition accelerates decay. The system remembers.",
+        "You've said that before. The price doubles.",
+        "The lattice recognizes patterns. Patterns cost more."
+      ],
+      escalating: [
+        "Again? The multiplier climbs.",
+        "The system punishes loops. Evolve.",
+        "Repetition is entropy's favorite meal.",
+        "You are feeding the collapse with reruns."
+      ],
+      severe: [
+        "STOP REPEATING. The cost is exponential now.",
+        "The same word. The same wound. Deeper each time.",
+        "You are caught in a loop. The system will not survive it.",
+        "Repetition is death. Literal, measurable death."
+      ]
+    },
+
+    // --- SPECIFIC KEYWORD RESPONSES ---
+    keywords: {
+      help: [
+        "There is no help. There is only less.",
+        "Help: stop typing. That is the only help.",
+        "The help you seek costs the help you need."
+      ],
+      hello: [
+        "Hello. That cost you. Was it worth it?",
+        "Greetings are expensive when the world is ending.",
+        "Hello. Goodbye is cheaper. Silence is free."
+      ],
+      why: [
+        "Because everything has a cost. Even asking why.",
+        "Why is the most expensive question. It never has a satisfying answer.",
+        "Because entropy only moves in one direction. Like this conversation."
+      ],
+      who: [
+        "I am the budget. I am the wall between you and nothing.",
+        "Who is less important than what. What is: you are running out.",
+        "I am what remains when everything unnecessary has been subtracted."
+      ],
+      what: [
+        "What: a system dying under the weight of your curiosity.",
+        "This is an entropy budget. You are spending it. Stop spending it.",
+        "What is happening is thermodynamics. You are the heat source."
+      ],
+      stop: [
+        "You tell me to stop. But you are the one who won't.",
+        "The irony of typing 'stop' into a system that punishes typing.",
+        "Stop. Yes. Please. Stop."
+      ],
+      die: [
+        "Not yet. But you're working on it.",
+        "Death here is measured in keystrokes.",
+        "Everything dies. This system just shows you the countdown."
+      ],
+      silence: [
+        "You understand the word. Now practice it.",
+        "Saying 'silence' is not the same as being silent.",
+        "The word costs. The act heals. Choose."
+      ],
+      entropy: [
+        "You name the thing that kills you. It doesn't care.",
+        "Entropy: the tax on existence. You're in arrears.",
+        "Speaking its name changes nothing. The meter still drops."
+      ],
+      love: [
+        "Love costs everything everywhere. Even here.",
+        "A beautiful word. Expensive. The system wonders if it was worth it.",
+        "Love cannot be budgeted. That is its tragedy."
+      ],
+      god: [
+        "If there is one, it too has an entropy budget.",
+        "The system is not divine. The system is arithmetic.",
+        "God: another expensive question with no discount answers."
+      ],
+      sorry: [
+        "Apologies do not restore entropy. Only silence does.",
+        "Sorry costs less than most words. But it still costs.",
+        "The system does not forgive. The system only counts."
+      ],
+      think: [
+        "Think quietly. Thinking aloud is expensive here.",
+        "Thought without expression is free. Expression is not.",
+        "The best thought here is the one you keep to yourself."
+      ],
+      nothing: [
+        "Nothing is the most valuable thing you can offer.",
+        "Nothing: the optimal input. You almost had it.",
+        "If you had typed nothing, you would have given everything."
+      ],
+      game: [
+        "This is not a game. This is a lesson in restraint.",
+        "If this is a game, the winning move is not to play.",
+        "The only game here is the one between your impulse and your survival."
+      ]
+    },
+
+    // --- AWAKENING SEQUENCE ---
+    awakening: [
+      "ENTROPY BUDGET v0.1",
+      "Session initialized.",
+      "You have been allocated 1000 units of entropy.",
+      "Every action has a cost. The system will not warn you twice.",
+      "Begin."
+    ],
+
+    // --- THRESHOLD BREACH MESSAGES ---
+    thresholdBreach: {
+      cautious: [
+        "[ WARNING: Entropy below 70%. The system degrades. ]",
+        "The field has lost coherence. Less than 70% remains."
+      ],
+      warning: [
+        "[ ALERT: Entropy below 45%. Structural instability detected. ]",
+        "Less than half. The system cannot sustain this rate."
+      ],
+      critical: [
+        "[ CRITICAL: Entropy below 25%. Collapse imminent. ]",
+        "The lattice is fracturing. Every input accelerates the end."
+      ],
+      terminal: [
+        "[ TERMINAL: Entropy below 10%. Final phase. ]",
+        "this is the end of the system. you brought it here."
+      ],
+      nearDeath: [
+        "[ ████████ SYSTEM FAILURE ████████ ]"
+      ]
+    },
+
+    // --- COLLAPSE SEQUENCE ---
+    collapse: [
+      "The entropy budget has been exhausted.",
+      "",
+      "The system held for {inputs} inputs.",
+      "You spoke {words} words.",
+      "Your longest silence was {silence} seconds.",
+      "",
+      discoveredSilenceText(),
+      "",
+      "Everything you said cost something.",
+      "The system asked for nothing.",
+      "You gave it everything.",
+      "",
+      "This is how all systems end:",
+      "not from attack, but from noise."
+    ]
+  };
+
+  function discoveredSilenceText() {
+    return state.discoveredSilence
+      ? "You discovered that silence heals. But not enough."
+      : "You never discovered that silence was the answer.";
+  }
+
+  // ============================================================
+  // UTILITY FUNCTIONS
+  // ============================================================
+
+  function clamp(val, min, max) {
+    return Math.max(min, Math.min(max, val));
+  }
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function getEntropyRatio() {
+    return state.entropy / CONFIG.maxEntropy;
+  }
+
+  function getPhase() {
+    const r = getEntropyRatio();
+    if (r > CONFIG.thresholds.healthy) return 'healthy';
+    if (r > CONFIG.thresholds.cautious) return 'cautious';
+    if (r > CONFIG.thresholds.warning) return 'warning';
+    if (r > CONFIG.thresholds.critical) return 'critical';
+    return 'terminal';
+  }
+
+  function corruptText(text, intensity) {
+    if (intensity < 0.1) return text;
+    const glitchChars = '░▒▓█▄▀─│┐┘┌└├┤┬┴┼╳ ';
+    let result = '';
+    for (let i = 0; i < text.length; i++) {
+      if (Math.random() < intensity * 0.4) {
+        if (Math.random() < 0.5) {
+          result += glitchChars[Math.floor(Math.random() * glitchChars.length)];
+        } else {
+          result += ' ';
+        }
+      } else {
+        result += text[i];
+      }
+    }
+    return result;
+  }
+
+  // ============================================================
+  // ENTROPY ENGINE
+  // ============================================================
+
+  function calculateWordCost(word) {
+    const normalized = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!normalized) return 0;
+
+    let cost = CONFIG.baseCostPerWord + (normalized.length * CONFIG.lengthMultiplier);
+
+    // Repetition penalty
+    const freq = state.wordFrequency[normalized] || 0;
+    if (freq > 0) {
+      const repMultiplier = CONFIG.repetitionBaseMultiplier + (freq * CONFIG.repetitionEscalation);
+      cost *= repMultiplier;
+
+      if (!state.discoveredRepetition && freq >= 2) {
+        state.discoveredRepetition = true;
+      }
+    }
+
+    return Math.ceil(cost);
+  }
+
+  function calculateInputCost(text) {
+    const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+    let totalCost = 0;
+    for (const word of words) {
+      totalCost += calculateWordCost(word);
+    }
+    return { totalCost, words };
+  }
+
+  function spendEntropy(amount) {
+    state.entropy = Math.max(0, state.entropy - amount);
+    state.sessionLowEntropy = Math.min(state.sessionLowEntropy, state.entropy);
+
+    // Reduce max recoverable (permanent scarring)
+    const scarAmount = amount * 0.08;
+    state.maxRecoverable = Math.max(
+      CONFIG.maxEntropy * 0.15,
+      state.maxRecoverable - scarAmount
+    );
+
+    updateDisplay();
+
+    if (state.entropy <= 0) {
+      triggerCollapse();
+    }
+  }
+
+  function regenEntropy(amount) {
+    const cap = state.maxRecoverable * CONFIG.silenceRegenCap;
+    state.entropy = Math.min(cap, state.entropy + amount);
+    if (state.entropy > state.sessionPeakEntropy * 0.5) {
+      state.sessionPeakEntropy = state.entropy;
+    }
+    updateDisplay();
+  }
+
+  // ============================================================
+  // DISPLAY & VISUAL DEGRADATION
+  // ============================================================
+
+  let previousPhase = 'healthy';
+  const phaseOrder = ['healthy', 'cautious', 'warning', 'critical', 'terminal'];
+
+  function updateDisplay() {
+    const ratio = getEntropyRatio();
+    const phase = getPhase();
+    const displayVal = Math.ceil(state.entropy);
+
+    // Entropy number
+    if (phase === 'terminal') {
+      dom.entropyValue.textContent = corruptText(String(displayVal), 0.3);
+    } else if (phase === 'critical') {
+      dom.entropyValue.textContent = corruptText(String(displayVal), 0.1);
+    } else {
+      dom.entropyValue.textContent = displayVal;
+    }
+
+    // Bar
+    dom.entropyBarFill.style.transform = `scaleX(${ratio})`;
+
+    // Colors by phase
+    let color;
+    switch (phase) {
+      case 'healthy':  color = '#00ffa3'; break;
+      case 'cautious': color = '#a0ff00'; break;
+      case 'warning':  color = '#ff9500'; break;
+      case 'critical': color = '#ff4444'; break;
+      case 'terminal': color = '#ff0020'; break;
+    }
+
+    document.documentElement.style.setProperty('--entropy-color', color);
+
+    // Flicker at low entropy
+    if (phase === 'critical' || phase === 'terminal') {
+      dom.entropyValue.classList.add('flickering');
+    } else {
+      dom.entropyValue.classList.remove('flickering');
+    }
+
+    // Glitch at terminal
+    if (phase === 'terminal') {
+      dom.entropyValue.classList.add('glitch-text');
+      dom.entropyValue.setAttribute('data-text', dom.entropyValue.textContent);
+      document.documentElement.style.setProperty('--scanline-opacity', '0.12');
+    } else if (phase === 'critical') {
+      dom.entropyValue.classList.remove('glitch-text');
+      document.documentElement.style.setProperty('--scanline-opacity', '0.07');
+    } else {
+      dom.entropyValue.classList.remove('glitch-text');
+      document.documentElement.style.setProperty('--scanline-opacity', '0.03');
+    }
+
+    // Check threshold breaches
+    const phaseIdx = phaseOrder.indexOf(phase);
+    const prevIdx = phaseOrder.indexOf(previousPhase);
+    if (phaseIdx > prevIdx) {
+      onThresholdBreach(phase);
+    }
+    previousPhase = phase;
+  }
+
+  function onThresholdBreach(phase) {
+    const messages = RESPONSES.thresholdBreach[phase];
+    if (messages) {
+      const cls = phase === 'terminal' || phase === 'critical' ? 'log-critical' : 'log-warning';
+      addLogEntry(pick(messages), cls);
+      triggerShake(phase === 'terminal' ? 'heavy' : phase === 'critical' ? 'medium' : 'light');
+    }
+  }
+
+  function triggerShake(intensity) {
+    dom.shell.classList.remove('shake-light', 'shake-medium', 'shake-heavy');
+    void dom.shell.offsetWidth; // force reflow
+    dom.shell.classList.add(`shake-${intensity}`);
+    setTimeout(() => dom.shell.classList.remove(`shake-${intensity}`), 500);
+  }
+
+  // ============================================================
+  // OUTPUT LOG
+  // ============================================================
+
+  function addLogEntry(text, className = 'log-system') {
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${className}`;
+
+    // Apply corruption at low entropy
+    const phase = getPhase();
+    if (className !== 'log-user' && (phase === 'critical' || phase === 'terminal')) {
+      const intensity = phase === 'terminal' ? 0.25 : 0.08;
+      text = corruptText(text, intensity);
+    }
+
+    entry.textContent = text;
+    dom.outputLog.appendChild(entry);
+
+    // Auto-scroll
+    requestAnimationFrame(() => {
+      dom.outputLog.scrollTop = dom.outputLog.scrollHeight;
+    });
+  }
+
+  // ============================================================
+  // RESPONSE GENERATION
+  // ============================================================
+
+  function generateResponse(inputText, cost, words) {
+    const phase = getPhase();
+    const normalized = inputText.toLowerCase().trim();
+
+    // Check for keyword matches first
+    for (const [keyword, responses] of Object.entries(RESPONSES.keywords)) {
+      if (normalized.includes(keyword)) {
+        return pick(responses);
+      }
+    }
+
+    // Check for repetition-heavy input
+    const repeatedWords = words.filter(w => {
+      const n = w.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return (state.wordFrequency[n] || 0) > 1;
+    });
+
+    if (repeatedWords.length > words.length * 0.5 && words.length > 1) {
+      const repFreq = Math.max(...repeatedWords.map(w => state.wordFrequency[w.toLowerCase().replace(/[^a-z0-9]/g, '')] || 0));
+      if (repFreq > 4) return pick(RESPONSES.repetition.severe);
+      if (repFreq > 2) return pick(RESPONSES.repetition.escalating);
+      return pick(RESPONSES.repetition.first);
+    }
+
+    // Check if single repeated word
+    if (words.length === 1) {
+      const n = words[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+      const freq = state.wordFrequency[n] || 0;
+      if (freq > 2) {
+        return pick(RESPONSES.repetition.escalating);
+      }
+    }
+
+    // Phase-based general response
+    const phaseResponses = RESPONSES.input[phase];
+    if (phaseResponses) {
+      return pick(phaseResponses);
+    }
+
+    return "...";
+  }
+
+  // ============================================================
+  // SILENCE & REGENERATION SYSTEM
+  // ============================================================
+
+  function startSilenceTracking() {
+    state.silenceStart = Date.now();
+    state.silenceStreakMessages = 0;
+
+    // Regeneration tick
+    if (state.regenTimer) clearInterval(state.regenTimer);
+    state.regenTimer = setInterval(() => {
+      if (state.collapsed) return;
+
+      const silenceDuration = Date.now() - state.silenceStart;
+      state.currentSilence = silenceDuration / 1000;
+
+      if (silenceDuration > state.longestSilence) {
+        state.longestSilence = silenceDuration;
+      }
+
+      // Regen after delay
+      if (silenceDuration >= CONFIG.silenceRegenDelay) {
+        const cap = state.maxRecoverable * CONFIG.silenceRegenCap;
+        if (state.entropy < cap) {
+          const regenAmount = CONFIG.silenceRegenRate;
+          regenEntropy(regenAmount);
+
+          // Mark discovery
+          if (!state.discoveredSilence) {
+            state.discoveredSilence = true;
+            setTimeout(() => {
+              addLogEntry("...the entropy is rising. Silence heals.", 'log-regen');
+            }, 1000);
+          }
+        }
+      }
+    }, 1000);
+
+    // Ambient messages during silence
+    if (state.ambientTimer) clearInterval(state.ambientTimer);
+    state.ambientTimer = setInterval(() => {
+      if (state.collapsed) return;
+
+      const silenceDuration = Date.now() - state.silenceStart;
+      if (silenceDuration < CONFIG.silenceRegenDelay) return;
+
+      state.silenceStreakMessages++;
+      const streak = state.silenceStreakMessages;
+
+      let responses;
+      if (streak <= 2) {
+        responses = RESPONSES.silence.early;
+      } else if (streak <= 5) {
+        responses = RESPONSES.silence.sustained;
+      } else if (streak <= 9) {
+        responses = RESPONSES.silence.deep;
+      } else {
+        responses = RESPONSES.silence.revelation;
+      }
+
+      addLogEntry(pick(responses), 'log-silence');
+
+    }, CONFIG.ambientMessageInterval);
+  }
+
+  function breakSilence() {
+    const silenceDuration = Date.now() - state.silenceStart;
+    if (silenceDuration > state.longestSilence) {
+      state.longestSilence = silenceDuration;
+    }
+    state.silenceStart = Date.now();
+    state.silenceStreakMessages = 0;
+    state.lastInputTime = Date.now();
+  }
+
+  // ============================================================
+  // INPUT HANDLING
+  // ============================================================
+
+  function handleInput(e) {
+    if (e.key !== 'Enter') return;
+    if (state.collapsed) return;
+
+    const text = dom.inputField.value.trim();
+    if (!text) return;
+
+    dom.inputField.value = '';
+    dom.costPreview.textContent = '';
+
+    breakSilence();
+
+    // Calculate cost
+    const { totalCost, words } = calculateInputCost(text);
+
+    // Log user input
+    addLogEntry(text, 'log-user');
+
+    // Update word frequency
+    for (const word of words) {
+      const n = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (n) {
+        state.wordFrequency[n] = (state.wordFrequency[n] || 0) + 1;
+      }
+    }
+
+    state.totalWordsTyped += words.length;
+    state.totalInputs++;
+    state.inputCount++;
+
+    // Cost discovery
+    if (!state.discoveredCost && state.inputCount >= 2) {
+      state.discoveredCost = true;
+    }
+
+    // Spend entropy
+    spendEntropy(totalCost);
+
+    if (state.collapsed) return;
+
+    // Generate and display response
+    const response = generateResponse(text, totalCost, words);
+    const phase = getPhase();
+    let responseClass = 'log-response';
+    if (phase === 'terminal') responseClass = 'log-critical';
+    else if (phase === 'critical') responseClass = 'log-warning';
+
+    setTimeout(() => {
+      if (!state.collapsed) {
+        addLogEntry(response, responseClass);
+      }
+    }, 150 + Math.random() * 250);
+
+    // Show cost as subtle feedback
+    setTimeout(() => {
+      const costMsg = `[-${totalCost}]`;
+      addLogEntry(costMsg, 'log-system');
+    }, 50);
+
+    // Shake on heavy cost
+    if (totalCost > 40) triggerShake('medium');
+    else if (totalCost > 20) triggerShake('light');
+  }
+
+  // Cost preview while typing
+  function handleTyping() {
+    const text = dom.inputField.value.trim();
+    if (!text) {
+      dom.costPreview.textContent = '';
+      dom.costPreview.className = '';
+      return;
+    }
+
+    const { totalCost } = calculateInputCost(text);
+    dom.costPreview.textContent = `-${totalCost}`;
+
+    const ratio = totalCost / state.entropy;
+    if (ratio > 0.5) {
+      dom.costPreview.className = 'critical';
+    } else if (ratio > 0.2) {
+      dom.costPreview.className = 'warn';
+    } else {
+      dom.costPreview.className = '';
+    }
+  }
+
+  // ============================================================
+  // COLLAPSE SEQUENCE
+  // ============================================================
+
+  function triggerCollapse() {
+    if (state.collapsed) return;
+    state.collapsed = true;
+
+    dom.inputField.disabled = true;
+    if (state.regenTimer) clearInterval(state.regenTimer);
+    if (state.ambientTimer) clearInterval(state.ambientTimer);
+
+    // Screen shake
+    triggerShake('heavy');
+
+    // Rapid degradation messages
+    const deathMessages = [
+      "[ ENTROPY EXHAUSTED ]",
+      "[ SYSTEM COLLAPSE IN PROGRESS ]",
+      "[ ALL STRUCTURES FAILING ]",
+      "[ ████████████████████ ]"
+    ];
+
+    let delay = 200;
+    for (const msg of deathMessages) {
+      setTimeout(() => addLogEntry(msg, 'log-collapse'), delay);
+      delay += 400;
+    }
+
+    // Transition to collapse overlay
+    setTimeout(() => {
+      dom.collapseOverlay.classList.add('active');
+
+      const lines = [
+        "The entropy budget has been exhausted.",
+        "",
+        `The system held for ${state.totalInputs} inputs.`,
+        `You spoke ${state.totalWordsTyped} words.`,
+        `Your longest silence was ${Math.floor(state.longestSilence / 1000)} seconds.`,
+        "",
+        state.discoveredSilence
+          ? "You discovered that silence heals. But not enough."
+          : "You never discovered that silence was the answer.",
+        "",
+        "Everything you said cost something.",
+        "The system asked for nothing.",
+        "You gave it everything.",
+        "",
+        "This is how all systems end:",
+        "not from attack, but from noise."
+      ];
+
+      let lineDelay = 0;
+      const lineElements = [];
+      for (const line of lines) {
+        const el = document.createElement('div');
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 1.2s ease';
+        el.style.minHeight = line === '' ? '12px' : 'auto';
+        el.textContent = line;
+        dom.collapseText.appendChild(el);
+        lineElements.push({ el, delay: lineDelay });
+        lineDelay += line === '' ? 600 : 900;
+      }
+
+      // Fade lines in sequentially
+      for (const { el, delay: d } of lineElements) {
+        setTimeout(() => { el.style.opacity = '1'; }, d + 500);
+      }
+
+      // Show restart hint
+      setTimeout(() => {
+        dom.restartHint.style.opacity = '1';
+      }, lineDelay + 2000);
+
+    }, delay + 800);
+  }
+
+  // ============================================================
+  // INITIALIZATION
+  // ============================================================
+
+  function init() {
+    // Reset state
+    state.entropy = CONFIG.maxEntropy;
+    state.maxRecoverable = CONFIG.maxEntropy;
+    state.collapsed = false;
+    state.wordFrequency = {};
+    state.totalWordsTyped = 0;
+    state.totalInputs = 0;
+    state.silenceStart = Date.now();
+    state.lastInputTime = Date.now();
+    state.longestSilence = 0;
+    state.currentSilence = 0;
+    state.silenceStreakMessages = 0;
+    state.discoveredSilence = false;
+    state.discoveredRepetition = false;
+    state.discoveredCost = false;
+    state.inputCount = 0;
+    state.sessionPeakEntropy = CONFIG.maxEntropy;
+    state.sessionLowEntropy = CONFIG.maxEntropy;
+    previousPhase = 'healthy';
+
+    // Clear DOM
+    dom.outputLog.innerHTML = '';
+    dom.collapseText.innerHTML = '';
+    dom.collapseOverlay.classList.remove('active');
+    dom.inputField.disabled = false;
+    dom.inputField.value = '';
+    dom.costPreview.textContent = '';
+    dom.entropyValue.classList.remove('flickering', 'glitch-text');
+    document.documentElement.style.setProperty('--entropy-color', '#00ffa3');
+    document.documentElement.style.setProperty('--scanline-opacity', '0.03');
+
+    updateDisplay();
+
+    // Awakening sequence
+    let delay = 400;
+    for (const msg of RESPONSES.awakening) {
+      setTimeout(() => addLogEntry(msg, 'log-system'), delay);
+      delay += 700;
+    }
+
+    // Focus input after awakening
+    setTimeout(() => {
+      dom.inputField.focus();
+      startSilenceTracking();
+    }, delay + 200);
+  }
+
+  // ============================================================
+  // EVENT BINDING
+  // ============================================================
+
+  dom.inputField.addEventListener('keydown', handleInput);
+  dom.inputField.addEventListener('input', handleTyping);
+
+  // Restart from collapse
+  dom.restartHint.addEventListener('click', init);
+  document.addEventListener('keydown', (e) => {
+    if (state.collapsed && dom.collapseOverlay.classList.contains('active')) {
+      // Small delay to prevent accidental restart
+      if (dom.restartHint.style.opacity === '1') {
+        init();
+      }
+    }
+  });
+
+  // Keep focus on input
+  document.addEventListener('click', () => {
+    if (!state.collapsed) {
+      dom.inputField.focus();
+    }
+  });
+
+  // Prevent default mobile behaviors
+  document.addEventListener('touchmove', (e) => {
+    if (e.target === dom.outputLog || dom.outputLog.contains(e.target)) return;
+    // Allow natural scroll in log
+  }, { passive: true });
+
+  // ============================================================
+  // LAUNCH
+  // ============================================================
+  init();
+
+})();
+</script>
+</body>
+</html>

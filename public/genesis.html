@@ -1,0 +1,2137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Genesis Engine</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0f;
+  --bg2: #12121a;
+  --bg3: #1a1a26;
+  --fg: #c8c8d4;
+  --fg-dim: #6e6e82;
+  --fg-bright: #e8e8f0;
+  --accent: #7b8fff;
+  --accent2: #5de4c7;
+  --accent3: #e4a05d;
+  --danger: #e45d6b;
+  --border: #2a2a3a;
+  --system: #5d7be4;
+  --narrator: #b89dff;
+  --npc: #5de4c7;
+  --env: #6e6e82;
+  --radius: 12px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* ── SETUP SCREEN ── */
+#setup-screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px;
+  z-index: 100;
+  background: var(--bg);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: max(24px, var(--safe-top));
+  padding-bottom: max(24px, var(--safe-bottom));
+}
+
+#setup-screen.hidden { display: none; }
+
+.setup-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+  opacity: 0; animation: fadeUp 0.6s ease forwards;
+}
+.setup-subtitle {
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--fg-bright);
+  margin-bottom: 32px;
+  opacity: 0; animation: fadeUp 0.6s ease 0.1s forwards;
+}
+
+.setup-group {
+  width: 100%; max-width: 400px;
+  margin-bottom: 18px;
+  opacity: 0; animation: fadeUp 0.5s ease forwards;
+}
+.setup-group:nth-child(3) { animation-delay: 0.15s; }
+.setup-group:nth-child(4) { animation-delay: 0.2s; }
+.setup-group:nth-child(5) { animation-delay: 0.25s; }
+.setup-group:nth-child(6) { animation-delay: 0.3s; }
+.setup-group:nth-child(7) { animation-delay: 0.35s; }
+.setup-group:nth-child(8) { animation-delay: 0.4s; }
+
+.setup-label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  margin-bottom: 6px;
+}
+
+.setup-select, .setup-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--fg-bright);
+  font-family: 'Crimson Pro', serif;
+  font-size: 17px;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.setup-select:focus, .setup-input:focus {
+  border-color: var(--accent);
+}
+.setup-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236e6e82'%3E%3Cpath d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+.setup-select option { background: var(--bg2); color: var(--fg); }
+
+.setup-btn {
+  display: block;
+  width: 100%; max-width: 400px;
+  margin-top: 28px;
+  padding: 14px 24px;
+  background: var(--accent);
+  color: var(--bg);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0; animation: fadeUp 0.5s ease 0.45s forwards;
+}
+.setup-btn:active { transform: scale(0.97); opacity: 0.9; }
+
+.seed-row {
+  display: flex; gap: 8px; align-items: center;
+}
+.seed-row .setup-input { flex: 1; }
+.seed-dice {
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--fg-dim);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.seed-dice:active { background: var(--accent); color: var(--bg); }
+
+/* ── CHAT SCREEN ── */
+#chat-screen {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  padding-top: var(--safe-top);
+}
+#chat-screen.active { display: flex; }
+
+.chat-header {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.chat-header-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.chat-header-info {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--fg-dim);
+  text-align: right;
+  line-height: 1.4;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.msg {
+  max-width: 92%;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  animation: msgIn 0.3s ease;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.msg-system {
+  align-self: center;
+  max-width: 100%;
+  background: transparent;
+  color: var(--system);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-align: center;
+  padding: 8px 12px;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+}
+.msg-narrator {
+  align-self: flex-start;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--fg);
+}
+.msg-narrator .msg-source {
+  color: var(--narrator);
+}
+.msg-env {
+  align-self: flex-start;
+  background: transparent;
+  color: var(--env);
+  font-style: italic;
+  padding: 4px 14px;
+  font-size: 15px;
+}
+.msg-npc {
+  align-self: flex-start;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+}
+.msg-npc .msg-source { color: var(--npc); }
+.msg-player {
+  align-self: flex-end;
+  background: #1e2444;
+  border: 1px solid #2a3460;
+  color: var(--fg-bright);
+}
+.msg-source {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.msg-text { line-height: 1.55; }
+.msg-text em { color: var(--accent3); font-style: italic; }
+
+.chat-input-area {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  padding-bottom: max(10px, var(--safe-bottom));
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; align-items: flex-end;
+}
+.chat-input {
+  flex: 1;
+  min-height: 42px;
+  max-height: 120px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--fg-bright);
+  font-family: 'Crimson Pro', serif;
+  font-size: 17px;
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+  overflow-y: auto;
+  transition: border-color 0.2s;
+}
+.chat-input:focus { border-color: var(--accent); }
+.chat-input::placeholder { color: var(--fg-dim); }
+
+.chat-send {
+  flex-shrink: 0;
+  width: 42px; height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  color: var(--bg);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chat-send:active { transform: scale(0.9); }
+.chat-send:disabled { opacity: 0.3; }
+
+/* Typing indicator */
+.typing-dots { display: inline-flex; gap: 4px; padding: 4px 0; }
+.typing-dots span {
+  width: 6px; height: 6px;
+  background: var(--fg-dim);
+  border-radius: 50%;
+  animation: bounce 1.2s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SETUP SCREEN ═══════════════ -->
+<div id="setup-screen">
+  <div class="setup-title">Genesis Engine</div>
+  <div class="setup-subtitle">Shape Your World</div>
+
+  <div class="setup-group">
+    <label class="setup-label">Era</label>
+    <select id="cfg-era" class="setup-select">
+      <option value="prehistoric">Prehistoric — Before Written Memory</option>
+      <option value="ancient">Ancient — Bronze & Iron</option>
+      <option value="classical">Classical — Empires & Philosophy</option>
+      <option value="medieval" selected>Medieval — Crowns & Cathedrals</option>
+      <option value="renaissance">Renaissance — Rebirth & Discovery</option>
+      <option value="industrial">Industrial — Steam & Revolution</option>
+      <option value="modern">Modern — 20th Century</option>
+      <option value="nearfuture">Near Future — 2040–2120</option>
+      <option value="farfuture">Far Future — Post-Solar</option>
+      <option value="postapoc">Post-Apocalyptic — After the Fall</option>
+      <option value="mythic">Mythic — Where Gods Walk</option>
+    </select>
+  </div>
+
+  <div class="setup-group">
+    <label class="setup-label">Region</label>
+    <select id="cfg-region" class="setup-select">
+      <option value="temperate">Temperate Heartland</option>
+      <option value="coastal">Coastal Shores</option>
+      <option value="desert">Vast Desert</option>
+      <option value="arctic">Frozen North</option>
+      <option value="jungle">Dense Jungle</option>
+      <option value="mountain">Highland Peaks</option>
+      <option value="swamp">Marshlands</option>
+      <option value="island">Island Archipelago</option>
+      <option value="underground">Subterranean Depths</option>
+      <option value="floating">Sky Territories</option>
+      <option value="urban">Sprawling Metropolis</option>
+    </select>
+  </div>
+
+  <div class="setup-group">
+    <label class="setup-label">Starting Role (or leave blank)</label>
+    <input id="cfg-role" class="setup-input" type="text" placeholder="e.g. wandering healer, exiled thief, shipwrecked soldier…">
+  </div>
+
+  <div class="setup-group">
+    <label class="setup-label">Your Name</label>
+    <input id="cfg-name" class="setup-input" type="text" placeholder="(optional)">
+  </div>
+
+  <div class="setup-group">
+    <label class="setup-label">World Seed</label>
+    <div class="seed-row">
+      <input id="cfg-seed" class="setup-input" type="text" placeholder="Any word or number…">
+      <button class="seed-dice" id="btn-dice" aria-label="Random seed">⚄</button>
+    </div>
+  </div>
+
+  <button class="setup-btn" id="btn-begin">Enter the World</button>
+</div>
+
+<!-- ═══════════════ CHAT SCREEN ═══════════════ -->
+<div id="chat-screen">
+  <div class="chat-header">
+    <div class="chat-header-title" id="hdr-title">Genesis</div>
+    <div class="chat-header-info" id="hdr-info"></div>
+  </div>
+  <div class="chat-messages" id="messages"></div>
+  <div class="chat-input-area">
+    <textarea class="chat-input" id="input" rows="1" placeholder="What do you do?"></textarea>
+    <button class="chat-send" id="btn-send" aria-label="Send">↑</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   GENESIS ENGINE — Deterministic Generative World
+   No APIs. No precoded paths. Pure algorithmic emergence.
+   ═══════════════════════════════════════════════════════════════ */
+
+// ─── SEEDED PRNG (Mulberry32) ───
+class PRNG {
+  constructor(seed) {
+    this.state = this._hash(String(seed));
+    this.initial = this.state;
+  }
+  _hash(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) {
+      h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    }
+    return h >>> 0 || 1;
+  }
+  next() {
+    let t = this.state += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  nextInt(min, max) { return min + Math.floor(this.next() * (max - min + 1)); }
+  pick(arr) { return arr[Math.floor(this.next() * arr.length)]; }
+  shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(this.next() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  chance(p) { return this.next() < p; }
+  weighted(items) {
+    // items: [{val, w}, ...]
+    const total = items.reduce((s, i) => s + i.w, 0);
+    let r = this.next() * total;
+    for (const item of items) {
+      r -= item.w;
+      if (r <= 0) return item.val;
+    }
+    return items[items.length - 1].val;
+  }
+  fork(extra) { return new PRNG(this.initial + '-' + extra); }
+}
+
+// ─── LEXICON ───
+const LEX = {
+  // Name generation syllables by culture-feel
+  syllables: {
+    hard:    ['gar','thor','brak','kron','vol','grim','stark','dur','mund','val','rik','sten','ulf','bor','dag','arn'],
+    soft:    ['el','ara','lia','wen','mir','isa','cel','tha','nai','ori','ren','sil','fae','lyn','ada','eve'],
+    exotic:  ['zha','kai','tsu','rak','qui','xen','zan','oph','azi','iru','oba','yen','djo','umi','nyx','ash'],
+    ancient: ['ath','osi','anu','mah','kal','set','pha','uru','nim','bal','eni','tau','khe','ama','sha','dra'],
+  },
+
+  // Place name components
+  placePrefix: ['Stone','Iron','Shadow','Silver','Dark','White','Red','Old','High','Deep','Grey','Black','Ember','Frost','Storm'],
+  placeSuffix: ['haven','hold','watch','fall','gate','keep','bridge','ford','marsh','moor','vale','hollow','reach','crest','stead','well','peak','grove'],
+  placeNature: ['the Whispering Pines','the Shattered Coast','the Burning Plains','the Silent Marsh','the Crimson Ridge','the Ashen Waste','the Winding River','the Broken Crown','the Hollow Mountains','the Veiled Woods','the Salted Flats','the Singing Stones'],
+
+  // Occupations by era category
+  occupations: {
+    primitive: ['gatherer','hunter','elder','shaman','scout','toolmaker','fire-keeper','bone-reader','tracker','weaver'],
+    agrarian: ['farmer','blacksmith','healer','merchant','guard','priest','miller','tanner','carpenter','shepherd','mason','brewer','baker','innkeeper','scribe','hunter','herbalist','midwife','fisherman','weaver'],
+    advanced: ['engineer','soldier','physician','professor','journalist','detective','mechanic','pilot','trader','diplomat','scientist','inventor','architect','lawyer','banker','surgeon'],
+    future: ['data-weaver','hull technician','atmosphere engineer','gene-sculptor','drift navigator','memory curator','signal hunter','synth-grower','void cartographer','lattice monk','resource broker','pattern analyst'],
+    mythic: ['oracle','champion','warden','seer','rune-binder','beast-speaker','flame-dancer','soul-mender','star-reader','myth-keeper','oath-sworn','bridge-walker'],
+  },
+
+  // Personality traits (spectrum pairs)
+  traits: [
+    ['bold','cautious'],['kind','cruel'],['honest','deceptive'],['calm','volatile'],
+    ['proud','humble'],['generous','greedy'],['loyal','treacherous'],['wise','foolish'],
+    ['curious','incurious'],['patient','impulsive'],['stoic','emotional'],['witty','solemn'],
+  ],
+
+  // Motivations
+  motivations: ['power','knowledge','survival','revenge','love','redemption','duty','freedom','wealth','legacy','faith','curiosity','escape','justice','glory','peace'],
+
+  // Weather patterns by region type
+  weatherBase: {
+    temperate:    ['clear','partly cloudy','overcast','light rain','heavy rain','fog','gentle wind'],
+    coastal:      ['sea breeze','salt fog','clear skies','squall approaching','drizzle','brilliant sun','choppy wind'],
+    desert:       ['blazing sun','dust haze','scorching heat','cool night','sandstorm brewing','dry wind','starlit clarity'],
+    arctic:       ['bitter cold','howling wind','snowfall','pale sun','ice fog','aurora overhead','whiteout'],
+    jungle:       ['humid haze','monsoon rain','steaming heat','brief downpour','thick mist','insect drone','canopy drip'],
+    mountain:     ['thin air','alpine clarity','rolling clouds','bitter wind','snow flurries','rumbling thunder','crystal dawn'],
+    swamp:        ['thick fog','muggy heat','drizzle','stagnant haze','buzzing insects','heavy dew','eerie stillness'],
+    island:       ['trade wind','tropical sun','sudden rain','salt spray','warm breeze','passing clouds','tide surge'],
+    underground:  ['still air','damp chill','distant rumble','mineral dust','cold draft','dripping silence','warm vent'],
+    floating:     ['high wind','sun glare','thin cloud','vertigo gusts','rainbow mist','endless blue','lightning below'],
+    urban:        ['smog','gray overcast','light rain','industrial haze','cold wind','pale sun','humid night'],
+  },
+
+  // Sensory detail pools
+  senses: {
+    smell: ['wood smoke','damp earth','salt','iron','flowers','decay','cooking','pine','dust','rain','sweat','incense','leather','bread','blood','moss'],
+    sound: ['distant thunder','birdsong','running water','wind through trees','crackling fire','murmured voices','silence','footsteps','hammering','bells','insects','creaking wood','howling','laughter','dripping','chanting'],
+    texture: ['rough stone','worn leather','cold metal','smooth wood','gritty sand','damp cloth','cracked earth','soft fur','sharp edges','warm clay','icy surface','splintered beam'],
+  },
+
+  // Emotional/atmosphere modifiers
+  atmosphere: ['uneasy','hopeful','melancholy','tense','serene','foreboding','vibrant','desolate','sacred','hostile','mysterious','welcoming','oppressive','liberating','haunted','alive'],
+};
+
+// ─── ERA CONFIG ───
+const ERA_CONFIG = {
+  prehistoric: { tech: 0, magic: 1, occGroup: 'primitive', popMul: 0.3, structures: ['cave','lean-to','firepit','stone circle','bone pile','carved wall'] },
+  ancient:     { tech: 1, magic: 2, occGroup: 'agrarian', popMul: 0.5, structures: ['mud-brick house','granary','temple','market square','well','wall segment','shrine'] },
+  classical:   { tech: 2, magic: 1, occGroup: 'agrarian', popMul: 0.7, structures: ['forum','bathhouse','aqueduct','villa','barracks','amphitheater','library','warehouse'] },
+  medieval:    { tech: 2, magic: 2, occGroup: 'agrarian', popMul: 1.0, structures: ['tavern','smithy','chapel','keep','market','stable','cottage','guildhall','watchtower','well'] },
+  renaissance: { tech: 3, magic: 1, occGroup: 'agrarian', popMul: 1.2, structures: ['workshop','academy','gallery','bank','printing house','observatory','townhouse','theater'] },
+  industrial:  { tech: 4, magic: 0, occGroup: 'advanced', popMul: 1.5, structures: ['factory','tenement','station','warehouse','pub','office','clock tower','foundry','hospital'] },
+  modern:      { tech: 5, magic: 0, occGroup: 'advanced', popMul: 2.0, structures: ['apartment','office tower','diner','garage','school','clinic','park','bar','shop','station'] },
+  nearfuture:  { tech: 6, magic: 0, occGroup: 'future', popMul: 2.0, structures: ['hab-block','data center','med-pod','transit hub','market deck','sky-garden','recycler','drone port'] },
+  farfuture:   { tech: 8, magic: 3, occGroup: 'future', popMul: 1.0, structures: ['lattice node','bio-dome','drift anchor','memory vault','synthesis chamber','null-chapel','signal spire'] },
+  postapoc:    { tech: 2, magic: 1, occGroup: 'primitive', popMul: 0.4, structures: ['ruin shelter','scrap wall','rain collector','fire barrel','lookout post','buried cache','bone marker'] },
+  mythic:      { tech: 1, magic: 5, occGroup: 'mythic', popMul: 0.8, structures: ['sacred grove','oracle pool','sky bridge','ancestor hall','flame altar','dream gate','warding stones','spirit well'] },
+};
+
+// ─── WORLD GENERATOR ───
+class WorldGenerator {
+  constructor(rng, era, region) {
+    this.rng = rng;
+    this.era = era;
+    this.region = region;
+    this.cfg = ERA_CONFIG[era];
+  }
+
+  generateName(style) {
+    const pool = style || this.rng.pick(['hard','soft','exotic','ancient']);
+    const syls = LEX.syllables[pool];
+    const count = this.rng.nextInt(2, 3);
+    let name = '';
+    for (let i = 0; i < count; i++) name += this.rng.pick(syls);
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  }
+
+  generatePlaceName() {
+    if (this.rng.chance(0.4)) {
+      return this.rng.pick(LEX.placePrefix) + this.rng.pick(LEX.placeSuffix);
+    }
+    if (this.rng.chance(0.3)) {
+      return this.generateName() + "'s " + this.rng.pick(['Rest','Crossing','Landing','End','Promise','Folly','Watch','Gift']);
+    }
+    return 'The ' + this.rng.pick(['Old','New','Lower','Upper','East','West','North','South','Inner','Outer']) + ' ' + this.rng.pick(['Quarter','Ward','District','Settlement','Outpost','Camp','Hamlet','Clearing']);
+  }
+
+  generateNPC(locationId) {
+    const rng = this.rng;
+    const style = rng.pick(['hard','soft','exotic','ancient']);
+    const name = this.generateName(style);
+    const occ = rng.pick(LEX.occupations[this.cfg.occGroup]);
+    const traitPair = rng.pick(LEX.traits);
+    const primary = rng.pick(traitPair);
+    const traitPair2 = rng.pick(LEX.traits.filter(t => t !== traitPair));
+    const secondary = rng.pick(traitPair2);
+    const motivation = rng.pick(LEX.motivations);
+    const age = rng.nextInt(16, 70);
+    const gender = rng.pick(['male','female','nonbinary']);
+
+    // Generate a personal detail/secret
+    const secrets = [
+      `is hiding from someone in their past`,
+      `knows the location of something valuable`,
+      `carries a burden of guilt`,
+      `is not who they claim to be`,
+      `has a forbidden loyalty`,
+      `possesses knowledge that could change things`,
+      `lost something they desperately want back`,
+      `is planning to leave soon`,
+      `made a deal they regret`,
+      `witnessed something they cannot speak of`,
+      `is slowly dying of a hidden affliction`,
+      `protects someone in secret`,
+    ];
+
+    // Disposition toward strangers
+    const disposition = rng.nextInt(-3, 3); // -3 hostile to 3 friendly
+
+    // Dialogue style
+    const styles = ['terse','verbose','poetic','blunt','nervous','warm','cold','sarcastic','formal','folksy'];
+
+    return {
+      id: 'npc_' + rng.nextInt(10000,99999),
+      name, occupation: occ, age, gender,
+      traits: [primary, secondary],
+      motivation,
+      secret: rng.pick(secrets),
+      disposition,
+      dialogueStyle: rng.pick(styles),
+      trust: 0, // earned through interaction
+      met: false,
+      locationId,
+      state: 'idle', // idle, working, sleeping, traveling, agitated
+      inventory: this._npcInventory(occ),
+      knowledge: [], // things they know that player might learn
+    };
+  }
+
+  _npcInventory(occ) {
+    const rng = this.rng;
+    const base = {
+      farmer: ['hoe','bread','waterskin'],
+      blacksmith: ['hammer','tongs','iron ingot'],
+      healer: ['herb pouch','bandages','salve'],
+      merchant: ['coins','ledger','sample goods'],
+      guard: ['spear','shield','whistle'],
+      hunter: ['bow','knife','dried meat','trap'],
+      innkeeper: ['key ring','mug','coin purse'],
+      shaman: ['totem','herbs','bone dice'],
+      scout: ['rope','waterskin','signal mirror'],
+    };
+    const items = base[occ] || [rng.pick(['pouch','tool','ration','trinket'])];
+    return [...items];
+  }
+
+  generateLocation(parentId, type) {
+    const rng = this.rng;
+    const name = this.generatePlaceName();
+    const structures = [];
+    const structCount = rng.nextInt(2, 6);
+    const available = [...this.cfg.structures];
+    for (let i = 0; i < structCount && available.length; i++) {
+      const idx = Math.floor(rng.next() * available.length);
+      structures.push(available.splice(idx, 1)[0]);
+    }
+
+    const atmo = rng.pick(LEX.atmosphere);
+    const smell = rng.pick(LEX.senses.smell);
+    const sound = rng.pick(LEX.senses.sound);
+
+    // Points of interest
+    const pois = [];
+    if (rng.chance(0.6)) pois.push(this._generatePOI());
+    if (rng.chance(0.3)) pois.push(this._generatePOI());
+
+    const locId = 'loc_' + rng.nextInt(10000,99999);
+
+    // Generate NPCs for this location
+    const npcCount = Math.max(1, Math.round(rng.nextInt(1, 5) * this.cfg.popMul));
+    const npcs = [];
+    for (let i = 0; i < npcCount; i++) {
+      npcs.push(this.generateNPC(locId));
+    }
+
+    return {
+      id: locId,
+      name, type: type || this.region,
+      structures,
+      atmosphere: atmo,
+      senses: { smell, sound, texture: rng.pick(LEX.senses.texture) },
+      pois,
+      npcs,
+      parentId,
+      exits: {}, // populated during connection phase
+      discovered: {},
+      events: [],
+      resources: this._locationResources(),
+    };
+  }
+
+  _generatePOI() {
+    const rng = this.rng;
+    const types = [
+      { name: 'a weathered monument', interactable: true, detail: 'Its inscription is worn but partially legible.' },
+      { name: 'a strange marking on the ground', interactable: true, detail: 'It seems deliberately placed.' },
+      { name: 'an abandoned structure', interactable: true, detail: 'Something was left behind inside.' },
+      { name: 'a natural formation', interactable: false, detail: 'It dominates the area with its presence.' },
+      { name: 'signs of recent activity', interactable: true, detail: 'Someone was here not long ago.' },
+      { name: 'a hidden alcove', interactable: true, detail: 'It could conceal something—or someone.' },
+      { name: 'a water source', interactable: true, detail: 'The water appears clear, though its depth is uncertain.' },
+      { name: 'scattered remains', interactable: true, detail: 'They tell a story, if you care to read it.' },
+    ];
+    const poi = rng.pick(types);
+    return { ...poi, examined: false, id: 'poi_' + rng.nextInt(10000,99999) };
+  }
+
+  _locationResources() {
+    const rng = this.rng;
+    const res = {};
+    if (rng.chance(0.5)) res.food = rng.pick(['berries','roots','wild game','fish','grain','mushrooms']);
+    if (rng.chance(0.3)) res.material = rng.pick(['wood','stone','iron','clay','reeds','bone','scrap']);
+    if (rng.chance(0.2)) res.special = rng.pick(['herbs','crystals','old writings','ancient relics','rare ore','strange fluid']);
+    return res;
+  }
+
+  generateWorld() {
+    const rng = this.rng;
+
+    // Create 5-8 connected locations
+    const locCount = rng.nextInt(5, 8);
+    const locations = {};
+    const locIds = [];
+
+    for (let i = 0; i < locCount; i++) {
+      const loc = this.generateLocation(null);
+      locations[loc.id] = loc;
+      locIds.push(loc.id);
+    }
+
+    // Connect locations with directional exits
+    const dirs = ['north','south','east','west'];
+    const opp = { north:'south', south:'north', east:'west', west:'east' };
+    for (let i = 0; i < locIds.length; i++) {
+      const connections = rng.nextInt(1, Math.min(3, locIds.length - 1));
+      let made = Object.keys(locations[locIds[i]].exits).length;
+      for (let c = 0; c < connections && made < 4; c++) {
+        const targetIdx = rng.nextInt(0, locIds.length - 1);
+        if (targetIdx === i) continue;
+        const dir = rng.pick(dirs.filter(d => !locations[locIds[i]].exits[d]));
+        if (!dir) continue;
+        const oppDir = opp[dir];
+        if (locations[locIds[targetIdx]].exits[oppDir]) continue;
+        locations[locIds[i]].exits[dir] = locIds[targetIdx];
+        locations[locIds[targetIdx]].exits[oppDir] = locIds[i];
+        made++;
+      }
+    }
+
+    // Ensure connectivity — every location has at least 1 exit
+    for (const id of locIds) {
+      if (Object.keys(locations[id].exits).length === 0) {
+        const other = rng.pick(locIds.filter(x => x !== id));
+        const dir = rng.pick(dirs.filter(d => !locations[id].exits[d]));
+        const oppDir = opp[dir];
+        if (!locations[other].exits[oppDir]) {
+          locations[id].exits[dir] = other;
+          locations[other].exits[oppDir] = id;
+        } else {
+          const altDir = rng.pick(dirs.filter(d => !locations[id].exits[d]));
+          locations[id].exits[altDir] = other;
+        }
+      }
+    }
+
+    // Generate region-wide lore
+    const lore = this._generateLore();
+
+    return {
+      locations,
+      startingLocation: locIds[0],
+      lore,
+      factions: this._generateFactions(locations),
+      globalEvents: [],
+      calendar: { day: 1, hour: 8, season: rng.pick(['spring','summer','autumn','winter']) },
+    };
+  }
+
+  _generateLore() {
+    const rng = this.rng;
+    const legends = [
+      () => `Long ago, a ${rng.pick(['great','terrible','forgotten'])} ${rng.pick(['war','plague','cataclysm','migration','betrayal'])} shaped this land. The people still ${rng.pick(['remember','fear','celebrate','deny','argue about'])} it.`,
+      () => `There is said to be a ${rng.pick(['hidden','lost','cursed','sacred','forbidden'])} ${rng.pick(['place','artifact','creature','knowledge','path'])} somewhere in the region. ${rng.pick(['Many have searched.','Few believe it.','Some have died trying.','It changes those who find it.','It may be just a story.'])}`,
+      () => `The ${rng.pick(['oldest','wisest','most feared','most revered'])} figure in local memory was ${this.generateName()}, who ${rng.pick(['united the people','destroyed something precious','discovered a secret','vanished without explanation','made a sacrifice no one understood'])}.`,
+    ];
+    return rng.shuffle(legends).slice(0, rng.nextInt(2,3)).map(fn => fn());
+  }
+
+  _generateFactions(locations) {
+    const rng = this.rng;
+    const count = rng.nextInt(2, 4);
+    const factions = [];
+    const fTypes = ['order','guild','cult','family','militia','circle','alliance','syndicate','council','brotherhood'];
+    for (let i = 0; i < count; i++) {
+      factions.push({
+        name: 'The ' + this.generateName() + ' ' + rng.pick(fTypes),
+        goal: rng.pick(LEX.motivations),
+        power: rng.nextInt(1, 5),
+        attitude: rng.pick(['expansionist','defensive','secretive','benevolent','oppressive','neutral']),
+        territory: rng.pick(Object.keys(locations)),
+      });
+    }
+    return factions;
+  }
+}
+
+// ─── NATURAL LANGUAGE PARSER ───
+class Parser {
+  constructor() {
+    this.verbs = this._buildVerbMap();
+    this.lastTargets = { npc: null, item: null, poi: null, direction: null };
+  }
+
+  _buildVerbMap() {
+    return {
+      // Movement
+      go:       { intent: 'move', aliases: ['go','walk','move','travel','head','run','leave','proceed','wander','venture','trek','journey','flee','sprint','crawl','climb'] },
+      north:    { intent: 'move_dir', dir: 'north', aliases: ['north','n'] },
+      south:    { intent: 'move_dir', dir: 'south', aliases: ['south','s'] },
+      east:     { intent: 'move_dir', dir: 'east', aliases: ['east','e'] },
+      west:     { intent: 'move_dir', dir: 'west', aliases: ['west','w'] },
+
+      // Observation
+      look:     { intent: 'look', aliases: ['look','examine','inspect','observe','study','survey','scan','check','peer','gaze','search','investigate','watch','view'] },
+      smell:    { intent: 'sense', sense: 'smell', aliases: ['smell','sniff','inhale'] },
+      listen:   { intent: 'sense', sense: 'sound', aliases: ['listen','hear'] },
+      touch:    { intent: 'sense', sense: 'texture', aliases: ['touch','feel'] },
+
+      // Interaction
+      talk:     { intent: 'talk', aliases: ['talk','speak','ask','tell','say','greet','hail','call','whisper','shout','yell','converse','question','chat','address','interrogate'] },
+      take:     { intent: 'take', aliases: ['take','grab','pick','collect','steal','pocket','loot','get','acquire','gather','harvest'] },
+      give:     { intent: 'give', aliases: ['give','offer','hand','present','trade','share','donate','pass'] },
+      use:      { intent: 'use', aliases: ['use','activate','open','close','push','pull','turn','toggle','apply','wield','drink','eat','consume','light','unlock'] },
+      attack:   { intent: 'attack', aliases: ['attack','fight','hit','strike','stab','shoot','punch','kick','swing','throw','assault','ambush'] },
+      hide:     { intent: 'hide', aliases: ['hide','sneak','crouch','lurk','conceal','evade','duck','stealth'] },
+
+      // Self
+      inventory:{ intent: 'inventory', aliases: ['inventory','items','bag','pockets','belongings','i','inv','carrying'] },
+      status:   { intent: 'status', aliases: ['status','health','self','me','condition','stats','hp'] },
+      rest:     { intent: 'rest', aliases: ['rest','sleep','camp','nap','meditate','sit','recover','wait'] },
+      help:     { intent: 'help', aliases: ['help','commands','hint','?','h','what','how'] },
+      map:      { intent: 'map', aliases: ['map','exits','directions','where','paths','routes','navigate'] },
+    };
+  }
+
+  parse(input, worldState) {
+    const raw = input.trim().toLowerCase();
+    if (!raw) return { intent: 'empty' };
+
+    const tokens = raw.replace(/[^a-z0-9' -]/g, '').split(/\s+/);
+
+    // 1. Check for direct direction commands
+    for (const dir of ['north','south','east','west','n','s','e','w']) {
+      if (tokens[0] === dir || (tokens.length === 1 && raw === dir)) {
+        const fullDir = { n:'north', s:'south', e:'east', w:'west' }[dir] || dir;
+        this.lastTargets.direction = fullDir;
+        return { intent: 'move_dir', direction: fullDir };
+      }
+    }
+
+    // 2. Extract verb
+    let verb = null;
+    let verbDef = null;
+    for (const [key, def] of Object.entries(this.verbs)) {
+      if (def.aliases.includes(tokens[0])) {
+        verb = key;
+        verbDef = def;
+        break;
+      }
+    }
+
+    // 3. If no verb matched, try to infer intent from context
+    if (!verb) {
+      // Check if it's a name (talking to someone)
+      const npcs = worldState.currentNPCs || [];
+      const npcMatch = npcs.find(n => raw.includes(n.name.toLowerCase()));
+      if (npcMatch) {
+        this.lastTargets.npc = npcMatch;
+        return { intent: 'talk', target: npcMatch, dialogue: raw };
+      }
+
+      // Check if it's a freeform statement (just say it aloud)
+      if (tokens.length > 2) {
+        return { intent: 'say_aloud', text: input.trim() };
+      }
+
+      return { intent: 'unknown', raw: input.trim() };
+    }
+
+    // 4. Build result
+    const result = { intent: verbDef.intent, raw: input.trim() };
+
+    // For move_dir already handled
+    if (verbDef.intent === 'move_dir') {
+      result.direction = verbDef.dir;
+      this.lastTargets.direction = verbDef.dir;
+      return result;
+    }
+
+    // 5. Extract target from remaining tokens
+    const rest = tokens.slice(1).join(' ');
+
+    // Direction extraction for movement
+    if (result.intent === 'move') {
+      for (const dir of ['north','south','east','west']) {
+        if (rest.includes(dir)) {
+          result.direction = dir;
+          this.lastTargets.direction = dir;
+          return result;
+        }
+      }
+      // Check for location name
+      const locs = worldState.currentExits || {};
+      for (const [dir, locId] of Object.entries(locs)) {
+        const loc = worldState.locations[locId];
+        if (loc && rest.includes(loc.name.toLowerCase())) {
+          result.direction = dir;
+          return result;
+        }
+      }
+      // If they just said "go" with no direction, report exits
+      if (!rest) {
+        result.intent = 'map';
+        return result;
+      }
+      result.target = rest;
+      return result;
+    }
+
+    // NPC matching
+    if (['talk','give','attack'].includes(result.intent)) {
+      const npcs = worldState.currentNPCs || [];
+      const npcMatch = npcs.find(n =>
+        rest.includes(n.name.toLowerCase()) ||
+        rest.includes(n.occupation.toLowerCase())
+      );
+      if (npcMatch) {
+        result.target = npcMatch;
+        this.lastTargets.npc = npcMatch;
+      } else if (this.lastTargets.npc && (rest === 'them' || rest === 'him' || rest === 'her' || rest === '' || rest === 'again')) {
+        result.target = this.lastTargets.npc;
+      }
+
+      // Extract what to say/give
+      const aboutIdx = rest.indexOf(' about ');
+      if (aboutIdx > -1) result.topic = rest.slice(aboutIdx + 7);
+
+      // Try to capture quoted speech or the rest as dialogue
+      const quoteMatch = input.match(/["'](.+?)["']/);
+      if (quoteMatch) result.dialogue = quoteMatch[1];
+      else if (result.intent === 'talk' && rest && !result.target) result.dialogue = rest;
+
+      return result;
+    }
+
+    // POI/item matching
+    if (['look','use','take'].includes(result.intent)) {
+      result.target = rest || null;
+      if (rest === 'around' || rest === 'here' || rest === '') {
+        result.intent = result.intent === 'look' ? 'look_around' : result.intent;
+      }
+      return result;
+    }
+
+    // Sense
+    if (result.intent === 'sense') {
+      result.sense = verbDef.sense;
+      return result;
+    }
+
+    result.target = rest || null;
+    return result;
+  }
+}
+
+// ─── NARRATIVE COMPOSITOR ───
+class Narrator {
+  constructor(rng, era, region) {
+    this.rng = rng;
+    this.era = era;
+    this.region = region;
+  }
+
+  describeLocation(loc, weather, time, firstVisit) {
+    const r = this.rng;
+    const parts = [];
+
+    // Opening — place name and first impression
+    if (firstVisit) {
+      const approaches = [
+        `You arrive at <em>${loc.name}</em>.`,
+        `Before you lies <em>${loc.name}</em>.`,
+        `The path opens into <em>${loc.name}</em>.`,
+        `You find yourself at <em>${loc.name}</em>.`,
+        `<em>${loc.name}</em> spreads before you.`,
+      ];
+      parts.push(r.pick(approaches));
+    } else {
+      parts.push(`You are at <em>${loc.name}</em>.`);
+    }
+
+    // Atmosphere and weather
+    const timeStr = this._timeOfDay(time);
+    parts.push(`The ${timeStr} carries a ${loc.atmosphere} quality. ${weather}.`);
+
+    // Structures
+    if (loc.structures.length > 0) {
+      const structs = loc.structures;
+      if (structs.length === 1) {
+        parts.push(`A ${structs[0]} stands here.`);
+      } else if (structs.length === 2) {
+        parts.push(`You can see a ${structs[0]} and a ${structs[1]}.`);
+      } else {
+        const listed = structs.slice(0, -1).map(s => `a ${s}`).join(', ');
+        parts.push(`The area holds ${listed}, and a ${structs[structs.length-1]}.`);
+      }
+    }
+
+    // Senses
+    parts.push(`The air smells of ${loc.senses.smell}. You hear ${loc.senses.sound}.`);
+
+    // POIs
+    for (const poi of loc.pois) {
+      if (!poi.examined) {
+        parts.push(`You notice ${poi.name}.`);
+      }
+    }
+
+    // NPCs present
+    const visibleNPCs = loc.npcs.filter(n => n.state !== 'sleeping' || time.hour >= 6 && time.hour < 22);
+    if (visibleNPCs.length > 0) {
+      const npcDescs = visibleNPCs.map(n => {
+        if (!n.met) return `a ${n.occupation}`;
+        return `${n.name} the ${n.occupation}`;
+      });
+      if (npcDescs.length === 1) {
+        parts.push(`${npcDescs[0].charAt(0).toUpperCase() + npcDescs[0].slice(1)} is here.`);
+      } else {
+        parts.push(`Present are ${npcDescs.slice(0,-1).join(', ')} and ${npcDescs[npcDescs.length-1]}.`);
+      }
+    }
+
+    // Exits
+    const exits = Object.keys(loc.exits);
+    if (exits.length > 0) {
+      parts.push(`Paths lead ${exits.join(', ')}.`);
+    }
+
+    return parts.join(' ');
+  }
+
+  _timeOfDay(time) {
+    const h = time.hour;
+    if (h < 5) return 'deep night';
+    if (h < 7) return 'early dawn';
+    if (h < 9) return 'morning light';
+    if (h < 12) return 'midmorning';
+    if (h < 14) return 'midday sun';
+    if (h < 17) return 'afternoon';
+    if (h < 19) return 'golden hour';
+    if (h < 21) return 'dusk';
+    return 'night air';
+  }
+
+  describeNPCMeeting(npc) {
+    const r = this.rng;
+    const gp = { male: 'He', female: 'She', nonbinary: 'They' }[npc.gender];
+    const gp2 = { male: 'his', female: 'her', nonbinary: 'their' }[npc.gender];
+
+    const ageDesc = npc.age < 20 ? 'young' : npc.age < 35 ? '' : npc.age < 55 ? 'weathered' : 'elderly';
+
+    const appears = [
+      `${gp} appears ${npc.traits[0]} and somewhat ${npc.traits[1]}.`,
+      `There is something ${npc.traits[0]} in ${gp2} bearing, tempered by a ${npc.traits[1]} edge.`,
+      `${gp} carries ${gp2}self with a ${npc.traits[0]} air.`,
+    ];
+
+    return `This is ${npc.name}, a${ageDesc ? ' ' + ageDesc : ''} ${npc.occupation}. ${r.pick(appears)}`;
+  }
+
+  generateNPCDialogue(npc, topic, playerTrust) {
+    const r = this.rng;
+    const trust = npc.trust + playerTrust;
+    const style = npc.dialogueStyle;
+
+    // Build response based on disposition, trust, style, and topic
+    let response = '';
+    const name = npc.name;
+
+    // Greeting if first interaction
+    const greetings = {
+      terse:    [`"What."`, `"Speak."`, `"Hmm?"`],
+      verbose:  [`"Ah, a visitor! It has been some time since anyone new passed through these parts. Tell me, what brings you?"`, `"Well now, this is unexpected. Please, do tell me why you've come."`],
+      poetic:   [`"The wind brings strangers, and strangers bring change."`, `"Another soul walks the path. Welcome, traveler."`],
+      blunt:    [`"You want something, or are you just standing there?"`, `"State your business."`],
+      nervous:  [`"Oh! I didn't— I didn't see you there. Can I... help you?"`, `"You're not— you're not here to cause trouble, are you?"`],
+      warm:     [`"Welcome, friend. What can I do for you?"`, `"Come, sit. You look like you've been traveling."`],
+      cold:     [`"I have little time for pleasantries."`, `"Make it quick."`],
+      sarcastic:[`"Oh wonderful, another face I'll have to remember."`, `"Let me guess— you need something."`],
+      formal:   [`"Greetings. How may I be of service?"`, `"I bid you welcome. State your purpose, if you please."`],
+      folksy:   [`"Well hey there! Don't get many visitors round here."`, `"Pull up a seat, friend. What's on your mind?"`],
+    };
+
+    const greeting = r.pick(greetings[style] || greetings.warm);
+
+    // Topic responses
+    if (topic) {
+      const topicLower = topic.toLowerCase();
+
+      // About themselves
+      if (topicLower.includes('you') || topicLower.includes('yourself') || topicLower.includes('your')) {
+        if (trust > 1) {
+          response = this._wrapStyle(style, `I'm a ${npc.occupation}. Been here a while now. ${this._motivationLine(npc)}`, r);
+        } else {
+          response = this._wrapStyle(style, `I'm just a ${npc.occupation}. Nothing more to tell.`, r);
+        }
+      }
+      // About the area
+      else if (topicLower.includes('place') || topicLower.includes('area') || topicLower.includes('here') || topicLower.includes('town') || topicLower.includes('around')) {
+        response = this._wrapStyle(style, this._areaKnowledge(npc, r), r);
+      }
+      // About danger/trouble
+      else if (topicLower.includes('danger') || topicLower.includes('trouble') || topicLower.includes('threat') || topicLower.includes('warning')) {
+        if (trust > 0) {
+          response = this._wrapStyle(style, r.pick([
+            `There are things out there best avoided. Not everything wants to be found.`,
+            `Keep your wits about you, especially at night. The ${r.pick(['roads','paths','edges','shadows'])} aren't safe.`,
+            `I've heard tell of ${r.pick(['bandits','strange creatures','disappearances','unrest','sickness'])} not far from here.`,
+          ]), r);
+        } else {
+          response = this._wrapStyle(style, `I don't share that kind of talk with strangers.`, r);
+        }
+      }
+      // About rumors/secrets
+      else if (topicLower.includes('rumor') || topicLower.includes('secret') || topicLower.includes('news') || topicLower.includes('gossip') || topicLower.includes('hear')) {
+        if (trust > 2) {
+          response = this._wrapStyle(style, npc.secret.charAt(0).toUpperCase() + npc.secret.slice(1) + `. But you didn't hear that from me.`, r);
+        } else if (trust > 0) {
+          response = this._wrapStyle(style, r.pick([
+            `People talk, but half of it's nonsense. I've heard ${r.pick(['whispers','murmurs','stories'])} though.`,
+            `There's always something going on beneath the surface. Give me a reason to trust you, maybe I'll share.`,
+          ]), r);
+        } else {
+          response = this._wrapStyle(style, `We don't share our business with outsiders.`, r);
+        }
+      }
+      // About directions/travel
+      else if (topicLower.includes('direction') || topicLower.includes('way') || topicLower.includes('path') || topicLower.includes('travel') || topicLower.includes('road')) {
+        response = this._wrapStyle(style, r.pick([
+          `The paths here branch in several directions. Choose carefully— not all lead where you'd expect.`,
+          `If you're heading out, mind the ${r.pick(['weather','terrain','time of day'])}. It matters more than you'd think.`,
+          `I'd suggest the ${r.pick(['north','east','south','west'])} path if you're looking for ${r.pick(['safety','supplies','answers','trouble'])}.`,
+        ]), r);
+      }
+      // About work/trade
+      else if (topicLower.includes('work') || topicLower.includes('trade') || topicLower.includes('buy') || topicLower.includes('sell') || topicLower.includes('job')) {
+        response = this._wrapStyle(style, r.pick([
+          `I might have something you could help with. Depends on what you're willing to do.`,
+          `Trade's been ${r.pick(['slow','fair','dangerous','unpredictable'])} lately. But there's always demand for the right goods.`,
+          `A ${npc.occupation} always needs ${r.pick(['supplies','reliable help','new contacts','raw materials'])}. You offering?`,
+        ]), r);
+      }
+      // Generic
+      else {
+        response = this._wrapStyle(style, r.pick([
+          `I don't know much about that, I'm afraid.`,
+          `Can't say I have anything useful on that subject.`,
+          `That's beyond my knowing. Try asking around.`,
+          `Hmm. You're asking the wrong person.`,
+        ]), r);
+      }
+    }
+
+    if (!response) response = greeting;
+    return { speaker: name, text: response };
+  }
+
+  _wrapStyle(style, content, r) {
+    switch(style) {
+      case 'terse': return `"${content.split('.')[0]}."`;
+      case 'verbose': return `"${content} ${r.pick(['You see, it\'s quite a thing.','There\'s more to it, of course.','I could go on, but...'])}"`;
+      case 'poetic': return `"${content.replace(/\./g, '—').replace(/—$/, '.')}"`;
+      case 'nervous': return `"${content.replace(/\./g, '...')} ${r.pick(['I think.','Maybe.','Don\'t quote me.','Is that okay?'])}"`;
+      default: return `"${content}"`;
+    }
+  }
+
+  _motivationLine(npc) {
+    const motMap = {
+      power: 'What I want is simple— to have enough strength that nobody decides my fate.',
+      knowledge: 'I seek understanding. There are things in this world worth knowing.',
+      survival: 'Every day above ground is a good day. That\'s all I ask.',
+      revenge: 'I have unfinished business. Let\'s leave it at that.',
+      love: 'There\'s someone... someone who matters more than anything.',
+      redemption: 'I\'ve done things I\'m not proud of. Trying to make it right.',
+      duty: 'I serve something greater than myself. Always have.',
+      freedom: 'Walls, rules, chains— I can\'t abide them. Never could.',
+      wealth: 'Money opens doors. I intend to open all of them.',
+      legacy: 'I want to build something that outlasts me.',
+      faith: 'I follow a path not everyone can see. But it\'s there.',
+      curiosity: 'I just need to know. About everything.',
+      escape: 'I\'m running from something. Or maybe toward something. Hard to tell.',
+      justice: 'Wrong is wrong. Someone has to stand against it.',
+      glory: 'I want my name remembered.',
+      peace: 'I\'m tired of conflict. I just want quiet.',
+    };
+    return motMap[npc.motivation] || 'I have my reasons.';
+  }
+
+  _areaKnowledge(npc, r) {
+    return r.pick([
+      `This place has a history. Layers of it, built on top of each other. The ${r.pick(['walls','ground','air','silence'])} remembers.`,
+      `It's ${r.pick(['quieter','busier','stranger','more dangerous'])} than it used to be. Things change. Not always for the better.`,
+      `There's a ${r.pick(['pattern','rhythm','tension','balance'])} to this place. Spend enough time and you'll feel it.`,
+      `People come, people go. The land stays. That's the only truth here.`,
+    ]);
+  }
+
+  describeMovement(fromLoc, toLoc, direction) {
+    const r = this.rng;
+    const transitions = [
+      `You head ${direction}. The landscape shifts as ${fromLoc.name} falls behind you.`,
+      `Moving ${direction}, you leave ${fromLoc.name} and the terrain gradually changes.`,
+      `The ${direction} path carries you away from ${fromLoc.name}.`,
+      `You take the ${direction} route. The air changes; something feels different here.`,
+    ];
+    return r.pick(transitions);
+  }
+
+  describeAction(action, success, context) {
+    const r = this.rng;
+    if (action === 'rest') {
+      return r.pick([
+        'You find a relatively sheltered spot and rest. Time passes. You feel somewhat recovered.',
+        'You settle down and close your eyes for a while. The world continues around you.',
+        'Rest comes slowly, but it comes. When you rise, the light has shifted.',
+      ]);
+    }
+    if (action === 'hide') {
+      if (success) {
+        return r.pick([
+          'You find concealment and press yourself into the shadows. The world moves past without noticing you.',
+          'You slip out of sight. For now, you are invisible.',
+        ]);
+      }
+      return 'There is nowhere adequate to hide here. You remain exposed.';
+    }
+    if (action === 'take') {
+      if (success) return `You take the ${context}.`;
+      return `You can't take that.`;
+    }
+    return '';
+  }
+
+  describeExamine(poi) {
+    return `You examine ${poi.name} more closely. ${poi.detail}`;
+  }
+
+  describeCombat(attacker, defender, outcome) {
+    const r = this.rng;
+    if (outcome === 'hit') {
+      return r.pick([
+        `Your strike connects. ${defender.name || 'The target'} staggers.`,
+        `The blow lands true. ${defender.name || 'They'} reel from the impact.`,
+      ]);
+    }
+    if (outcome === 'miss') {
+      return r.pick([
+        `Your attack misses. ${defender.name || 'They'} sidestep${defender.name ? 's' : ''} with unexpected quickness.`,
+        `The strike goes wide. An opening presents itself— but not for you.`,
+      ]);
+    }
+    if (outcome === 'flee') {
+      return `${defender.name || 'They'} break${defender.name ? 's' : ''} away and flee${defender.name ? 's' : ''} from the confrontation.`;
+    }
+    if (outcome === 'hostile') {
+      return `${defender.name} turns hostile! ${{ male:'He',female:'She',nonbinary:'They' }[defender.gender]} readies for a fight.`;
+    }
+    return '';
+  }
+}
+
+// ─── SIMULATION ENGINE ───
+class Simulation {
+  constructor(rng, world) {
+    this.rng = rng;
+    this.world = world;
+    this.tickCount = 0;
+  }
+
+  tick(hours = 1) {
+    const cal = this.world.calendar;
+    cal.hour += hours;
+    while (cal.hour >= 24) {
+      cal.hour -= 24;
+      cal.day++;
+      // Season change every 30 days
+      if (cal.day % 30 === 0) {
+        const seasons = ['spring','summer','autumn','winter'];
+        const idx = seasons.indexOf(cal.season);
+        cal.season = seasons[(idx + 1) % 4];
+      }
+    }
+    this.tickCount++;
+
+    // NPC state updates
+    for (const loc of Object.values(this.world.locations)) {
+      for (const npc of loc.npcs) {
+        this._tickNPC(npc, cal);
+      }
+    }
+
+    // Possible world events
+    if (this.rng.chance(0.08)) {
+      return this._worldEvent();
+    }
+    return null;
+  }
+
+  _tickNPC(npc, cal) {
+    const r = this.rng;
+    // Sleep cycle
+    if (cal.hour >= 22 || cal.hour < 6) {
+      npc.state = 'sleeping';
+    } else if (cal.hour >= 6 && cal.hour < 8) {
+      npc.state = r.pick(['idle','working']);
+    } else if (cal.hour < 18) {
+      npc.state = r.chance(0.7) ? 'working' : 'idle';
+    } else {
+      npc.state = 'idle';
+    }
+
+    // Small chance of NPC moving locations
+    if (r.chance(0.02) && npc.state !== 'sleeping') {
+      const currentLoc = this.world.locations[npc.locationId];
+      if (currentLoc) {
+        const exits = Object.values(currentLoc.exits);
+        if (exits.length > 0) {
+          const newLocId = r.pick(exits);
+          // Move NPC
+          currentLoc.npcs = currentLoc.npcs.filter(n => n.id !== npc.id);
+          npc.locationId = newLocId;
+          this.world.locations[newLocId].npcs.push(npc);
+          npc.state = 'traveling';
+        }
+      }
+    }
+  }
+
+  _worldEvent() {
+    const r = this.rng;
+    const events = [
+      `Distant sounds carry on the wind — something is happening beyond the horizon.`,
+      `The weather shifts abruptly. The air feels charged with possibility.`,
+      `A column of smoke rises in the distance. Its source is unclear.`,
+      `Birds scatter from the ${r.pick(['north','south','east','west'])} in sudden alarm.`,
+      `The ground trembles faintly. It passes quickly, but the unease lingers.`,
+      `A stranger is spotted on the edge of the area, but vanishes before anyone can approach.`,
+      `An unusual sound echoes through the region — ${r.pick(['a horn','a bell','a cry','thunder','singing'])}.`,
+      `Something in the air changes. A new season seems to be asserting itself.`,
+    ];
+    return r.pick(events);
+  }
+
+  getWeather(region) {
+    const pool = LEX.weatherBase[region] || LEX.weatherBase.temperate;
+    return this.rng.pick(pool);
+  }
+
+  getTimeString(cal) {
+    const period = cal.hour < 6 ? 'night' : cal.hour < 12 ? 'morning' : cal.hour < 18 ? 'afternoon' : 'evening';
+    const h = cal.hour % 12 || 12;
+    const ampm = cal.hour < 12 ? 'AM' : 'PM';
+    return `Day ${cal.day}, ${h}:00 ${ampm} · ${cal.season}`;
+  }
+}
+
+// ─── PLAYER STATE ───
+class Player {
+  constructor(name, role) {
+    this.name = name || 'Stranger';
+    this.role = role || 'wanderer';
+    this.health = 100;
+    this.maxHealth = 100;
+    this.stamina = 100;
+    this.inventory = this._startingInventory(role);
+    this.locationId = null;
+    this.reputation = 0; // -10 to 10
+    this.hidden = false;
+    this.knownNPCs = new Set();
+    this.visitedLocations = new Set();
+    this.flags = {};
+    this.log = [];
+  }
+
+  _startingInventory(role) {
+    const roleItems = {
+      wanderer: ['worn cloak','waterskin','flint'],
+      healer: ['herb pouch','bandages','mortar','clean water'],
+      thief: ['lockpick','dark cloak','dagger','rope'],
+      soldier: ['short sword','leather armor','rations','shield'],
+      scholar: ['journal','charcoal pen','small knife','tinderbox'],
+      merchant: ['coin purse','ledger','trade samples','donkey lead'],
+    };
+    // Match keywords in role to preset, or default
+    const r = role.toLowerCase();
+    for (const [key, items] of Object.entries(roleItems)) {
+      if (r.includes(key)) return [...items];
+    }
+    return ['worn pack','waterskin','flint'];
+  }
+
+  takeDamage(amount) {
+    this.health = Math.max(0, this.health - amount);
+    return this.health;
+  }
+
+  heal(amount) {
+    this.health = Math.min(this.maxHealth, this.health + amount);
+    return this.health;
+  }
+
+  rest() {
+    this.stamina = Math.min(100, this.stamina + 30);
+    this.health = Math.min(this.maxHealth, this.health + 10);
+  }
+}
+
+// ─── GAME ENGINE ───
+class GenesisEngine {
+  constructor() {
+    this.rng = null;
+    this.world = null;
+    this.player = null;
+    this.narrator = null;
+    this.parser = new Parser();
+    this.sim = null;
+    this.ui = null;
+  }
+
+  init(config) {
+    const seed = config.seed || 'genesis-' + Date.now();
+    this.rng = new PRNG(seed);
+
+    // Generate world
+    const gen = new WorldGenerator(this.rng.fork('world'), config.era, config.region);
+    this.world = gen.generateWorld();
+
+    // Create player
+    this.player = new Player(config.name, config.role);
+    this.player.locationId = this.world.startingLocation;
+    this.player.visitedLocations.add(this.world.startingLocation);
+
+    // Systems
+    this.narrator = new Narrator(this.rng.fork('narrate'), config.era, config.region);
+    this.sim = new Simulation(this.rng.fork('sim'), this.world);
+
+    this.eraName = config.era;
+    this.regionName = config.region;
+
+    return this;
+  }
+
+  getCurrentLocation() {
+    return this.world.locations[this.player.locationId];
+  }
+
+  getWorldState() {
+    const loc = this.getCurrentLocation();
+    return {
+      currentNPCs: loc.npcs,
+      currentExits: loc.exits,
+      locations: this.world.locations,
+      player: this.player,
+    };
+  }
+
+  processInput(input) {
+    const parsed = this.parser.parse(input, this.getWorldState());
+    const results = [];
+
+    switch (parsed.intent) {
+      case 'move_dir':
+      case 'move':
+        results.push(...this._handleMove(parsed));
+        break;
+      case 'look_around':
+        results.push(...this._handleLookAround());
+        break;
+      case 'look':
+        results.push(...this._handleLook(parsed));
+        break;
+      case 'sense':
+        results.push(...this._handleSense(parsed));
+        break;
+      case 'talk':
+        results.push(...this._handleTalk(parsed));
+        break;
+      case 'take':
+        results.push(...this._handleTake(parsed));
+        break;
+      case 'use':
+        results.push(...this._handleUse(parsed));
+        break;
+      case 'attack':
+        results.push(...this._handleAttack(parsed));
+        break;
+      case 'hide':
+        results.push(...this._handleHide());
+        break;
+      case 'inventory':
+        results.push(...this._handleInventory());
+        break;
+      case 'status':
+        results.push(...this._handleStatus());
+        break;
+      case 'rest':
+        results.push(...this._handleRest());
+        break;
+      case 'map':
+        results.push(...this._handleMap());
+        break;
+      case 'help':
+        results.push(...this._handleHelp());
+        break;
+      case 'say_aloud':
+        results.push(...this._handleSayAloud(parsed));
+        break;
+      case 'give':
+        results.push(...this._handleGive(parsed));
+        break;
+      case 'unknown':
+        results.push(...this._handleUnknown(parsed));
+        break;
+      case 'empty':
+        break;
+      default:
+        results.push({ type: 'narrator', text: 'You pause, uncertain of what to do.' });
+    }
+
+    // Tick simulation
+    const tickHours = ['rest','move','move_dir'].includes(parsed.intent) ? this.rng.nextInt(1,2) : 0.5;
+    const worldEvent = this.sim.tick(tickHours);
+    if (worldEvent) {
+      results.push({ type: 'env', text: worldEvent });
+    }
+
+    return results;
+  }
+
+  _handleMove(parsed) {
+    const loc = this.getCurrentLocation();
+    const dir = parsed.direction;
+
+    if (!dir) {
+      // Try to match target to a direction or location
+      if (parsed.target) {
+        for (const [d, id] of Object.entries(loc.exits)) {
+          const targetLoc = this.world.locations[id];
+          if (targetLoc && targetLoc.name.toLowerCase().includes(parsed.target.toLowerCase())) {
+            return this._doMove(d);
+          }
+        }
+      }
+      const exits = Object.keys(loc.exits);
+      if (exits.length === 0) return [{ type: 'narrator', text: 'There are no paths leading from here.' }];
+      return [{ type: 'narrator', text: `Paths lead ${exits.join(', ')}. Which direction?` }];
+    }
+
+    return this._doMove(dir);
+  }
+
+  _doMove(dir) {
+    const loc = this.getCurrentLocation();
+    const targetId = loc.exits[dir];
+
+    if (!targetId) {
+      return [{ type: 'narrator', text: `There is no path to the ${dir}.` }];
+    }
+
+    const targetLoc = this.world.locations[targetId];
+    const firstVisit = !this.player.visitedLocations.has(targetId);
+
+    // Move
+    const moveDesc = this.narrator.describeMovement(loc, targetLoc, dir);
+    this.player.locationId = targetId;
+    this.player.visitedLocations.add(targetId);
+    this.player.stamina = Math.max(0, this.player.stamina - 5);
+
+    const weather = this.sim.getWeather(this.regionName);
+    const arriveDesc = this.narrator.describeLocation(targetLoc, weather, this.world.calendar, firstVisit);
+
+    return [
+      { type: 'env', text: moveDesc },
+      { type: 'narrator', text: arriveDesc },
+    ];
+  }
+
+  _handleLookAround() {
+    const loc = this.getCurrentLocation();
+    const weather = this.sim.getWeather(this.regionName);
+    return [{ type: 'narrator', text: this.narrator.describeLocation(loc, weather, this.world.calendar, false) }];
+  }
+
+  _handleLook(parsed) {
+    const loc = this.getCurrentLocation();
+    const target = (parsed.target || '').toLowerCase();
+
+    if (!target || target === 'around' || target === 'here') {
+      return this._handleLookAround();
+    }
+
+    // Look at NPC
+    const npc = loc.npcs.find(n =>
+      n.name.toLowerCase().includes(target) ||
+      n.occupation.toLowerCase().includes(target)
+    );
+    if (npc) {
+      npc.met = true;
+      this.player.knownNPCs.add(npc.id);
+      return [{ type: 'narrator', text: this.narrator.describeNPCMeeting(npc) }];
+    }
+
+    // Look at POI
+    const poi = loc.pois.find(p => p.name.toLowerCase().includes(target));
+    if (poi) {
+      poi.examined = true;
+      return [{ type: 'narrator', text: this.narrator.describeExamine(poi) }];
+    }
+
+    // Look at structure
+    const struct = loc.structures.find(s => s.toLowerCase().includes(target));
+    if (struct) {
+      const r = this.rng;
+      return [{ type: 'narrator', text: `You examine the ${struct}. ${r.pick([
+        'It shows signs of regular use.',
+        'It has seen better days, but remains functional.',
+        'There is something about it that draws your attention.',
+        'It appears typical for this area, though not without character.',
+        'Up close, you notice small details — marks of the people who built and used it.',
+      ])}` }];
+    }
+
+    // Look at inventory item
+    const item = this.player.inventory.find(i => i.toLowerCase().includes(target));
+    if (item) {
+      return [{ type: 'narrator', text: `You examine your ${item}. It's seen some use, but it serves its purpose.` }];
+    }
+
+    return [{ type: 'narrator', text: `You look for "${parsed.target}" but nothing in particular catches your eye.` }];
+  }
+
+  _handleSense(parsed) {
+    const loc = this.getCurrentLocation();
+    const sense = parsed.sense;
+    const val = loc.senses[sense];
+    const descriptions = {
+      smell: `You breathe deeply. The scent of ${val} fills your awareness.`,
+      sound: `You close your eyes and listen. ${val.charAt(0).toUpperCase() + val.slice(1)}.`,
+      texture: `You reach out. ${val.charAt(0).toUpperCase() + val.slice(1)} meets your hand.`,
+    };
+    return [{ type: 'narrator', text: descriptions[sense] || `You focus your senses.` }];
+  }
+
+  _handleTalk(parsed) {
+    const loc = this.getCurrentLocation();
+    let npc = parsed.target;
+
+    // If target is a string, find the NPC
+    if (typeof npc === 'string' || !npc) {
+      const search = (typeof npc === 'string' ? npc : parsed.raw || '').toLowerCase();
+      npc = loc.npcs.find(n =>
+        search.includes(n.name.toLowerCase()) ||
+        search.includes(n.occupation.toLowerCase())
+      );
+    }
+
+    if (!npc) {
+      // Default to first visible NPC
+      const visible = loc.npcs.filter(n => n.state !== 'sleeping');
+      if (visible.length === 0) return [{ type: 'narrator', text: 'There is no one here to speak with.' }];
+      if (visible.length === 1) {
+        npc = visible[0];
+      } else {
+        return [{ type: 'narrator', text: `Who do you want to talk to? Present are: ${visible.map(n => n.met ? n.name : 'a ' + n.occupation).join(', ')}.` }];
+      }
+    }
+
+    // Mark as met
+    if (!npc.met) {
+      npc.met = true;
+      this.player.knownNPCs.add(npc.id);
+    }
+
+    // Check if sleeping
+    if (npc.state === 'sleeping') {
+      return [{ type: 'narrator', text: `${npc.name} is asleep. You could wait, or wake them — though that might not be well received.` }];
+    }
+
+    // Generate dialogue
+    const topic = parsed.topic || parsed.dialogue || null;
+    const dialogue = this.narrator.generateNPCDialogue(npc, topic, this.player.reputation);
+
+    // Increase trust slightly with each interaction
+    npc.trust = Math.min(5, npc.trust + 0.3);
+
+    const results = [];
+    results.push({ type: 'npc', speaker: dialogue.speaker, text: dialogue.text });
+    return results;
+  }
+
+  _handleTake(parsed) {
+    const loc = this.getCurrentLocation();
+    const target = (parsed.target || '').toLowerCase();
+
+    if (!target) return [{ type: 'narrator', text: 'Take what?' }];
+
+    // Resources
+    for (const [key, val] of Object.entries(loc.resources)) {
+      if (target.includes(val.toLowerCase()) || target.includes(key)) {
+        this.player.inventory.push(val);
+        delete loc.resources[key];
+        return [{ type: 'narrator', text: this.narrator.describeAction('take', true, val) }];
+      }
+    }
+
+    // POI items (if examined)
+    const poi = loc.pois.find(p => p.examined && p.interactable && p.name.toLowerCase().includes(target));
+    if (poi) {
+      const itemName = this.rng.pick(['old trinket','worn token','small artifact','curious fragment','etched stone','sealed letter']);
+      this.player.inventory.push(itemName);
+      poi.interactable = false;
+      return [{ type: 'narrator', text: `You retrieve a ${itemName} from ${poi.name}.` }];
+    }
+
+    return [{ type: 'narrator', text: `There is nothing you can take by that name.` }];
+  }
+
+  _handleUse(parsed) {
+    const target = (parsed.target || '').toLowerCase();
+    if (!target) return [{ type: 'narrator', text: 'Use what?' }];
+
+    const item = this.player.inventory.find(i => i.toLowerCase().includes(target));
+    if (!item) return [{ type: 'narrator', text: `You don't have anything like that.` }];
+
+    // Context-sensitive use
+    const r = this.rng;
+    if (item.includes('bandage') || item.includes('salve') || item.includes('herb')) {
+      this.player.heal(15);
+      this.player.inventory = this.player.inventory.filter(i => i !== item);
+      return [{ type: 'narrator', text: `You apply the ${item}. Some of your wounds mend. Health restored slightly.` }];
+    }
+    if (item.includes('ration') || item.includes('bread') || item.includes('meat') || item.includes('food') || item.includes('berries')) {
+      this.player.stamina = Math.min(100, this.player.stamina + 20);
+      this.player.inventory = this.player.inventory.filter(i => i !== item);
+      return [{ type: 'narrator', text: `You eat the ${item}. Hunger fades. You feel somewhat restored.` }];
+    }
+    if (item.includes('water') || item.includes('drink')) {
+      this.player.stamina = Math.min(100, this.player.stamina + 10);
+      return [{ type: 'narrator', text: `You drink from the ${item}. The thirst eases.` }];
+    }
+    if (item.includes('flint') || item.includes('tinderbox')) {
+      return [{ type: 'narrator', text: `You strike a small flame. The light holds, at least for a while. It could be useful.` }];
+    }
+    return [{ type: 'narrator', text: `You turn the ${item} over in your hands, but nothing immediate comes of using it here.` }];
+  }
+
+  _handleAttack(parsed) {
+    const loc = this.getCurrentLocation();
+    let npc = parsed.target;
+
+    if (typeof npc === 'string' || !npc) {
+      const search = (typeof npc === 'string' ? npc : '').toLowerCase();
+      npc = loc.npcs.find(n =>
+        search.includes(n.name.toLowerCase()) ||
+        search.includes(n.occupation.toLowerCase())
+      );
+    }
+
+    if (!npc) {
+      const visible = loc.npcs.filter(n => n.state !== 'sleeping');
+      if (visible.length === 0) return [{ type: 'narrator', text: 'There is no one here to fight.' }];
+      return [{ type: 'narrator', text: 'Attack whom?' }];
+    }
+
+    const r = this.rng;
+    const results = [];
+
+    // Combat resolution
+    const playerSkill = this.player.inventory.some(i => i.includes('sword') || i.includes('dagger') || i.includes('bow') || i.includes('spear')) ? 0.6 : 0.35;
+    const hit = r.chance(playerSkill);
+
+    if (hit) {
+      results.push({ type: 'narrator', text: this.narrator.describeCombat(this.player, npc, 'hit') });
+      // NPC might flee or fight back
+      if (r.chance(0.4)) {
+        results.push({ type: 'narrator', text: this.narrator.describeCombat(this.player, npc, 'flee') });
+        // Remove NPC from location
+        loc.npcs = loc.npcs.filter(n => n.id !== npc.id);
+      } else {
+        // NPC fights back
+        const dmg = r.nextInt(5, 20);
+        this.player.takeDamage(dmg);
+        results.push({ type: 'narrator', text: `${npc.name} retaliates. You take a blow. (-${dmg} health)` });
+      }
+    } else {
+      results.push({ type: 'narrator', text: this.narrator.describeCombat(this.player, npc, 'miss') });
+      const dmg = r.nextInt(8, 25);
+      this.player.takeDamage(dmg);
+      results.push({ type: 'narrator', text: `${npc.name} counterattacks fiercely. (-${dmg} health)` });
+    }
+
+    // Reputation hit
+    this.player.reputation = Math.max(-10, this.player.reputation - 2);
+    npc.trust = Math.max(-5, npc.trust - 3);
+    npc.disposition = Math.max(-3, npc.disposition - 2);
+
+    // Check player death
+    if (this.player.health <= 0) {
+      results.push({ type: 'system', text: '— Your vision darkens. The world fades. —' });
+      results.push({ type: 'narrator', text: 'You have fallen. The world moves on without you, indifferent to your passing. But every ending is also a beginning — if you choose to see it that way.' });
+      results.push({ type: 'system', text: 'GAME OVER — Refresh to begin a new world.' });
+    }
+
+    return results;
+  }
+
+  _handleHide() {
+    const loc = this.getCurrentLocation();
+    const hasCover = loc.structures.length > 0 || loc.pois.length > 0;
+    const success = hasCover && this.rng.chance(0.7);
+    this.player.hidden = success;
+    return [{ type: 'narrator', text: this.narrator.describeAction('hide', success) }];
+  }
+
+  _handleInventory() {
+    const inv = this.player.inventory;
+    if (inv.length === 0) return [{ type: 'system', text: 'You carry nothing.' }];
+    return [{ type: 'system', text: `You are carrying: ${inv.join(', ')}.` }];
+  }
+
+  _handleStatus() {
+    const p = this.player;
+    const healthDesc = p.health > 80 ? 'healthy' : p.health > 50 ? 'bruised' : p.health > 25 ? 'wounded' : 'critically injured';
+    const staminaDesc = p.stamina > 70 ? 'well-rested' : p.stamina > 40 ? 'somewhat tired' : 'exhausted';
+    const repDesc = p.reputation > 3 ? 'well-regarded' : p.reputation > -1 ? 'unknown' : p.reputation > -5 ? 'mistrusted' : 'feared';
+
+    return [{ type: 'system', text: `${p.name} — ${p.role}\nHealth: ${p.health}/${p.maxHealth} (${healthDesc})\nStamina: ${p.stamina}/100 (${staminaDesc})\nReputation: ${repDesc}\nPlaces visited: ${p.visitedLocations.size}` }];
+  }
+
+  _handleRest() {
+    this.player.rest();
+    const desc = this.narrator.describeAction('rest', true);
+    return [
+      { type: 'narrator', text: desc },
+      { type: 'system', text: `Health: ${this.player.health}/${this.player.maxHealth} · Stamina: ${this.player.stamina}/100` },
+    ];
+  }
+
+  _handleMap() {
+    const loc = this.getCurrentLocation();
+    const exits = loc.exits;
+    const lines = [`You are at <em>${loc.name}</em>.`];
+    if (Object.keys(exits).length === 0) {
+      lines.push('There are no obvious paths from here.');
+    } else {
+      for (const [dir, id] of Object.entries(exits)) {
+        const target = this.world.locations[id];
+        const visited = this.player.visitedLocations.has(id);
+        lines.push(`${dir.charAt(0).toUpperCase() + dir.slice(1)}: ${visited ? target.name : 'Unknown territory'}`);
+      }
+    }
+    return [{ type: 'system', text: lines.join('\n') }];
+  }
+
+  _handleHelp() {
+    return [{ type: 'system', text: `Speak naturally. Some things you can do:\n• Move: "go north", "head east", or just "north"\n• Look: "look around", "examine the monument", "look at the merchant"\n• Talk: "talk to the healer", "ask about rumors", "tell them about the fire"\n• Take: "take the herbs", "grab the stone"\n• Use: "use bandages", "eat bread", "drink water"\n• Fight: "attack the guard"\n• Hide: "hide", "sneak"\n• Rest: "rest", "sleep", "wait"\n• Status: "status", "inventory", "map"\n\nThere are no fixed commands. Try anything.` }];
+  }
+
+  _handleSayAloud(parsed) {
+    const loc = this.getCurrentLocation();
+    const visible = loc.npcs.filter(n => n.state !== 'sleeping');
+    const results = [];
+
+    results.push({ type: 'env', text: `Your words hang in the air.` });
+
+    // Any NPC might react
+    if (visible.length > 0 && this.rng.chance(0.5)) {
+      const responder = this.rng.pick(visible);
+      if (!responder.met) {
+        responder.met = true;
+        this.player.knownNPCs.add(responder.id);
+      }
+      const dialogue = this.narrator.generateNPCDialogue(responder, parsed.text, this.player.reputation);
+      results.push({ type: 'npc', speaker: dialogue.speaker, text: dialogue.text });
+    }
+
+    return results;
+  }
+
+  _handleGive(parsed) {
+    const loc = this.getCurrentLocation();
+    let npc = parsed.target;
+
+    if (typeof npc === 'string' || !npc) {
+      const search = (typeof npc === 'string' ? npc : '').toLowerCase();
+      npc = loc.npcs.find(n =>
+        search.includes(n.name.toLowerCase()) ||
+        search.includes(n.occupation.toLowerCase())
+      );
+    }
+    if (!npc) return [{ type: 'narrator', text: 'Give to whom?' }];
+
+    // Find item to give
+    const words = parsed.raw.toLowerCase();
+    const item = this.player.inventory.find(i => words.includes(i.toLowerCase()));
+    if (!item) return [{ type: 'narrator', text: `What would you like to give?` }];
+
+    this.player.inventory = this.player.inventory.filter(i => i !== item);
+    npc.inventory.push(item);
+    npc.trust = Math.min(5, npc.trust + 1);
+    this.player.reputation = Math.min(10, this.player.reputation + 0.5);
+
+    const r = this.rng;
+    const reactions = [
+      `${npc.name} accepts the ${item}. Something shifts in their expression.`,
+      `${npc.name} takes the ${item}, weighing it carefully. "This... thank you."`,
+      `${npc.name} receives the ${item} with a nod of acknowledgment.`,
+    ];
+    return [{ type: 'narrator', text: r.pick(reactions) }];
+  }
+
+  _handleUnknown(parsed) {
+    const r = this.rng;
+    const responses = [
+      `You consider it, but aren't sure how to proceed. Perhaps try something more specific.`,
+      `The impulse doesn't translate into clear action. What exactly do you want to do?`,
+      `You hesitate. The world waits. Try looking around, or talking to someone.`,
+    ];
+    return [{ type: 'narrator', text: r.pick(responses) }];
+  }
+
+  getEntryNarration() {
+    const loc = this.getCurrentLocation();
+    const weather = this.sim.getWeather(this.regionName);
+    const results = [];
+
+    // Lore introduction
+    const r = this.rng;
+    const eraIntros = {
+      prehistoric: 'Before language carved names into memory, before walls rose to divide the earth—',
+      ancient:     'In an age when empires were young and the gods felt close—',
+      classical:   'In the age of philosophy and conquest, where ideas moved as swiftly as armies—',
+      medieval:    'In a time of crowns and cathedrals, where faith and steel shaped the world—',
+      renaissance: 'At the dawn of rediscovery, when old knowledge sparked new fire—',
+      industrial:  'Amid the roar of engines and the fog of progress—',
+      modern:      'In a world of wonders and contradictions, where everything moves too fast—',
+      nearfuture:  'In the years after the great shift, when humanity reached further than ever—',
+      farfuture:   'Across distances that would have been incomprehensible to the ancients—',
+      postapoc:    'After everything fell apart—after the fires, the silence, the long nothing—',
+      mythic:      'In a world where the boundary between mortal and divine is thin as breath—',
+    };
+
+    results.push({ type: 'system', text: `— ${eraIntros[this.eraName]} —` });
+
+    // Player introduction
+    const roleDesc = this.player.role === 'wanderer'
+      ? `You are ${this.player.name}. No title, no allegiance. Just a body moving through the world.`
+      : `You are ${this.player.name}, a ${this.player.role}. Whatever brought you here, this is where the path has led.`;
+
+    results.push({ type: 'narrator', text: roleDesc });
+
+    // World lore hint
+    if (this.world.lore.length > 0) {
+      results.push({ type: 'env', text: this.world.lore[0] });
+    }
+
+    // Location description
+    results.push({ type: 'narrator', text: this.narrator.describeLocation(loc, weather, this.world.calendar, true) });
+
+    return results;
+  }
+}
+
+
+// ═══════════════ UI CONTROLLER ═══════════════
+const $ = id => document.getElementById(id);
+let engine = null;
+
+// Setup screen
+$('btn-dice').addEventListener('click', () => {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let seed = '';
+  for (let i = 0; i < 8; i++) seed += chars[Math.floor(Math.random() * chars.length)];
+  $('cfg-seed').value = seed;
+});
+
+// Auto-generate initial seed
+$('btn-dice').click();
+
+$('btn-begin').addEventListener('click', startGame);
+
+function startGame() {
+  const config = {
+    era: $('cfg-era').value,
+    region: $('cfg-region').value,
+    role: $('cfg-role').value.trim() || 'wanderer',
+    name: $('cfg-name').value.trim() || 'Stranger',
+    seed: $('cfg-seed').value.trim() || 'default',
+  };
+
+  engine = new GenesisEngine();
+  engine.init(config);
+
+  // Switch screens
+  $('setup-screen').classList.add('hidden');
+  $('chat-screen').classList.add('active');
+
+  // Set header
+  $('hdr-title').textContent = config.name;
+  updateHeader();
+
+  // Entry narration
+  const msgs = engine.getEntryNarration();
+  let delay = 0;
+  for (const msg of msgs) {
+    setTimeout(() => addMessage(msg), delay);
+    delay += 400;
+  }
+}
+
+function updateHeader() {
+  if (!engine) return;
+  const timeStr = engine.sim.getTimeString(engine.world.calendar);
+  const hp = engine.player.health;
+  $('hdr-info').innerHTML = `${timeStr}<br>♥ ${hp}`;
+}
+
+function addMessage(msg) {
+  const container = $('messages');
+  const div = document.createElement('div');
+
+  switch (msg.type) {
+    case 'system':
+      div.className = 'msg msg-system';
+      div.innerHTML = msg.text.replace(/\n/g, '<br>');
+      break;
+    case 'narrator':
+      div.className = 'msg msg-narrator';
+      div.innerHTML = `<span class="msg-source">Narrator</span><span class="msg-text">${msg.text}</span>`;
+      break;
+    case 'env':
+      div.className = 'msg msg-env';
+      div.innerHTML = msg.text;
+      break;
+    case 'npc':
+      div.className = 'msg msg-npc';
+      div.innerHTML = `<span class="msg-source">${msg.speaker}</span><span class="msg-text">${msg.text}</span>`;
+      break;
+    case 'player':
+      div.className = 'msg msg-player';
+      div.innerHTML = `<span class="msg-text">${msg.text}</span>`;
+      break;
+  }
+
+  container.appendChild(div);
+  requestAnimationFrame(() => {
+    container.scrollTop = container.scrollHeight;
+  });
+}
+
+// Input handling
+const input = $('input');
+const sendBtn = $('btn-send');
+
+function handleSend() {
+  const text = input.value.trim();
+  if (!text || !engine) return;
+  if (engine.player.health <= 0) return;
+
+  // Show player message
+  addMessage({ type: 'player', text });
+  input.value = '';
+  input.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  // Show brief typing indicator
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'msg msg-narrator';
+  typingDiv.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  $('messages').appendChild(typingDiv);
+  $('messages').scrollTop = $('messages').scrollHeight;
+
+  // Process after slight delay for natural feel
+  setTimeout(() => {
+    typingDiv.remove();
+    const results = engine.processInput(text);
+    let delay = 0;
+    for (const msg of results) {
+      setTimeout(() => {
+        addMessage(msg);
+        updateHeader();
+      }, delay);
+      delay += 250;
+    }
+    sendBtn.disabled = false;
+  }, 300 + Math.random() * 400);
+}
+
+sendBtn.addEventListener('click', handleSend);
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    handleSend();
+  }
+});
+
+// Auto-resize textarea
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+
+// Prevent iOS zoom on double-tap
+let lastTap = 0;
+document.addEventListener('touchend', (e) => {
+  const now = Date.now();
+  if (now - lastTap < 300) e.preventDefault();
+  lastTap = now;
+}, { passive: false });
+
+// Handle iOS keyboard
+const handleResize = () => {
+  if (document.activeElement === input) {
+    setTimeout(() => {
+      $('messages').scrollTop = $('messages').scrollHeight;
+    }, 300);
+  }
+};
+window.visualViewport?.addEventListener('resize', handleResize);
+</script>
+</body>
+</html>

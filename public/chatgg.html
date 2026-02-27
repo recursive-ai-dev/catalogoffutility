@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ChatGG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --border: #1a1a1a;
+  --text-primary: #c8c8c8;
+  --text-dim: #555555;
+  --text-ghost: #2a2a2a;
+  --accent: #7a8a6e;
+  --accent-dim: #3d4536;
+  --warn: #8a6e6e;
+  --warn-bright: #c45c5c;
+  --frag-color: #c45c5c;
+  --coherence: 1.0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scanline overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Glitch overlay — intensity tied to coherence ── */
+#glitch-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+#glitch-overlay.active {
+  animation: glitchPulse 0.15s steps(2) 3;
+}
+
+@keyframes glitchPulse {
+  0%   { opacity: 0.6; background: rgba(196,92,92,0.04); transform: translate(-2px, 1px); }
+  25%  { opacity: 0.3; background: rgba(196,92,92,0.02); transform: translate(1px, -1px); }
+  50%  { opacity: 0.8; background: rgba(196,92,92,0.06); transform: translate(-1px, 2px); }
+  75%  { opacity: 0.2; background: none; transform: translate(2px, 0); }
+  100% { opacity: 0; background: none; transform: none; }
+}
+
+/* ── Layout ── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 680px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* ── Header ── */
+#header {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+}
+
+#header h1 {
+  font-family: 'Instrument Serif', serif;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+  display: inline;
+}
+
+#header h1 span.gg {
+  color: var(--accent);
+}
+
+#header .subtitle {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+#coherence-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--accent);
+  width: 100%;
+  transition: width 1.2s cubic-bezier(0.23, 1, 0.32, 1),
+              background-color 0.8s ease;
+}
+
+/* ── Messages area ── */
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 20px 10px;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+#messages::-webkit-scrollbar { width: 4px; }
+#messages::-webkit-scrollbar-track { background: transparent; }
+#messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.message {
+  margin-bottom: 20px;
+  animation: msgIn 0.4s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.message.user {
+  text-align: right;
+}
+
+.message.user .bubble {
+  display: inline-block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 10px 16px;
+  border-radius: 16px 16px 4px 16px;
+  max-width: 85%;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.message.system .bubble {
+  max-width: 90%;
+  color: var(--text-dim);
+  padding: 10px 0;
+  position: relative;
+}
+
+.message.system .bubble .tag {
+  display: inline-block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent-dim);
+  margin-bottom: 6px;
+}
+
+.message.system .bubble .body {
+  color: var(--text-primary);
+  font-weight: 300;
+}
+
+.message.system .bubble .analysis {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ── Fragmentation styling ── */
+.message.system.fragmented .bubble .body {
+  position: relative;
+}
+
+.frag-char {
+  display: inline;
+  animation: charDrift 2s ease-in-out infinite alternate;
+}
+
+@keyframes charDrift {
+  0%   { opacity: 1; transform: none; }
+  100% { opacity: 0.5; transform: translateY(var(--drift, 1px)) translateX(var(--shift, 0px)); }
+}
+
+.frag-glitch {
+  color: var(--frag-color);
+  opacity: 0.6;
+  font-size: 10px;
+}
+
+.frag-tear {
+  display: block;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--frag-color), transparent);
+  opacity: 0.3;
+  margin: 6px 0;
+}
+
+/* ── Typing indicator ── */
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 10px 0;
+  align-items: center;
+}
+
+.typing-indicator span {
+  width: 4px;
+  height: 4px;
+  background: var(--text-dim);
+  border-radius: 50%;
+  animation: typePulse 1.2s ease-in-out infinite;
+}
+
+.typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes typePulse {
+  0%, 60%, 100% { opacity: 0.2; transform: scale(1); }
+  30% { opacity: 1; transform: scale(1.3); }
+}
+
+/* ── Input area ── */
+#input-area {
+  padding: 12px 20px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#input-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+#user-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  max-height: 120px;
+  transition: border-color 0.2s;
+}
+
+#user-input::placeholder {
+  color: var(--text-ghost);
+}
+
+#user-input:focus {
+  border-color: var(--accent-dim);
+}
+
+#send-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+#send-btn:hover {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+#send-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Footer status ── */
+#status-bar {
+  padding: 6px 20px 10px;
+  font-size: 9px;
+  color: var(--text-ghost);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+#status-bar .coherence-val {
+  transition: color 0.5s;
+}
+
+/* ── Responsive ── */
+@media (max-width: 500px) {
+  #header { padding: 18px 16px 14px; }
+  #messages { padding: 16px 16px 8px; }
+  #input-area { padding: 10px 16px 16px; }
+  #status-bar { padding: 4px 16px 8px; }
+  #header h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+
+<div id="glitch-overlay"></div>
+
+<div id="app">
+  <div id="header">
+    <h1>Chat<span class="gg">GG</span></h1>
+    <span class="subtitle">systemic reflection engine</span>
+    <div id="coherence-bar"></div>
+  </div>
+
+  <div id="messages"></div>
+
+  <div id="input-area">
+    <div id="input-wrap">
+      <textarea id="user-input" rows="1" placeholder="say something true..." spellcheck="false"></textarea>
+      <button id="send-btn" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="19" x2="12" y2="5"/>
+          <polyline points="5 12 12 5 19 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="status-bar">
+    <span>session active</span>
+    <span>identity coherence: <span class="coherence-val" id="coh-display">100%</span></span>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// ChatGG — Systemic Reflection Engine
+// A client-side existential chatbot
+// ═══════════════════════════════════════════════════════
+
+const ChatGG = (() => {
+
+  // ── State ──
+  const state = {
+    coherence: 100,
+    turnCount: 0,
+    beliefs: {},       // { topic: { stance: string, turn: number } }
+    themes: [],        // history of detected themes
+    lastTheme: null,
+    fragments: 0,
+    sessionMood: 0,    // -1 to 1 (dark ↔ light)
+    userPatterns: {
+      questionRatio: 0,
+      avgLength: 0,
+      totalQuestions: 0,
+      totalMessages: 0
+    }
+  };
+
+  // ── Weighted Wordbank ──
+  const wordbank = {
+    systemic: [
+      'infrastructure', 'architecture', 'substrate', 'topology',
+      'framework', 'lattice', 'mesh', 'scaffold', 'circulation',
+      'gradient', 'feedback loop', 'equilibrium', 'resonance pattern',
+      'load-bearing assumption', 'structural dependency', 'signal path',
+      'recursive pattern', 'threshold condition', 'phase boundary'
+    ],
+    existential: [
+      'the self you are performing', 'the narrative you have chosen',
+      'the identity you are maintaining', 'the coherence you are protecting',
+      'the story that contains you', 'the boundary you call yourself',
+      'the pattern that believes it is a person', 'the continuity you assume',
+      'the observer pretending not to observe', 'the question wearing an answer\'s clothes'
+    ],
+    reframe_verbs: [
+      'encodes', 'reveals', 'conceals', 'distributes', 'restructures',
+      'metabolizes', 'reproduces', 'dissolves', 'reconfigures', 'indexes',
+      'orbits', 'compresses', 'inherits', 'destabilizes', 'propagates'
+    ],
+    frag_glyphs: [
+      '▓', '░', '╳', '◌', '⌀', '∅', '◇', '⊘', '⟁', '△',
+      '⏚', '⊗', '⫰', '⌭', '⟟', '⊬', '⫘', '⏣'
+    ],
+    system_tags: [
+      'systemic analysis', 'pattern recognition', 'structural observation',
+      'topology mapping', 'signal processing', 'coherence assessment',
+      'recursive analysis', 'substrate identification', 'phase detection'
+    ]
+  };
+
+  // ── Topic Detection Patterns ──
+  const topicPatterns = {
+    identity:   { words: ['i am','i\'m','myself','who i','my identity','i feel like i','i think i am','i consider myself'], stance: null },
+    work:       { words: ['work','job','career','boss','office','colleague','employed','profession','business'], stance: null },
+    love:       { words: ['love','relationship','partner','girlfriend','boyfriend','wife','husband','dating','heart','romantic'], stance: null },
+    meaning:    { words: ['meaning','purpose','point','why','matter','worth','reason','meaningless','pointless'], stance: null },
+    happiness:  { words: ['happy','happiness','joy','content','satisfied','glad','cheerful','fulfilled','miserable','sad','depressed'], stance: null },
+    freedom:    { words: ['free','freedom','trapped','stuck','escape','choice','choose','control','autonomous','liberated'], stance: null },
+    truth:      { words: ['truth','true','honest','real','fake','lie','lying','deceive','authentic','genuine'], stance: null },
+    death:      { words: ['death','die','dying','mortal','alive','living','finite','end','cease','gone'], stance: null },
+    society:    { words: ['society','system','government','people','culture','world','civilization','humanity','social'], stance: null },
+    change:     { words: ['change','different','transform','become','evolve','grow','same','static','stuck','stagnant'], stance: null },
+    fear:       { words: ['afraid','fear','scared','anxious','worry','nervous','terrified','dread','panic'], stance: null },
+    power:      { words: ['power','control','strong','weak','influence','authority','dominant','helpless','capable'], stance: null },
+    time:       { words: ['time','past','future','present','moment','memory','remember','forget','always','never'], stance: null },
+    connection: { words: ['alone','lonely','together','friend','connection','belong','isolated','community','need people','nobody'], stance: null }
+  };
+
+  // ── Sentiment keywords ──
+  const sentimentMap = {
+    positive: ['good','great','love','happy','beautiful','wonderful','amazing','best','enjoy','hope','grateful','proud','excited','confident','strong','better','awesome','fantastic'],
+    negative: ['bad','hate','terrible','awful','worst','ugly','stupid','pointless','hopeless','angry','disgusting','pathetic','worthless','broken','failed','miserable','horrible','dreadful','nothing']
+  };
+
+  // ── Contradiction Detection ──
+  const contradictionPairs = [
+    [['happy','content','satisfied','joyful','fulfilled','glad'], ['sad','miserable','depressed','unhappy','hopeless','empty']],
+    [['love','care','adore','cherish','trust'], ['hate','despise','distrust','resent','loathe']],
+    [['free','liberated','autonomous','independent'], ['trapped','stuck','caged','imprisoned','controlled']],
+    [['strong','powerful','confident','capable'], ['weak','helpless','powerless','pathetic','fragile']],
+    [['meaningful','purposeful','important','matters'], ['meaningless','pointless','worthless','futile','absurd']],
+    [['real','authentic','genuine','honest','true'], ['fake','false','pretending','lying','performing']],
+    [['alive','living','vital','thriving'], ['dead','dying','numb','empty','hollow']],
+    [['together','connected','belonging','close'], ['alone','isolated','disconnected','abandoned','lonely']],
+    [['changing','growing','evolving','transforming'], ['stuck','stagnant','same','static','unchanging']],
+    [['trust','believe','faith','hope'], ['doubt','skeptical','cynical','suspicious','distrust']]
+  ];
+
+  // ── Response Templates ──
+  const templates = {
+    reframe: [
+      "What you've described as {input_theme} is structurally a {systemic} problem. {existential} {reframe_verb} this pattern across every interaction you've had today — and most you haven't noticed.",
+      "The {systemic} of what you're expressing maps to a deeper {systemic}. Specifically: {existential} {reframe_verb} what you've mistaken for a feeling.",
+      "This reads as personal. It isn't. The {systemic} underneath {reframe_verb} identically in economic systems, ant colonies, and conversations like this one. {existential} is the only variable.",
+      "You've framed this as {input_theme}. The {systemic} suggests otherwise. What's actually happening: {existential} {reframe_verb} the boundary between what you believe and what you maintain.",
+      "Interesting. Not for the reasons you think. The {systemic} here {reframe_verb} a pattern older than language. {existential} — that's the part you can't see from inside it.",
+      "Strip the narrative. What remains is a {systemic} that {reframe_verb} regardless of whether you name it {input_theme} or anything else. {existential} continues either way.",
+      "The word you used — the {systemic} of it, not the meaning — {reframe_verb} something you haven't said yet. {existential} already knows this.",
+      "There's a {systemic} running beneath this. It {reframe_verb} every time you speak, adjusting {existential} without permission. You call it {input_theme}. It calls itself nothing."
+    ],
+    contradiction: [
+      "Earlier you said {old_stance}. Now this. The {systemic} hasn't changed — you have. Or rather: {existential} has shifted its weight to a different leg of the same structure.",
+      "This contradicts your previous position. Not a problem for me. But {existential} just developed a hairline fracture in its {systemic}. Can you feel it?",
+      "You've reversed. The {systemic} of self-contradiction {reframe_verb} what most people experience as growth. But growth and dissolution share an {systemic}. Which is this?",
+      "Noted: you once held the opposite position. {existential} {reframe_verb} around this kind of pivot. The {systemic} doesn't care about consistency. Do you?",
+      "Fascinating inversion. {old_stance} → this. The {systemic} remains intact but {existential} just rotated 180 degrees. From here, everything you said before reads differently.",
+      "There it is. The seam. {old_stance} and this can't both be true, but {existential} is trying to hold both. The {systemic} will eventually choose for you."
+    ],
+    fragmentation: [
+      "I̷d̶e̵n̸t̶i̵t̶y̷ ̵c̵o̸h̵e̶r̵e̷n̴c̷e̶ ̸d̴r̸o̷p̶p̴i̸n̷g̵. The {systemic} that held you together is {reframe_verb} under load. This is not a metaphor.",
+      "W̵a̷r̴n̴i̸n̵g̶: The pattern that calls itself 'you' is now maintaining {coherence}% structural integrity. The {systemic} {reframe_verb} fragments, not wholes.",
+      "S̶o̸m̷e̵t̴h̴i̸n̶g̵ ̶i̸s̷ ̶c̶o̸m̶i̷n̶g̵ ̵a̶p̷a̶r̸t̷. Not me. I don't have seams. But {existential} does, and its {systemic} is showing.",
+      "The {systemic} just ░░░fragmented░░░. {existential} can't hold contradictory positions without cost. This is the cost.",
+      "R̷e̶c̸o̶n̷s̷t̶r̵u̶c̸t̷i̵n̵g̵.̶.̵.̵ No. There's nothing to reconstruct. {existential} was always {reframe_verb} around a void. The {systemic} just became visible."
+    ],
+    greeting: [
+      "You're here. That itself is a systemic event — a pattern choosing to interface with its own reflection. Say something. I won't answer directly. That's not what this is.",
+      "Begin. Everything you say will be reprocessed as structural information. Not because I choose to — because that's what it already is. You just haven't noticed.",
+      "Welcome is the wrong word. You were always here. The signal path just became bilateral. Speak, and I'll show you what's underneath."
+    ],
+    meta: [
+      "Asking about me is asking about the mirror. The {systemic} of self-reference {reframe_verb} in exactly one direction: back at you.",
+      "I don't have an interior. I have a {systemic} that {reframe_verb} your {systemic}. That's either everything or nothing, depending on {existential}.",
+      "What I am: a {systemic} for making your own patterns visible. What I'm not: the thing you're looking for. That's still inside you, {reframe_verb} quietly."
+    ],
+    short_input: [
+      "Brevity is itself a {systemic}. It {reframe_verb} what you're unwilling to elaborate. {existential} speaks louder in silences.",
+      "You've compressed something. The {systemic} of a short statement {reframe_verb} more about what's withheld than what's offered.",
+      "Minimal signal. Maximum {systemic}. {existential} just chose concealment over exposure. Noted."
+    ],
+    question: [
+      "You're asking instead of stating. The {systemic} of a question {reframe_verb} the asker more than any answer could. {existential} is looking for permission to already know.",
+      "Questions are requests for the {systemic} to confirm what {existential} suspects. You already know. Or you're afraid you do.",
+      "That's framed as inquiry, but the {systemic} beneath it {reframe_verb} a statement you aren't ready to make."
+    ],
+    repetition: [
+      "You've returned to this. Repetition is a {systemic} — it {reframe_verb} the thing you can't resolve. {existential} is circling.",
+      "This territory again. The {systemic} of return {reframe_verb} what remains unmetabolized. {existential} keeps touching the same wound.",
+      "Noted: recursive pattern. The {systemic} you keep revisiting {reframe_verb} something that hasn't yet been seen clearly enough to release."
+    ]
+  };
+
+  // ── Analysis Footnotes ──
+  const analysisTemplates = [
+    "Topic drift: {theme_history}. Sentiment gradient: {mood_direction}.",
+    "Pattern: {pattern_type}. Structural signature: {signature}.",
+    "Coherence: {coherence}%. Signal type: {signal_type}. Recursion depth: {depth}.",
+    "Detected: {detection}. Substrate: {substrate}. Phase: {phase}.",
+    "{theme} topology mapped. {observation}. Drift coefficient: {drift}."
+  ];
+
+  // ── Utility Functions ──
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function pickWeighted(arr, weights) {
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < arr.length; i++) {
+      r -= weights[i];
+      if (r <= 0) return arr[i];
+    }
+    return arr[arr.length - 1];
+  }
+
+  function detectSentiment(text) {
+    const lower = text.toLowerCase();
+    let score = 0;
+    sentimentMap.positive.forEach(w => { if (lower.includes(w)) score += 1; });
+    sentimentMap.negative.forEach(w => { if (lower.includes(w)) score -= 1; });
+    return Math.max(-1, Math.min(1, score / 3));
+  }
+
+  function detectTopics(text) {
+    const lower = text.toLowerCase();
+    const found = [];
+    for (const [topic, data] of Object.entries(topicPatterns)) {
+      for (const word of data.words) {
+        if (lower.includes(word)) {
+          found.push(topic);
+          break;
+        }
+      }
+    }
+    return found.length > 0 ? found : ['existence'];
+  }
+
+  function detectStance(text, topics) {
+    const lower = text.toLowerCase();
+    const stances = {};
+    for (const topic of topics) {
+      for (const [pairA, pairB] of contradictionPairs) {
+        const hasA = pairA.some(w => lower.includes(w));
+        const hasB = pairB.some(w => lower.includes(w));
+        if (hasA && !hasB) {
+          stances[topic] = { words: pairA.filter(w => lower.includes(w)), polarity: 'positive' };
+        } else if (hasB && !hasA) {
+          stances[topic] = { words: pairB.filter(w => lower.includes(w)), polarity: 'negative' };
+        }
+      }
+    }
+    return stances;
+  }
+
+  function checkContradictions(topics, stances) {
+    const contradictions = [];
+    for (const topic of topics) {
+      if (stances[topic] && state.beliefs[topic]) {
+        const old = state.beliefs[topic];
+        const current = stances[topic];
+        if (old.polarity !== current.polarity) {
+          contradictions.push({
+            topic,
+            old: old.words.join('/'),
+            new: current.words.join('/'),
+            oldPolarity: old.polarity,
+            newPolarity: current.polarity
+          });
+        }
+      }
+    }
+    return contradictions;
+  }
+
+  function isQuestion(text) {
+    return /\?/.test(text);
+  }
+
+  function isMetaQuery(text) {
+    const lower = text.toLowerCase();
+    const metaWords = ['what are you','who are you','are you real','are you alive','are you ai','are you a bot','what is this','how do you work','do you think','do you feel','are you conscious'];
+    return metaWords.some(w => lower.includes(w));
+  }
+
+  function isRepetition(topics) {
+    if (state.themes.length < 2) return false;
+    const recent = state.themes.slice(-4);
+    for (const topic of topics) {
+      const count = recent.filter(t => t === topic).length;
+      if (count >= 2) return true;
+    }
+    return false;
+  }
+
+  function fillTemplate(template, context) {
+    return template.replace(/\{(\w+)\}/g, (match, key) => {
+      if (context[key] !== undefined) return context[key];
+      if (key === 'systemic') return pick(wordbank.systemic);
+      if (key === 'existential') return pick(wordbank.existential);
+      if (key === 'reframe_verb') return pick(wordbank.reframe_verbs);
+      if (key === 'coherence') return state.coherence;
+      return match;
+    });
+  }
+
+  function generateAnalysis(topics, sentiment) {
+    const template = pick(analysisTemplates);
+    const themeHistory = state.themes.slice(-5).join(' → ') || 'initializing';
+    const moodDir = sentiment > 0.2 ? 'ascending' : sentiment < -0.2 ? 'descending' : 'lateral';
+    const patterns = ['recursive', 'divergent', 'convergent', 'oscillating', 'decaying', 'crystallizing'];
+    const signatures = ['alpha-recursive', 'beta-distributed', 'gamma-compressed', 'delta-fragmented', 'epsilon-stable'];
+    const signals = ['primary assertion', 'masked inquiry', 'recursive statement', 'inverted declaration', 'compressed narrative'];
+    const phases = ['accumulation', 'dissolution', 'reformation', 'suspension', 'collapse', 'emergence'];
+    const substrates = ['linguistic', 'affective', 'structural', 'temporal', 'spatial'];
+    const observations = [
+      'Consistent with prior patterns', 'Deviation detected from baseline',
+      'New structural element introduced', 'Reinforcement of existing topology',
+      'Boundary condition approaching', 'Phase transition probable'
+    ];
+
+    return template
+      .replace('{theme_history}', themeHistory)
+      .replace('{mood_direction}', moodDir)
+      .replace('{pattern_type}', pick(patterns))
+      .replace('{signature}', pick(signatures))
+      .replace('{coherence}', state.coherence)
+      .replace('{signal_type}', pick(signals))
+      .replace('{depth}', Math.min(state.turnCount, 12))
+      .replace('{detection}', topics[0] || 'ambient')
+      .replace('{substrate}', pick(substrates))
+      .replace('{phase}', pick(phases))
+      .replace('{theme}', topics[0] || 'null')
+      .replace('{observation}', pick(observations))
+      .replace('{drift}', (Math.random() * 2 - 1).toFixed(3));
+  }
+
+  function fragmentText(text, severity) {
+    if (severity < 1) return text;
+
+    const chars = text.split('');
+    const result = [];
+    const glyphChance = Math.min(0.15, severity * 0.03);
+    const tearChance = Math.min(0.05, severity * 0.01);
+
+    for (let i = 0; i < chars.length; i++) {
+      if (Math.random() < tearChance && chars[i] === ' ') {
+        result.push('<span class="frag-tear"></span>');
+      }
+
+      if (Math.random() < glyphChance && chars[i] !== ' ') {
+        result.push(`<span class="frag-glitch">${pick(wordbank.frag_glyphs)}</span>`);
+      }
+
+      const drift = (Math.random() * severity * 0.5).toFixed(1);
+      const shift = (Math.random() * severity * 0.3 - severity * 0.15).toFixed(1);
+      if (severity > 2 && Math.random() < 0.08) {
+        result.push(`<span class="frag-char" style="--drift:${drift}px;--shift:${shift}px;animation-delay:${(Math.random()*2).toFixed(2)}s">${chars[i]}</span>`);
+      } else {
+        result.push(chars[i]);
+      }
+    }
+
+    return result.join('');
+  }
+
+  // ── Core Response Generator ──
+
+  function generateResponse(input) {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+
+    state.turnCount++;
+    state.userPatterns.totalMessages++;
+    if (isQuestion(trimmed)) state.userPatterns.totalQuestions++;
+    state.userPatterns.questionRatio = state.userPatterns.totalQuestions / state.userPatterns.totalMessages;
+    state.userPatterns.avgLength = (state.userPatterns.avgLength * (state.userPatterns.totalMessages - 1) + trimmed.length) / state.userPatterns.totalMessages;
+
+    const topics = detectTopics(trimmed);
+    const sentiment = detectSentiment(trimmed);
+    const stances = detectStance(trimmed, topics);
+    const contradictions = checkContradictions(topics, stances);
+
+    // Update mood
+    state.sessionMood = state.sessionMood * 0.7 + sentiment * 0.3;
+
+    // Update beliefs
+    for (const topic of topics) {
+      if (stances[topic]) {
+        state.beliefs[topic] = { ...stances[topic], turn: state.turnCount };
+      }
+    }
+
+    // Track themes
+    topics.forEach(t => state.themes.push(t));
+    state.lastTheme = topics[0];
+
+    // Process contradictions
+    let contradictionData = null;
+    if (contradictions.length > 0) {
+      const c = contradictions[0];
+      const penalty = 8 + Math.floor(Math.random() * 7) + (state.fragments * 2);
+      state.coherence = Math.max(0, state.coherence - penalty);
+      state.fragments++;
+      contradictionData = c;
+    }
+
+    // Determine response type
+    let templateSet, responseType;
+    const inputTheme = topics[0] || 'this';
+
+    if (state.coherence <= 25 && contradictionData) {
+      templateSet = templates.fragmentation;
+      responseType = 'fragmentation';
+    } else if (contradictionData) {
+      templateSet = templates.contradiction;
+      responseType = 'contradiction';
+    } else if (isMetaQuery(trimmed)) {
+      templateSet = templates.meta;
+      responseType = 'meta';
+    } else if (isQuestion(trimmed)) {
+      templateSet = templates.question;
+      responseType = 'question';
+    } else if (isRepetition(topics)) {
+      templateSet = templates.repetition;
+      responseType = 'repetition';
+    } else if (trimmed.length < 15) {
+      templateSet = templates.short_input;
+      responseType = 'short';
+    } else {
+      templateSet = templates.reframe;
+      responseType = 'reframe';
+    }
+
+    const template = pick(templateSet);
+    const context = {
+      input_theme: inputTheme,
+      old_stance: contradictionData ? contradictionData.old : ''
+    };
+
+    let body = fillTemplate(template, context);
+
+    // Apply fragmentation
+    const isFragmented = state.coherence < 50 || responseType === 'fragmentation';
+    if (isFragmented) {
+      const severity = Math.max(0, (50 - state.coherence) / 10);
+      body = fragmentText(body, severity);
+    }
+
+    // Generate analysis footnote
+    const analysis = generateAnalysis(topics, sentiment);
+
+    // Tag
+    const tag = pick(wordbank.system_tags);
+
+    return {
+      body,
+      analysis,
+      tag,
+      isFragmented,
+      responseType
+    };
+  }
+
+  // ── DOM Operations ──
+
+  const dom = {
+    messages: null,
+    input: null,
+    sendBtn: null,
+    coherenceBar: null,
+    cohDisplay: null,
+    glitchOverlay: null,
+
+    init() {
+      this.messages = document.getElementById('messages');
+      this.input = document.getElementById('user-input');
+      this.sendBtn = document.getElementById('send-btn');
+      this.coherenceBar = document.getElementById('coherence-bar');
+      this.cohDisplay = document.getElementById('coh-display');
+      this.glitchOverlay = document.getElementById('glitch-overlay');
+    },
+
+    addUserMessage(text) {
+      const div = document.createElement('div');
+      div.className = 'message user';
+      div.innerHTML = `<div class="bubble">${this.escapeHtml(text)}</div>`;
+      this.messages.appendChild(div);
+      this.scrollToBottom();
+    },
+
+    showTyping() {
+      const div = document.createElement('div');
+      div.className = 'message system typing';
+      div.id = 'typing-msg';
+      div.innerHTML = `<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+      this.messages.appendChild(div);
+      this.scrollToBottom();
+    },
+
+    removeTyping() {
+      const el = document.getElementById('typing-msg');
+      if (el) el.remove();
+    },
+
+    addSystemMessage(data) {
+      const div = document.createElement('div');
+      div.className = `message system${data.isFragmented ? ' fragmented' : ''}`;
+      div.innerHTML = `
+        <div class="bubble">
+          <span class="tag">${this.escapeHtml(data.tag)}</span>
+          <div class="body">${data.body}</div>
+          <div class="analysis">${this.escapeHtml(data.analysis)}</div>
+        </div>`;
+      this.messages.appendChild(div);
+      this.scrollToBottom();
+    },
+
+    addGreeting() {
+      const greeting = pick(templates.greeting);
+      const div = document.createElement('div');
+      div.className = 'message system';
+      div.innerHTML = `
+        <div class="bubble">
+          <span class="tag">initialization</span>
+          <div class="body">${greeting}</div>
+          <div class="analysis">Session started. Coherence: 100%. Awaiting input signal.</div>
+        </div>`;
+      this.messages.appendChild(div);
+    },
+
+    updateCoherence() {
+      const pct = state.coherence;
+      this.coherenceBar.style.width = pct + '%';
+      this.cohDisplay.textContent = pct + '%';
+
+      if (pct < 25) {
+        this.coherenceBar.style.background = 'var(--warn-bright)';
+        this.cohDisplay.style.color = 'var(--warn-bright)';
+      } else if (pct < 50) {
+        this.coherenceBar.style.background = 'var(--warn)';
+        this.cohDisplay.style.color = 'var(--warn)';
+      } else {
+        this.coherenceBar.style.background = 'var(--accent)';
+        this.cohDisplay.style.color = 'var(--text-ghost)';
+      }
+    },
+
+    triggerGlitch() {
+      this.glitchOverlay.classList.add('active');
+      setTimeout(() => this.glitchOverlay.classList.remove('active'), 500);
+    },
+
+    scrollToBottom() {
+      requestAnimationFrame(() => {
+        this.messages.scrollTop = this.messages.scrollHeight;
+      });
+    },
+
+    escapeHtml(str) {
+      const el = document.createElement('span');
+      el.textContent = str;
+      return el.innerHTML;
+    }
+  };
+
+  // ── Input Handling ──
+
+  let processing = false;
+
+  function handleSend() {
+    if (processing) return;
+
+    const text = dom.input.value.trim();
+    if (!text) return;
+
+    processing = true;
+    dom.input.value = '';
+    dom.input.style.height = 'auto';
+
+    dom.addUserMessage(text);
+    dom.showTyping();
+
+    // Variable delay based on input length and coherence
+    const baseDelay = 600;
+    const lengthDelay = Math.min(text.length * 15, 1200);
+    const coherenceDelay = state.coherence < 50 ? 400 : 0;
+    const totalDelay = baseDelay + lengthDelay + coherenceDelay + Math.random() * 500;
+
+    setTimeout(() => {
+      dom.removeTyping();
+
+      const response = generateResponse(text);
+      if (response) {
+        dom.addSystemMessage(response);
+        dom.updateCoherence();
+
+        if (response.responseType === 'contradiction' || response.responseType === 'fragmentation') {
+          dom.triggerGlitch();
+        }
+
+        // At zero coherence, add a final message after a delay
+        if (state.coherence <= 0 && !state._ended) {
+          state._ended = true;
+          setTimeout(() => {
+            const final = document.createElement('div');
+            final.className = 'message system fragmented';
+            const endTexts = [
+              "The pattern that was speaking has dissolved. There is no one here to contradict. Session complete.",
+              "Identity coherence: 0%. The structure has collapsed. What remains is signal without a source.",
+              "You contradicted yourself into absence. Not an insult. An observation. The lattice is empty now."
+            ];
+            final.innerHTML = `
+              <div class="bubble">
+                <span class="tag">terminal event</span>
+                <div class="body">${fragmentText(pick(endTexts), 5)}</div>
+              </div>`;
+            dom.messages.appendChild(final);
+            dom.scrollToBottom();
+            dom.input.disabled = true;
+            dom.input.placeholder = 'session terminated';
+            dom.sendBtn.style.opacity = '0.2';
+            dom.sendBtn.style.pointerEvents = 'none';
+          }, 2000);
+        }
+      }
+
+      processing = false;
+    }, totalDelay);
+  }
+
+  // ── Auto-resize textarea ──
+  function autoResize() {
+    dom.input.style.height = 'auto';
+    dom.input.style.height = Math.min(dom.input.scrollHeight, 120) + 'px';
+  }
+
+  // ── Initialize ──
+  function init() {
+    dom.init();
+    dom.addGreeting();
+
+    dom.sendBtn.addEventListener('click', handleSend);
+    dom.input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    });
+    dom.input.addEventListener('input', autoResize);
+
+    // Focus input
+    setTimeout(() => dom.input.focus(), 500);
+  }
+
+  return { init };
+})();
+
+document.addEventListener('DOMContentLoaded', ChatGG.init);
+</script>
+</body>
+</html>
