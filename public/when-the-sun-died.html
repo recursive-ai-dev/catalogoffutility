@@ -5,79 +5,583 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WHEN THE SUN DIED</title>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=VT323&family=Courier+Prime:wght@400;700&display=swap');
+      @import url("https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=VT323&display=swap");
+
+      :root {
+        --bg: #080604;
+        --amber: #d97706;
+        --amber-dim: #92400e;
+        --text: #f3e6cf;
+        --text-dim: #c9ac80;
+        --glass: rgba(22, 14, 10, 0.7);
+      }
 
       * {
         box-sizing: border-box;
       }
 
+      html,
       body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background-color: #0c0a09;
-      }
-
-      /* CRT scanline effect */
-
-      #root::before {
-        content: "";
-        position: fixed;
-        top: 0;
-        left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(
-          rgba(251, 191, 36, 0.03) 50%,
-          transparent 50%
-        );
-        background-size: 100% 4px;
-        z-index: 1000;
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        overflow: hidden;
+        font-family: "Courier Prime", monospace;
+      }
+
+      #bg-video {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.26;
+        filter: saturate(0.45) contrast(1.05) brightness(0.55);
+        z-index: 0;
+      }
+
+      .vignette {
+        position: fixed;
+        inset: 0;
         pointer-events: none;
+        background: radial-gradient(circle at center, transparent 20%, rgba(0, 0, 0, 0.72) 100%);
+        z-index: 1;
+      }
+
+      .scanlines {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 8;
+        background: linear-gradient(rgba(217, 119, 6, 0.05) 50%, transparent 50%);
+        background-size: 100% 4px;
         animation: scan 8s linear infinite;
       }
 
       @keyframes scan {
-        0% { transform: translateY(0); }
-        100% { transform: translateY(10px); }
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(10px);
+        }
       }
 
-      /* CRT flicker */
-
-      @keyframes flicker {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.98; }
+      .app {
+        position: relative;
+        z-index: 5;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        width: 100%;
+        height: 100%;
       }
 
-      #root {
-        animation: flicker 0.15s infinite;
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 18px 22px;
+        border-bottom: 1px solid rgba(217, 119, 6, 0.25);
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.25));
       }
 
-      /* Custom scrollbar */
-
-      ::-webkit-scrollbar {
-        width: 8px;
+      .title {
+        margin: 0;
+        font-family: "VT323", monospace;
+        font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+        letter-spacing: 0.15em;
+        color: var(--text);
       }
 
-      ::-webkit-scrollbar-track {
-        background: #1c1917;
-        border-radius: 4px;
+      .status {
+        font-size: 0.8rem;
+        letter-spacing: 0.15em;
+        color: var(--text-dim);
+        text-transform: uppercase;
       }
 
-      ::-webkit-scrollbar-thumb {
-        background: #92400e;
-        border-radius: 4px;
+      .main {
+        display: grid;
+        grid-template-columns: minmax(220px, 26%) 1fr;
+        min-height: 0;
       }
 
-      ::-webkit-scrollbar-thumb:hover {
-        background: #d97706;
+      .chapters {
+        border-right: 1px solid rgba(217, 119, 6, 0.18);
+        background: var(--glass);
+        padding: 16px;
+        overflow-y: auto;
+      }
+
+      .chapter-btn {
+        width: 100%;
+        display: block;
+        text-align: left;
+        margin: 0 0 8px 0;
+        padding: 12px;
+        border: 1px solid rgba(217, 119, 6, 0.18);
+        background: rgba(0, 0, 0, 0.22);
+        color: var(--text-dim);
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 0.84rem;
+        letter-spacing: 0.04em;
+      }
+
+      .chapter-btn.active {
+        border-color: rgba(217, 119, 6, 0.56);
+        background: rgba(217, 119, 6, 0.12);
+        color: var(--text);
+      }
+
+      .content {
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        padding: 20px;
+        gap: 14px;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.5));
+        min-height: 0;
+      }
+
+      .chapter-title {
+        margin: 0;
+        font-family: "VT323", monospace;
+        font-size: clamp(1.4rem, 2.6vw, 2.2rem);
+        letter-spacing: 0.12em;
+        color: #ffd9a1;
+      }
+
+      .chapter-description {
+        margin: 0;
+        color: var(--text-dim);
+        line-height: 1.55;
+        max-width: 72ch;
+      }
+
+      .logs {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        overflow-y: auto;
+        border: 1px solid rgba(217, 119, 6, 0.2);
+        background: rgba(0, 0, 0, 0.34);
+      }
+
+      .log {
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(217, 119, 6, 0.1);
+        color: #f6dfb7;
+        line-height: 1.5;
+        opacity: 0;
+        animation: reveal 260ms ease forwards;
+      }
+
+      .log:last-child {
+        border-bottom: 0;
+      }
+
+      .log-time {
+        color: var(--amber);
+        margin-right: 8px;
+      }
+
+      @keyframes reveal {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 20px 16px;
+        border-top: 1px solid rgba(217, 119, 6, 0.22);
+        background: rgba(0, 0, 0, 0.45);
+      }
+
+      .control-group {
+        display: flex;
+        gap: 8px;
+      }
+
+      button.ctrl {
+        border: 1px solid rgba(217, 119, 6, 0.3);
+        background: rgba(18, 10, 6, 0.8);
+        color: var(--text-dim);
+        padding: 9px 12px;
+        cursor: pointer;
+        font-family: inherit;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: 0.72rem;
+      }
+
+      button.ctrl:hover {
+        color: var(--text);
+        border-color: rgba(217, 119, 6, 0.64);
+      }
+
+      .progress {
+        font-size: 0.76rem;
+        letter-spacing: 0.14em;
+        color: var(--text-dim);
+        text-transform: uppercase;
+      }
+
+      .start-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.86);
+        padding: 24px;
+      }
+
+      .start-overlay.hidden {
+        display: none;
+      }
+
+      .start-overlay h2 {
+        margin: 0;
+        font-family: "VT323", monospace;
+        font-size: clamp(2rem, 5vw, 3.2rem);
+        letter-spacing: 0.18em;
+        color: #ffcc86;
+      }
+
+      .start-overlay p {
+        margin: 0;
+        max-width: 52ch;
+        color: var(--text-dim);
+        line-height: 1.6;
+      }
+
+      #audio-status {
+        color: var(--amber);
+      }
+
+      @media (max-width: 900px) {
+        .main {
+          grid-template-columns: 1fr;
+          grid-template-rows: 180px 1fr;
+        }
+
+        .chapters {
+          border-right: 0;
+          border-bottom: 1px solid rgba(217, 119, 6, 0.18);
+          display: grid;
+          grid-auto-flow: column;
+          grid-auto-columns: minmax(180px, 1fr);
+          overflow-x: auto;
+          overflow-y: hidden;
+          gap: 8px;
+        }
+
+        .chapter-btn {
+          margin-bottom: 0;
+          height: 100%;
+        }
       }
     </style>
-    <script type="module" crossorigin>(function(){const d=document.createElement("link").relList;if(d&&d.supports&&d.supports("modulepreload"))return;for(const y of document.querySelectorAll('link[rel="modulepreload"]'))c(y);new MutationObserver(y=>{for(const S of y)if(S.type==="childList")for(const g of S.addedNodes)g.tagName==="LINK"&&g.rel==="modulepreload"&&c(g)}).observe(document,{childList:!0,subtree:!0});function s(y){const S={};return y.integrity&&(S.integrity=y.integrity),y.referrerPolicy&&(S.referrerPolicy=y.referrerPolicy),y.crossOrigin==="use-credentials"?S.credentials="include":y.crossOrigin==="anonymous"?S.credentials="omit":S.credentials="same-origin",S}function c(y){if(y.ep)return;y.ep=!0;const S=s(y);fetch(y.href,S)}})();var Mu={exports:{}},Ii={};var Ih;function Bm(){if(Ih)return Ii;Ih=1;var u=Symbol.for("react.transitional.element"),d=Symbol.for("react.fragment");function s(c,y,S){var g=null;if(S!==void 0&&(g=""+S),y.key!==void 0&&(g=""+y.key),"key"in y){S={};for(var b in y)b!=="key"&&(S[b]=y[b])}else S=y;return y=S.ref,{$$typeof:u,type:c,key:g,ref:y!==void 0?y:null,props:S}}return Ii.Fragment=d,Ii.jsx=s,Ii.jsxs=s,Ii}var Gh;function Im(){return Gh||(Gh=1,Mu.exports=Bm()),Mu.exports}var q=Im(),zu={exports:{}},W={};var Vh;function Gm(){if(Vh)return W;Vh=1;var u=Symbol.for("react.transitional.element"),d=Symbol.for("react.portal"),s=Symbol.for("react.fragment"),c=Symbol.for("react.strict_mode"),y=Symbol.for("react.profiler"),S=Symbol.for("react.consumer"),g=Symbol.for("react.context"),b=Symbol.for("react.forward_ref"),T=Symbol.for("react.suspense"),h=Symbol.for("react.memo"),O=Symbol.for("react.lazy"),R=Symbol.for("react.activity"),D=Symbol.iterator;function Z(p){return p===null||typeof p!="object"?null:(p=D&&p[D]||p["@@iterator"],typeof p=="function"?p:null)}var L={isMounted:function(){return!1},enqueueForceUpdate:function(){},enqueueReplaceState:function(){},enqueueSetState:function(){}},Q=Object.assign,F={};function ee(p,C,j){this.props=p,this.context=C,this.refs=F,this.updater=j||L}ee.prototype.isReactComponent={},ee.prototype.setState=function(p,C){if(typeof p!="object"&&typeof p!="function"&&p!=null)throw Error("takes an object of state variables to update or a function which returns an object of state variables.");this.updater.enqueueSetState(this,p,C,"setState")},ee.prototype.forceUpdate=function(p){this.updater.enqueueForceUpdate(this,p,"forceUpdate")};function he(){}he.prototype=ee.prototype;function te(p,C,j){this.props=p,this.context=C,this.refs=F,this.updater=j||L}var ze=te.prototype=new he;ze.constructor=te,Q(ze,ee.prototype),ze.isPureReactComponent=!0;var Ye=Array.isArray;function re(){}var ne={H:null,A:null,T:null,S:null},Ke=Object.prototype.hasOwnProperty;function He(p,C,j){var H=j.ref;return{$$typeof:u,type:p,key:C,ref:H!==void 0?H:null,props:j}}function _t(p,C){return He(p.type,C,p.props)}function Ge(p){return typeof p=="object"&&p!==null&&p.$$typeof===u}function P(p){var C={"=":"=0",":":"=2"};return"$"+p.replace(/[=:]/g,function(j){return C[j]})}var ot=/\/+/g;function st(p,C){return typeof p=="object"&&p!==null&&p.key!=null?P(""+p.key):C.toString(36)}function Pe(p){switch(p.status){case"fulfilled":return p.value;case"rejected":throw p.reason;default:switch(typeof p.status=="string"?p.then(re,re):(p.status="pending",p.then(function(C){p.status==="pending"&&(p.status="fulfilled",p.value=C)},function(C){p.status==="pending"&&(p.status="rejected",p.reason=C)})),p.status){case"fulfilled":return p.value;case"rejected":throw p.reason}}throw p}function A(p,C,j,H,$){var le=typeof p;(le==="undefined"||le==="boolean")&&(p=null);var ye=!1;if(p===null)ye=!0;else switch(le){case"bigint":case"string":case"number":ye=!0;break;case"object":switch(p.$$typeof){case u:case d:ye=!0;break;case O:return ye=p._init,A(ye(p._payload),C,j,H,$)}}if(ye)return $=$(p),ye=H===""?"."+st(p,0):H,Ye($)?(j="",ye!=null&&(j=ye.replace(ot,"$&/")+"/"),A($,C,j,"",function(_e){return _e})):$!=null&&(Ge($)&&($=_t($,j+($.key==null||p&&p.key===$.key?"":(""+$.key).replace(ot,"$&/")+"/")+ye)),C.push($)),1;ye=0;var $e=H===""?".":H+":";if(Ye(p))for(var B=0;B<p.length;B++)H=p[B],le=$e+st(H,B),ye+=A(H,C,j,le,$);else if(B=Z(p),typeof B=="function")for(p=B.call(p),B=0;!(H=p.next()).done;)H=H.value,le=$e+st(H,B++),ye+=A(H,C,j,le,$);else if(le==="object"){if(typeof p.then=="function")return A(Pe(p),C,j,H,$);throw C=String(p),Error("Objects are not valid as a React child (found: "+(C==="[object Object]"?"object with keys {"+Object.keys(p).join(", ")+"}":C)+"). If you meant to render a collection of children, use an array instead.")}return ye}function U(p,C,j){if(p==null)return p;var H=[],$=0;return A(p,H,"","",function(le){return C.call(j,le,$++)}),H}function K(p){if(p._status===-1){var C=p._result;C=C(),C.then(function(j){(p._status===0||p._status===-1)&&(p._status=1,p._result=j)},function(j){(p._status===0||p._status===-1)&&(p._status=2,p._result=j)}),p._status===-1&&(p._status=0,p._result=C)}if(p._status===1)return p._result.default;throw p._result}var ge=typeof reportError=="function"?reportError:function(p){if(typeof window=="object"&&typeof window.ErrorEvent=="function"){var C=new window.ErrorEvent("error",{bubbles:!0,cancelable:!0,message:typeof p=="object"&&p!==null&&typeof p.message=="string"?String(p.message):String(p),error:p});if(!window.dispatchEvent(C))return}else if(typeof process=="object"&&typeof process.emit=="function"){process.emit("uncaughtException",p);return}console.error(p)},we={map:U,forEach:function(p,C,j){U(p,function(){C.apply(this,arguments)},j)},count:function(p){var C=0;return U(p,function(){C++}),C},toArray:function(p){return U(p,function(C){return C})||[]},only:function(p){if(!Ge(p))throw Error("React.Children.only expected to receive a single React element child.");return p}};return W.Activity=R,W.Children=we,W.Component=ee,W.Fragment=s,W.Profiler=y,W.PureComponent=te,W.StrictMode=c,W.Suspense=T,W.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE=ne,W.__COMPILER_RUNTIME={__proto__:null,c:function(p){return ne.H.useMemoCache(p)}},W.cache=function(p){return function(){return p.apply(null,arguments)}},W.cacheSignal=function(){return null},W.cloneElement=function(p,C,j){if(p==null)throw Error("The argument must be a React element, but you passed "+p+".");var H=Q({},p.props),$=p.key;if(C!=null)for(le in C.key!==void 0&&($=""+C.key),C)!Ke.call(C,le)||le==="key"||le==="__self"||le==="__source"||le==="ref"&&C.ref===void 0||(H[le]=C[le]);var le=arguments.length-2;if(le===1)H.children=j;else if(1<le){for(var ye=Array(le),$e=0;$e<le;$e++)ye[$e]=arguments[$e+2];H.children=ye}return He(p.type,$,H)},W.createContext=function(p){return p={$$typeof:g,_currentValue:p,_currentValue2:p,_threadCount:0,Provider:null,Consumer:null},p.Provider=p,p.Consumer={$$typeof:S,_context:p},p},W.createElement=function(p,C,j){var H,$={},le=null;if(C!=null)for(H in C.key!==void 0&&(le=""+C.key),C)Ke.call(C,H)&&H!=="key"&&H!=="__self"&&H!=="__source"&&($[H]=C[H]);var ye=arguments.length-2;if(ye===1)$.children=j;else if(1<ye){for(var $e=Array(ye),B=0;B<ye;B++)$e[B]=arguments[B+2];$.children=$e}if(p&&p.defaultProps)for(H in ye=p.defaultProps,ye)$[H]===void 0&&($[H]=ye[H]);return He(p,le,$)},W.createRef=function(){return{current:null}},W.forwardRef=function(p){return{$$typeof:b,render:p}},W.isValidElement=Ge,W.lazy=function(p){return{$$typeof:O,_payload:{_status:-1,_result:p},_init:K}},W.memo=function(p,C){return{$$typeof:h,type:p,compare:C===void 0?null:C}},W.startTransition=function(p){var C=ne.T,j={};ne.T=j;try{var H=p(),$=ne.S;$!==null&&$(j,H),typeof H=="object"&&H!==null&&typeof H.then=="function"&&H.then(re,ge)}catch(le){ge(le)}finally{C!==null&&j.types!==null&&(C.types=j.types),ne.T=C}},W.unstable_useCacheRefresh=function(){return ne.H.useCacheRefresh()},W.use=function(p){return ne.H.use(p)},W.useActionState=function(p,C,j){return ne.H.useActionState(p,C,j)},W.useCallback=function(p,C){return ne.H.useCallback(p,C)},W.useContext=function(p){return ne.H.useContext(p)},W.useDebugValue=function(){},W.useDeferredValue=function(p,C){return ne.H.useDeferredValue(p,C)},W.useEffect=function(p,C){return ne.H.useEffect(p,C)},W.useEffectEvent=function(p){return ne.H.useEffectEvent(p)},W.useId=function(){return ne.H.useId()},W.useImperativeHandle=function(p,C,j){return ne.H.useImperativeHandle(p,C,j)},W.useInsertionEffect=function(p,C){return ne.H.useInsertionEffect(p,C)},W.useLayoutEffect=function(p,C){return ne.H.useLayoutEffect(p,C)},W.useMemo=function(p,C){return ne.H.useMemo(p,C)},W.useOptimistic=function(p,C){return ne.H.useOptimistic(p,C)},W.useReducer=function(p,C,j){return ne.H.useReducer(p,C,j)},W.useRef=function(p){return ne.H.useRef(p)},W.useState=function(p){return ne.H.useState(p)},W.useSyncExternalStore=function(p,C,j){return ne.H.useSyncExternalStore(p,C,j)},W.useTransition=function(){return ne.H.useTransition()},W.version="19.2.3",W}var Qh;function Lu(){return Qh||(Qh=1,zu.exports=Gm()),zu.exports}var V=Lu(),Yu={exports:{}},Gi={},Cu={exports:{}},Nu={};var Xh;function Vm(){return Xh||(Xh=1,(function(u){function d(A,U){var K=A.length;A.push(U);e:for(;0<K;){var ge=K-1>>>1,we=A[ge];if(0<y(we,U))A[ge]=U,A[K]=we,K=ge;else break e}}function s(A){return A.length===0?null:A[0]}function c(A){if(A.length===0)return null;var U=A[0],K=A.pop();if(K!==U){A[0]=K;e:for(var ge=0,we=A.length,p=we>>>1;ge<p;){var C=2*(ge+1)-1,j=A[C],H=C+1,$=A[H];if(0>y(j,K))H<we&&0>y($,j)?(A[ge]=$,A[H]=K,ge=H):(A[ge]=j,A[C]=K,ge=C);else if(H<we&&0>y($,K))A[ge]=$,A[H]=K,ge=H;else break e}}return U}function y(A,U){var K=A.sortIndex-U.sortIndex;return K!==0?K:A.id-U.id}if(u.unstable_now=void 0,typeof performance=="object"&&typeof performance.now=="function"){var S=performance;u.unstable_now=function(){return S.now()}}else{var g=Date,b=g.now();u.unstable_now=function(){return g.now()-b}}var T=[],h=[],O=1,R=null,D=3,Z=!1,L=!1,Q=!1,F=!1,ee=typeof setTimeout=="function"?setTimeout:null,he=typeof clearTimeout=="function"?clearTimeout:null,te=typeof setImmediate<"u"?setImmediate:null;function ze(A){for(var U=s(h);U!==null;){if(U.callback===null)c(h);else if(U.startTime<=A)c(h),U.sortIndex=U.expirationTime,d(T,U);else break;U=s(h)}}function Ye(A){if(Q=!1,ze(A),!L)if(s(T)!==null)L=!0,re||(re=!0,P());else{var U=s(h);U!==null&&Pe(Ye,U.startTime-A)}}var re=!1,ne=-1,Ke=5,He=-1;function _t(){return F?!0:!(u.unstable_now()-He<Ke)}function Ge(){if(F=!1,re){var A=u.unstable_now();He=A;var U=!0;try{e:{L=!1,Q&&(Q=!1,he(ne),ne=-1),Z=!0;var K=D;try{t:{for(ze(A),R=s(T);R!==null&&!(R.expirationTime>A&&_t());){var ge=R.callback;if(typeof ge=="function"){R.callback=null,D=R.priorityLevel;var we=ge(R.expirationTime<=A);if(A=u.unstable_now(),typeof we=="function"){R.callback=we,ze(A),U=!0;break t}R===s(T)&&c(T),ze(A)}else c(T);R=s(T)}if(R!==null)U=!0;else{var p=s(h);p!==null&&Pe(Ye,p.startTime-A),U=!1}}break e}finally{R=null,D=K,Z=!1}U=void 0}}finally{U?P():re=!1}}}var P;if(typeof te=="function")P=function(){te(Ge)};else if(typeof MessageChannel<"u"){var ot=new MessageChannel,st=ot.port2;ot.port1.onmessage=Ge,P=function(){st.postMessage(null)}}else P=function(){ee(Ge,0)};function Pe(A,U){ne=ee(function(){A(u.unstable_now())},U)}u.unstable_IdlePriority=5,u.unstable_ImmediatePriority=1,u.unstable_LowPriority=4,u.unstable_NormalPriority=3,u.unstable_Profiling=null,u.unstable_UserBlockingPriority=2,u.unstable_cancelCallback=function(A){A.callback=null},u.unstable_forceFrameRate=function(A){0>A||125<A?console.error("forceFrameRate takes a positive int between 0 and 125, forcing frame rates higher than 125 fps is not supported"):Ke=0<A?Math.floor(1e3/A):5},u.unstable_getCurrentPriorityLevel=function(){return D},u.unstable_next=function(A){switch(D){case 1:case 2:case 3:var U=3;break;default:U=D}var K=D;D=U;try{return A()}finally{D=K}},u.unstable_requestPaint=function(){F=!0},u.unstable_runWithPriority=function(A,U){switch(A){case 1:case 2:case 3:case 4:case 5:break;default:A=3}var K=D;D=A;try{return U()}finally{D=K}},u.unstable_scheduleCallback=function(A,U,K){var ge=u.unstable_now();switch(typeof K=="object"&&K!==null?(K=K.delay,K=typeof K=="number"&&0<K?ge+K:ge):K=ge,A){case 1:var we=-1;break;case 2:we=250;break;case 5:we=1073741823;break;case 4:we=1e4;break;default:we=5e3}return we=K+we,A={id:O++,callback:U,priorityLevel:A,startTime:K,expirationTime:we,sortIndex:-1},K>ge?(A.sortIndex=K,d(h,A),s(T)===null&&A===s(h)&&(Q?(he(ne),ne=-1):Q=!0,Pe(Ye,K-ge))):(A.sortIndex=we,d(T,A),L||Z||(L=!0,re||(re=!0,P()))),A},u.unstable_shouldYield=_t,u.unstable_wrapCallback=function(A){var U=D;return function(){var K=D;D=U;try{return A.apply(this,arguments)}finally{D=K}}}})(Nu)),Nu}var Zh;function Qm(){return Zh||(Zh=1,Cu.exports=Vm()),Cu.exports}var Du={exports:{}},lt={};var Kh;function Xm(){if(Kh)return lt;Kh=1;var u=Lu();function d(T){var h="https://react.dev/errors/"+T;if(1<arguments.length){h+="?args[]="+encodeURIComponent(arguments[1]);for(var O=2;O<arguments.length;O++)h+="&args[]="+encodeURIComponent(arguments[O])}return"Minified React error #"+T+"; visit "+h+" for the full message or use the non-minified dev environment for full errors and additional helpful warnings."}function s(){}var c={d:{f:s,r:function(){throw Error(d(522))},D:s,C:s,L:s,m:s,X:s,S:s,M:s},p:0,findDOMNode:null},y=Symbol.for("react.portal");function S(T,h,O){var R=3<arguments.length&&arguments[3]!==void 0?arguments[3]:null;return{$$typeof:y,key:R==null?null:""+R,children:T,containerInfo:h,implementation:O}}var g=u.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;function b(T,h){if(T==="font")return"";if(typeof h=="string")return h==="use-credentials"?h:""}return lt.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE=c,lt.createPortal=function(T,h){var O=2<arguments.length&&arguments[2]!==void 0?arguments[2]:null;if(!h||h.nodeType!==1&&h.nodeType!==9&&h.nodeType!==11)throw Error(d(299));return S(T,h,null,O)},lt.flushSync=function(T){var h=g.T,O=c.p;try{if(g.T=null,c.p=2,T)return T()}finally{g.T=h,c.p=O,c.d.f()}},lt.preconnect=function(T,h){typeof T=="string"&&(h?(h=h.crossOrigin,h=typeof h=="string"?h==="use-credentials"?h:"":void 0):h=null,c.d.C(T,h))},lt.prefetchDNS=function(T){typeof T=="string"&&c.d.D(T)},lt.preinit=function(T,h){if(typeof T=="string"&&h&&typeof h.as=="string"){var O=h.as,R=b(O,h.crossOrigin),D=typeof h.integrity=="string"?h.integrity:void 0,Z=typeof h.fetchPriority=="string"?h.fetchPriority:void 0;O==="style"?c.d.S(T,typeof h.precedence=="string"?h.precedence:void 0,{crossOrigin:R,integrity:D,fetchPriority:Z}):O==="script"&&c.d.X(T,{crossOrigin:R,integrity:D,fetchPriority:Z,nonce:typeof h.nonce=="string"?h.nonce:void 0})}},lt.preinitModule=function(T,h){if(typeof T=="string")if(typeof h=="object"&&h!==null){if(h.as==null||h.as==="script"){var O=b(h.as,h.crossOrigin);c.d.M(T,{crossOrigin:O,integrity:typeof h.integrity=="string"?h.integrity:void 0,nonce:typeof h.nonce=="string"?h.nonce:void 0})}}else h==null&&c.d.M(T)},lt.preload=function(T,h){if(typeof T=="string"&&typeof h=="object"&&h!==null&&typeof h.as=="string"){var O=h.as,R=b(O,h.crossOrigin);c.d.L(T,O,{crossOrigin:R,integrity:typeof h.integrity=="string"?h.integrity:void 0,nonce:typeof h.nonce=="string"?h.nonce:void 0,type:typeof h.type=="string"?h.type:void 0,fetchPriority:typeof h.fetchPriority=="string"?h.fetchPriority:void 0,referrerPolicy:typeof h.referrerPolicy=="string"?h.referrerPolicy:void 0,imageSrcSet:typeof h.imageSrcSet=="string"?h.imageSrcSet:void 0,imageSizes:typeof h.imageSizes=="string"?h.imageSizes:void 0,media:typeof h.media=="string"?h.media:void 0})}},lt.preloadModule=function(T,h){if(typeof T=="string")if(h){var O=b(h.as,h.crossOrigin);c.d.m(T,{as:typeof h.as=="string"&&h.as!=="script"?h.as:void 0,crossOrigin:O,integrity:typeof h.integrity=="string"?h.integrity:void 0})}else c.d.m(T)},lt.requestFormReset=function(T){c.d.r(T)},lt.unstable_batchedUpdates=function(T,h){return T(h)},lt.useFormState=function(T,h,O){return g.H.useFormState(T,h,O)},lt.useFormStatus=function(){return g.H.useHostTransitionStatus()},lt.version="19.2.3",lt}var Jh;function Zm(){if(Jh)return Du.exports;Jh=1;function u(){if(!(typeof __REACT_DEVTOOLS_GLOBAL_HOOK__>"u"||typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE!="function"))try{__REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE(u)}catch(d){console.error(d)}}return u(),Du.exports=Xm(),Du.exports}var $h;function Km(){if($h)return Gi;$h=1;var u=Qm(),d=Lu(),s=Zm();function c(e){var t="https://react.dev/errors/"+e;if(1<arguments.length){t+="?args[]="+encodeURIComponent(arguments[1]);for(var a=2;a<arguments.length;a++)t+="&args[]="+encodeURIComponent(arguments[a])}return"Minified React error #"+e+"; visit "+t+" for the full message or use the non-minified dev environment for full errors and additional helpful warnings."}function y(e){return!(!e||e.nodeType!==1&&e.nodeType!==9&&e.nodeType!==11)}function S(e){var t=e,a=e;if(e.alternate)for(;t.return;)t=t.return;else{e=t;do t=e,(t.flags&4098)!==0&&(a=t.return),e=t.return;while(e)}return t.tag===3?a:null}function g(e){if(e.tag===13){var t=e.memoizedState;if(t===null&&(e=e.alternate,e!==null&&(t=e.memoizedState)),t!==null)return t.dehydrated}return null}function b(e){if(e.tag===31){var t=e.memoizedState;if(t===null&&(e=e.alternate,e!==null&&(t=e.memoizedState)),t!==null)return t.dehydrated}return null}function T(e){if(S(e)!==e)throw Error(c(188))}function h(e){var t=e.alternate;if(!t){if(t=S(e),t===null)throw Error(c(188));return t!==e?null:e}for(var a=e,n=t;;){var i=a.return;if(i===null)break;var l=i.alternate;if(l===null){if(n=i.return,n!==null){a=n;continue}break}if(i.child===l.child){for(l=i.child;l;){if(l===a)return T(i),e;if(l===n)return T(i),t;l=l.sibling}throw Error(c(188))}if(a.return!==n.return)a=i,n=l;else{for(var o=!1,r=i.child;r;){if(r===a){o=!0,a=i,n=l;break}if(r===n){o=!0,n=i,a=l;break}r=r.sibling}if(!o){for(r=l.child;r;){if(r===a){o=!0,a=l,n=i;break}if(r===n){o=!0,n=l,a=i;break}r=r.sibling}if(!o)throw Error(c(189))}}if(a.alternate!==n)throw Error(c(190))}if(a.tag!==3)throw Error(c(188));return a.stateNode.current===a?e:t}function O(e){var t=e.tag;if(t===5||t===26||t===27||t===6)return e;for(e=e.child;e!==null;){if(t=O(e),t!==null)return t;e=e.sibling}return null}var R=Object.assign,D=Symbol.for("react.element"),Z=Symbol.for("react.transitional.element"),L=Symbol.for("react.portal"),Q=Symbol.for("react.fragment"),F=Symbol.for("react.strict_mode"),ee=Symbol.for("react.profiler"),he=Symbol.for("react.consumer"),te=Symbol.for("react.context"),ze=Symbol.for("react.forward_ref"),Ye=Symbol.for("react.suspense"),re=Symbol.for("react.suspense_list"),ne=Symbol.for("react.memo"),Ke=Symbol.for("react.lazy"),He=Symbol.for("react.activity"),_t=Symbol.for("react.memo_cache_sentinel"),Ge=Symbol.iterator;function P(e){return e===null||typeof e!="object"?null:(e=Ge&&e[Ge]||e["@@iterator"],typeof e=="function"?e:null)}var ot=Symbol.for("react.client.reference");function st(e){if(e==null)return null;if(typeof e=="function")return e.$$typeof===ot?null:e.displayName||e.name||null;if(typeof e=="string")return e;switch(e){case Q:return"Fragment";case ee:return"Profiler";case F:return"StrictMode";case Ye:return"Suspense";case re:return"SuspenseList";case He:return"Activity"}if(typeof e=="object")switch(e.$$typeof){case L:return"Portal";case te:return e.displayName||"Context";case he:return(e._context.displayName||"Context")+".Consumer";case ze:var t=e.render;return e=e.displayName,e||(e=t.displayName||t.name||"",e=e!==""?"ForwardRef("+e+")":"ForwardRef"),e;case ne:return t=e.displayName||null,t!==null?t:st(e.type)||"Memo";case Ke:t=e._payload,e=e._init;try{return st(e(t))}catch{}}return null}var Pe=Array.isArray,A=d.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,U=s.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,K={pending:!1,data:null,method:null,action:null},ge=[],we=-1;function p(e){return{current:e}}function C(e){0>we||(e.current=ge[we],ge[we]=null,we--)}function j(e,t){we++,ge[we]=e.current,e.current=t}var H=p(null),$=p(null),le=p(null),ye=p(null);function $e(e,t){switch(j(le,t),j($,e),j(H,null),t.nodeType){case 9:case 11:e=(e=t.documentElement)&&(e=e.namespaceURI)?dh(e):0;break;default:if(e=t.tagName,t=t.namespaceURI)t=dh(t),e=hh(t,e);else switch(e){case"svg":e=1;break;case"math":e=2;break;default:e=0}}C(H),j(H,e)}function B(){C(H),C($),C(le)}function _e(e){e.memoizedState!==null&&j(ye,e);var t=H.current,a=hh(t,e.type);t!==a&&(j($,e),j(H,a))}function Oe(e){$.current===e&&(C(H),C($)),ye.current===e&&(C(ye),ji._currentValue=K)}var oe,Ce;function Ae(e){if(oe===void 0)try{throw Error()}catch(a){var t=a.stack.trim().match(/\n( *(at )?)/);oe=t&&t[1]||"",Ce=-1<a.stack.indexOf(`
-    at`)?" (<anonymous>)":-1<a.stack.indexOf("@")?"@unknown:0:0":""}return`
-`+oe+e+Ce}var Te=!1;function Zn(e,t){if(!e||Te)return"";Te=!0;var a=Error.prepareStackTrace;Error.prepareStackTrace=void 0;try{var n={DetermineComponentFrameRoot:function(){try{if(t){var Y=function(){throw Error()};if(Object.defineProperty(Y.prototype,"props",{set:function(){throw Error()}}),typeof Reflect=="object"&&Reflect.construct){try{Reflect.construct(Y,[])}catch(_){var k=_}Reflect.construct(e,[],Y)}else{try{Y.call()}catch(_){k=_}e.call(Y.prototype)}}else{try{throw Error()}catch(_){k=_}(Y=e())&&typeof Y.catch=="function"&&Y.catch(function(){})}}catch(_){if(_&&k&&typeof _.stack=="string")return[_.stack,k.stack]}return[null,null]}};n.DetermineComponentFrameRoot.displayName="DetermineComponentFrameRoot";var i=Object.getOwnPropertyDescriptor(n.DetermineComponentFrameRoot,"name");i&&i.configurable&&Object.defineProperty(n.DetermineComponentFrameRoot,"name",{value:"DetermineComponentFrameRoot"});var l=n.DetermineComponentFrameRoot(),o=l[0],r=l[1];if(o&&r){var f=o.split(`
-`),E=r.split(`
-`);for(i=n=0;n<f.length&&!f[n].includes("DetermineComponentFrameRoot");)n++;for(;i<E.length&&!E[i].includes("DetermineComponentFrameRoot");)i++;if(n===f.length||i===E.length)for(n=f.length-1,i=E.length-1;1<=n&&0<=i&&f[n]!==E[i];)i--;for(;1<=n&&0<=i;n--,i--)if(f[n]!==E[i]){if(n!==1||i!==1)do if(n--,i--,0>i||f[n]!==E[i]){var M=`
-`+f[n].replace(" at new "," at ");return e.displayName&&M.includes("<anonymous>")&&(M=M.replace("<anonymous>",e.displayName)),M}while(1<=n&&0<=i);break}}}finally{Te=!1,Error.prepareStackTrace=a}return(a=e?e.displayName||e.name:"")?Ae(a):""}function Kn(e,t){switch(e.tag){case 26:case 27:case 5:return Ae(e.type);case 16:return Ae("Lazy");case 13:return e.child!==t&&t!==null?Ae("Suspense Fallback"):Ae("Suspense");case 19:return Ae("SuspenseList");case 0:case 15:return Zn(e.type,!1);case 11:return Zn(e.type.render,!1);case 1:return Zn(e.type,!0);case 31:return Ae("Activity");default:return""}}function fa(e){try{var t="",a=null;do t+=Kn(e,a),a=e,e=e.return;while(e);return t}catch(n){return`
-Error generating stack: `+n.message+`
-`+n.stack}}var ya=Object.prototype.hasOwnProperty,Jn=u.unstable_scheduleCallback,po=u.unstable_cancelCallback,vf=u.unstable_shouldYield,wf=u.unstable_requestPaint,gt=u.unstable_now,Tf=u.unstable_getCurrentPriorityLevel,Gu=u.unstable_ImmediatePriority,Vu=u.unstable_UserBlockingPriority,Ki=u.unstable_NormalPriority,Sf=u.unstable_LowPriority,Qu=u.unstable_IdlePriority,qf=u.log,xf=u.unstable_setDisableYieldValue,$n=null,bt=null;function ma(e){if(typeof qf=="function"&&xf(e),bt&&typeof bt.setStrictMode=="function")try{bt.setStrictMode($n,e)}catch{}}var vt=Math.clz32?Math.clz32:_f,Ef=Math.log,kf=... [truncated]
+  </head>
+  <body>
+    <video id="bg-video" autoplay muted loop playsinline></video>
+    <audio id="bg-audio" preload="auto" loop></audio>
+
+    <div class="vignette"></div>
+    <div class="scanlines"></div>
+
+    <div class="app">
+      <header class="top-bar">
+        <h1 class="title">WHEN THE SUN DIED</h1>
+        <div class="status">ARCHIVE LINK STABLE | <span id="audio-status">AUDIO READY</span></div>
+      </header>
+
+      <main class="main">
+        <aside class="chapters" id="chapters"></aside>
+        <section class="content">
+          <h2 class="chapter-title" id="chapter-title"></h2>
+          <p class="chapter-description" id="chapter-description"></p>
+          <ul class="logs" id="log-feed"></ul>
+        </section>
+      </main>
+
+      <footer class="controls">
+        <div class="control-group">
+          <button class="ctrl" id="prev-btn" type="button">Prev</button>
+          <button class="ctrl" id="next-btn" type="button">Next</button>
+        </div>
+        <div class="control-group">
+          <button class="ctrl" id="mode-btn" type="button">Mode: Classical</button>
+          <button class="ctrl" id="mute-btn" type="button">Audio: On</button>
+        </div>
+        <div class="progress" id="progress"></div>
+      </footer>
+    </div>
+
+    <div class="start-overlay" id="start-overlay">
+      <h2>BEGIN TRANSMISSION</h2>
+      <p>
+        The footage and soundtrack archives are now available.
+        Initialize playback to review the final five phases.
+      </p>
+      <button class="ctrl" id="start-btn" type="button">Initialize</button>
+    </div>
+
+    <script>
+      const phases = [
+        {
+          id: "LOG-00",
+          title: "PRE-EVENT // ROUTINE",
+          description: "Ordinary fragments before thermal collapse. Signals are calm. Voices are casual.",
+          video: "/videos/bar-ambient.mp4",
+          classical: "/soundtrack/phase-a-denial-classical.wav",
+          hiphop: "/soundtrack/denial_hiphop.mp3",
+          logs: [
+            "[00:08:11] Transit reports stable weather over Sector 3.",
+            "[00:11:49] Librarian note: ambient noise elevated, no source identified.",
+            "[00:14:10] Recommendation: continue observations."
+          ]
+        },
+        {
+          id: "PHASE-A",
+          title: "DENIAL // FALSE DAWN",
+          description: "The sky dims by fractions and everyone calls it cloud cover.",
+          video: "/videos/beach-ambient.mp4",
+          classical: "/soundtrack/phase-a-denial-classical.wav",
+          hiphop: "/soundtrack/denial_hiphop.mp3",
+          logs: [
+            "[01:02:02] Stellar output down 3.8%. Instrument recalibration requested.",
+            "[01:08:17] Public bulletin labels event as temporary anomaly.",
+            "[01:15:42] Children ask why noon looks like late evening."
+          ]
+        },
+        {
+          id: "PHASE-B",
+          title: "HEIGHTENED // STATIC",
+          description: "Every screen carries emergency graphics. No one agrees on the timeline.",
+          video: "/videos/rooftop-ambient.mp4",
+          classical: "/soundtrack/phase-b-heightened-classical.wav",
+          hiphop: "/soundtrack/heightened_hiphop.mp3",
+          logs: [
+            "[02:21:04] Orbital station confirms spectral collapse trajectory.",
+            "[02:26:55] Traffic control overwhelmed. Evacuation corridors saturated.",
+            "[02:30:19] Internal memo: maintain composure protocol."
+          ]
+        },
+        {
+          id: "PHASE-C",
+          title: "CRISIS // ABSENCE",
+          description: "The warmth leaves first. Then the power. Then the tone of every voice.",
+          video: "/videos/hospital-ambient.mp4",
+          classical: "/soundtrack/phase-c-crisis-classical.wav",
+          hiphop: "/soundtrack/crisis_hiphop.mp3",
+          logs: [
+            "[03:04:07] Core temperature drop exceeds all forecasts.",
+            "[03:10:23] Medical wards report panic and hypothermic shock.",
+            "[03:16:59] Last external transmission: 'Light source no longer visible.'"
+          ]
+        },
+        {
+          id: "PHASE-D",
+          title: "ACCEPTANCE // LOW FIRE",
+          description: "The urgency burns out. What remains is cataloging, memory, and witness.",
+          video: "/videos/park-ambient.mp4",
+          classical: "/soundtrack/phase-d-acceptance-classical.wav",
+          hiphop: "/soundtrack/acceptance_hiphop.mp3",
+          logs: [
+            "[04:01:12] Remaining stations switch to archival mode.",
+            "[04:07:40] Message traffic declines to ceremonial statements.",
+            "[04:13:08] Protocol rewritten: preserve testimony over survival metrics."
+          ]
+        },
+        {
+          id: "THE-END",
+          title: "POST-SUN // QUIET",
+          description: "This entry has no corrective action. Only a record that we were here.",
+          video: "/videos/library-ambient.mp4",
+          classical: "/soundtrack/the-end-classical.wav",
+          hiphop: null,
+          logs: [
+            "[05:00:01] Archive sealed. No future updates expected.",
+            "[05:03:29] Manual note: silence has measurable weight.",
+            "[05:05:00] End of line."
+          ]
+        }
+      ];
+
+      const chaptersEl = document.getElementById("chapters");
+      const chapterTitleEl = document.getElementById("chapter-title");
+      const chapterDescEl = document.getElementById("chapter-description");
+      const logFeedEl = document.getElementById("log-feed");
+      const progressEl = document.getElementById("progress");
+      const bgVideo = document.getElementById("bg-video");
+      const bgAudio = document.getElementById("bg-audio");
+      const audioStatusEl = document.getElementById("audio-status");
+
+      const prevBtn = document.getElementById("prev-btn");
+      const nextBtn = document.getElementById("next-btn");
+      const modeBtn = document.getElementById("mode-btn");
+      const muteBtn = document.getElementById("mute-btn");
+      const startOverlay = document.getElementById("start-overlay");
+      const startBtn = document.getElementById("start-btn");
+
+      let currentIndex = 0;
+      let audioMode = "classical";
+      let audioMuted = false;
+      let started = false;
+
+      function trackForPhase(phase) {
+        if (audioMode === "hiphop" && phase.hiphop) return phase.hiphop;
+        return phase.classical;
+      }
+
+      function pathToAbsolute(path) {
+        return new URL(path, window.location.href).href;
+      }
+
+      function renderChapters() {
+        chaptersEl.innerHTML = "";
+        phases.forEach((phase, index) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "chapter-btn";
+          btn.textContent = phase.id + " // " + phase.title;
+          btn.dataset.index = String(index);
+          btn.addEventListener("click", () => setPhase(index));
+          chaptersEl.appendChild(btn);
+        });
+      }
+
+      function renderLogs(lines) {
+        logFeedEl.innerHTML = "";
+        lines.forEach((line, idx) => {
+          const item = document.createElement("li");
+          item.className = "log";
+          item.style.animationDelay = String(idx * 70) + "ms";
+          const parsed = line.match(/^\[(.*?)\]\s*(.*)$/);
+          if (parsed) {
+            const time = document.createElement("span");
+            time.className = "log-time";
+            time.textContent = "[" + parsed[1] + "]";
+            item.appendChild(time);
+            item.appendChild(document.createTextNode(parsed[2]));
+          } else {
+            item.textContent = line;
+          }
+          logFeedEl.appendChild(item);
+        });
+      }
+
+      function applyMedia(phase) {
+        const nextVideo = pathToAbsolute(phase.video);
+        if (bgVideo.src !== nextVideo) {
+          bgVideo.src = phase.video;
+          bgVideo.load();
+        }
+
+        const nextTrack = trackForPhase(phase);
+        const nextAudio = pathToAbsolute(nextTrack);
+        if (bgAudio.src !== nextAudio) {
+          bgAudio.src = nextTrack;
+          bgAudio.load();
+        }
+
+        if (started) {
+          bgVideo.play().catch(() => {});
+          if (!audioMuted) {
+            bgAudio.play().catch(() => {
+              audioStatusEl.textContent = "AUDIO BLOCKED";
+            });
+          }
+        }
+      }
+
+      function setPhase(nextIndex) {
+        currentIndex = ((nextIndex % phases.length) + phases.length) % phases.length;
+        const phase = phases[currentIndex];
+
+        chapterTitleEl.textContent = phase.title;
+        chapterDescEl.textContent = phase.description;
+        progressEl.textContent = "Entry " + String(currentIndex + 1).padStart(2, "0") + " / " + String(phases.length).padStart(2, "0");
+
+        for (const btn of chaptersEl.querySelectorAll(".chapter-btn")) {
+          btn.classList.toggle("active", Number(btn.dataset.index) === currentIndex);
+        }
+
+        renderLogs(phase.logs);
+        applyMedia(phase);
+      }
+
+      function refreshModeLabel() {
+        modeBtn.textContent = "Mode: " + (audioMode === "classical" ? "Classical" : "Hiphop");
+      }
+
+      function refreshMuteLabel() {
+        muteBtn.textContent = "Audio: " + (audioMuted ? "Off" : "On");
+      }
+
+      prevBtn.addEventListener("click", () => setPhase(currentIndex - 1));
+      nextBtn.addEventListener("click", () => setPhase(currentIndex + 1));
+
+      modeBtn.addEventListener("click", () => {
+        audioMode = audioMode === "classical" ? "hiphop" : "classical";
+        refreshModeLabel();
+        setPhase(currentIndex);
+      });
+
+      muteBtn.addEventListener("click", () => {
+        audioMuted = !audioMuted;
+        refreshMuteLabel();
+        if (audioMuted) {
+          bgAudio.pause();
+          audioStatusEl.textContent = "AUDIO MUTED";
+        } else if (started) {
+          bgAudio.play().then(() => {
+            audioStatusEl.textContent = "AUDIO LIVE";
+          }).catch(() => {
+            audioStatusEl.textContent = "AUDIO BLOCKED";
+          });
+        }
+      });
+
+      startBtn.addEventListener("click", () => {
+        started = true;
+        startOverlay.classList.add("hidden");
+        audioStatusEl.textContent = audioMuted ? "AUDIO MUTED" : "AUDIO LIVE";
+        bgVideo.play().catch(() => {});
+        if (!audioMuted) {
+          bgAudio.play().catch(() => {
+            audioStatusEl.textContent = "AUDIO BLOCKED";
+          });
+        }
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowLeft") setPhase(currentIndex - 1);
+        if (event.key === "ArrowRight") setPhase(currentIndex + 1);
+      });
+
+      renderChapters();
+      refreshModeLabel();
+      refreshMuteLabel();
+      setPhase(0);
+    </script>
+  </body>
+</html>
