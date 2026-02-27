@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WARREN: INVASION PROTOCOL</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        :root {
+            --bg-color: #050505;
+            --primary: #00f3ff; /* Cyan Neon */
+            --danger: #ff0055;  /* Pink/Red Neon */
+            --accent: #fcee0a;  /* Yellow */
+            --grid-color: rgba(0, 243, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--primary);
+            font-family: 'VT323', monospace;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center center;
+        }
+
+        /* CRT Scanline Effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 10;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            box-shadow: 0 0 20px var(--primary);
+            border: 2px solid var(--primary);
+            background: #000;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            text-transform: uppercase;
+            z-index: 5;
+        }
+
+        .glitch-text {
+            position: relative;
+        }
+        
+        /* Simple CSS Glitch Animation for UI */
+        @keyframes glitch-anim {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+
+        .glitch-active {
+            animation: glitch-anim 0.2s infinite;
+            color: var(--danger);
+        }
+
+        #start-screen, #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            pointer-events: auto;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 60px;
+            margin: 0;
+            color: var(--primary);
+            text-shadow: 4px 4px 0px var(--danger);
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 40px;
+            color: var(--danger);
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 20px;
+            max-width: 600px;
+            line-height: 1.5;
+            color: #ccc;
+        }
+
+        .btn {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-family: 'VT323', monospace;
+            font-size: 28px;
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .btn:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .controls-hint {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .key {
+            display: inline-block;
+            border: 1px solid #666;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #fff;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div id="ui-layer">
+        <div class="hud-top">
+            <div id="score-display">SCORE: 00000</div>
+            <div id="level-display">WARREN LVL: 01</div>
+            <div id="lives-display">LIVES: 3</div>
+        </div>
+    </div>
+
+    <div id="start-screen">
+        <h1 class="glitch-text" data-text="WARREN">WARREN</h1>
+        <div style="font-size: 24px; color: var(--accent); margin-bottom: 20px;">INVASION PROTOCOL</div>
+        <p>
+            The AI "OMNICRON" has evolved into a digital god, creating the WARREN.<br>
+            You are the GLITCH. Climb the recursive architecture.<br>
+            Avoid the SENTINELS (red) and DATA MINES (pink).<br>
+            Reach the KERNEL at the top to corrupt the system.
+        </p>
+        <button class="btn" onclick="startGame()">INITIALIZE</button>
+        <div class="controls-hint">
+            Use <span class="key">←</span> <span class="key">→</span> to Move & <span class="key">SPACE</span> to Jump
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="hidden">
+        <h2 id="end-title">SYSTEM FAILURE</h2>
+        <p id="end-reason">SIGNAL LOST</p>
+        <div id="final-score" style="font-size: 30px; color: var(--accent); margin: 20px;">SCORE: 0</div>
+        <button class="btn" onclick="resetGame()">REBOOT SYSTEM</button>
+    </div>
+</div>
+
+<script>
+/**
+ * WARREN: INVASION PROTOCOL
+ * A Donkey Kong inspired Cyberpunk Platformer
+ */
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Game Constants
+const GRAVITY = 0.5;
+const FRICTION = 0.8;
+const MOVE_SPEED = 4; // Player speed
+const JUMP_FORCE = -11;
+const ENEMY_SPEED = 2;
+
+// Game State
+let gameState = 'START'; // START, PLAYING, GAMEOVER, WIN
+let score = 0;
+let lives = 3;
+let level = 1;
+let frameCount = 0;
+
+// Input Handling
+const keys = {
+    right: false,
+    left: false,
+    up: false
+};
+
+window.addEventListener('keydown', (e) => {
+    if (gameState !== 'PLAYING') return;
+    
+    if (e.code === 'ArrowRight') keys.right = true;
+    if (e.code === 'ArrowLeft') keys.left = true;
+    if (e.code === 'Space' || e.code === 'ArrowUp') {
+        if (!keys.up && player.grounded) {
+            player.velY = JUMP_FORCE;
+            player.grounded = false;
+            createParticles(player.x + player.width/2, player.y + player.height, 5, '#fff');
+        }
+        keys.up = true;
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowRight') keys.right = false;
+    if (e.code === 'ArrowLeft') keys.left = false;
+    if (e.code === 'Space' || e.code === 'ArrowUp') keys.up = false;
+});
+
+// Classes
+class Player {
+    constructor() {
+        this.width = 20;
+        this.height = 30;
+        this.x = 50;
+        this.y = canvas.height - 100;
+        this.velX = 0;
+        this.velY = 0;
+        this.color = '#00f3ff';
+        this.grounded = false;
+        this.climbing = false;
+    }
+
+    update() {
+        // Input Physics
+        if (keys.right) {
+            if (this.velX < MOVE_SPEED) this.velX++;
+        }
+        if (keys.left) {
+            if (this.velX > -MOVE_SPEED) this.velX--;
+        }
+
+        // Physics
+        this.velX *= FRICTION;
+        this.velY += GRAVITY;
+
+        this.x += this.velX;
+        this.y += this.velY;
+
+        // Boundaries
+        if (this.x < 0) this.x = 0;
+        if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+        
+        // Floor Collision (Death)
+        if (this.y > canvas.height) {
+            die();
+        }
+
+        this.grounded = false;
+        
+        // Platform Collision
+        platforms.forEach(platform => {
+            const dir = colCheck(this, platform);
+            if (dir === "b") {
+                this.grounded = true;
+                this.velY = 0;
+            } else if (dir === "t") {
+                this.velY *= -1;
+            }
+        });
+
+        // Ladder Collision (Simplified for this version: just vertical movement assist if needed, 
+        // but for DK style we stick to jumping between platforms)
+    }
+
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        
+        // Draw "Glitch" trail
+        if (Math.random() > 0.8) {
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(this.x + (Math.random() * 10 - 5), this.y, this.width, this.height);
+        }
+        
+        ctx.shadowBlur = 0;
+    }
+}
+
+class Platform {
+    constructor(x, y, width, height, type = 'normal') {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.type = type; // normal, ladder
+    }
+
+    draw() {
+        ctx.fillStyle = '#222';
+        ctx.strokeStyle = '#00f3ff';
+        ctx.lineWidth = 2;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        
+        // Tech details
+        ctx.fillStyle = 'rgba(0, 243, 255, 0.3)';
+        ctx.fillRect(this.x + 5, this.y + 5, this.width - 10, 2);
+    }
+}
+
+class Enemy {
+    constructor(x, y, rangeStart, rangeEnd, type = 'sentinel') {
+        this.x = x;
+        this.y = y;
+        this.width = 20;
+        this.height = 20;
+        this.rangeStart = rangeStart;
+        this.rangeEnd = rangeEnd;
+        this.speed = type === 'mine' ? 0 : ENEMY_SPEED + (Math.random());
+        this.dir = 1;
+        this.type = type; // sentinel (moves), mine (static)
+        this.color = type === 'mine' ? '#ff0055' : '#ff3333';
+        this.floatOffset = Math.random() * Math.PI * 2;
+    }
+
+    update() {
+        if (this.type === 'sentinel') {
+            this.x += this.speed * this.dir;
+            if (this.x > this.rangeEnd || this.x < this.rangeStart) {
+                this.dir *= -1;
+            }
+        } else if (this.type === 'mine') {
+            // Hover effect
+            this.y += Math.sin(frameCount * 0.1 + this.floatOffset) * 0.5;
+        }
+
+        // Collision with player
+        if (checkOverlap(this, player)) {
+            die();
+        }
+    }
+
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        
+        if (this.type === 'sentinel') {
+            // Draw Skull/Square shape
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(this.x + 4, this.y + 6, 4, 4);
+            ctx.fillRect(this.x + 12, this.y + 6, 4, 4);
+        } else {
+            // Draw Mine (Circle-ish)
+            ctx.beginPath();
+            ctx.arc(this.x + 10, this.y + 10, 10, 0, Math.PI * 2);
+            ctx.fill();
+            // Core
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(this.x + 10, this.y + 10, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.vy = (Math.random() - 0.5) * 4;
+        this.life = 1.0;
+        this.color = color;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= 0.05;
+    }
+    draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, 3, 3);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+class Goal {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 30;
+        this.height = 40;
+    }
+    
+    update() {
+        if (checkOverlap(this, player)) {
+            winLevel();
+        }
+    }
+    
+    draw() {
+        // Draw the "Kernel" (Princess/Goal)
+        const pulse = Math.sin(frameCount * 0.1) * 5;
+        ctx.fillStyle = '#fcee0a';
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#fcee0a';
+        
+        // Glitchy shape
+        ctx.beginPath();
+        ctx.moveTo(this.x + 15, this.y);
+        ctx.lineTo(this.x + 30, this.y + 20 + pulse);
+        ctx.lineTo(this.x + 15, this.y + 40);
+        ctx.lineTo(this.x, this.y + 20 - pulse);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+        
+        // Text
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px VT323';
+        ctx.fillText('KERNEL', this.x - 5, this.y - 10);
+    }
+}
+
+// Global Objects
+let player;
+let platforms = [];
+let enemies = [];
+let particles = [];
+let goal;
+let animationId;
+
+// Helpers
+function colCheck(shapeA, shapeB) {
+    // get the vectors to check against
+    const vX = (shapeA.x + (shapeA.width / 2)) - (shapeB.x + (shapeB.width / 2)),
+        vY = (shapeA.y + (shapeA.height / 2)) - (shapeB.y + (shapeB.height / 2)),
+        // add the half widths and half heights of the objects
+        hWidths = (shapeA.width / 2) + (shapeB.width / 2),
+        hHeights = (shapeA.height / 2) + (shapeB.height / 2);
+    let colDir = null;
+
+    // if the x and y vector are less than the half width or half height, they we must be inside the object, causing a collision
+    if (Math.abs(vX) < hWidths && Math.abs(vY) < hHeights) {
+        const oX = hWidths - Math.abs(vX), oY = hHeights - Math.abs(vY);
+        if (oX >= oY) {
+            if (vY > 0) {
+                colDir = "t";
+                shapeA.y += oY;
+            } else {
+                colDir = "b";
+                shapeA.y -= oY;
+            }
+        } else {
+            if (vX > 0) {
+                colDir = "l";
+                shapeA.x += oX;
+            } else {
+                colDir = "r";
+                shapeA.x -= oX;
+            }
+        }
+    }
+    return colDir;
+}
+
+function checkOverlap(rect1, rect2) {
+    return (rect1.x < rect2.x + rect2.width &&
+            rect1.x + rect1.width > rect2.x &&
+            rect1.y < rect2.y + rect2.height &&
+            rect1.y + rect1.height > rect2.y);
+}
+
+function createParticles(x, y, count, color) {
+    for(let i=0; i<count; i++) {
+        particles.push(new Particle(x, y, color));
+    }
+}
+
+// Level Generation
+function initLevel(lvl) {
+    platforms = [];
+    enemies = [];
+    player = new Player();
+    
+    // Base floor
+    platforms.push(new Platform(0, canvas.height - 20, canvas.width, 20));
+
+    if (lvl === 1) {
+        // Level 1: The Entry (Classic DK layout simplified)
+        platforms.push(new Platform(100, 500, 600, 20));
+        platforms.push(new Platform(50, 400, 200, 20));
+        platforms.push(new Platform(300, 400, 200, 20));
+        platforms.push(new Platform(550, 400, 200, 20));
+        platforms.push(new Platform(100, 300, 600, 20));
+        platforms.push(new Platform(0, 200, 300, 20));
+        platforms.push(new Platform(500, 200, 300, 20));
+        platforms.push(new Platform(200, 100, 400, 20)); // Top
+
+        enemies.push(new Enemy(100, 470, 100, 700));
+        enemies.push(new Enemy(300, 370, 300, 500));
+        enemies.push(new Enemy(100, 270, 100, 700));
+        
+        goal = new Goal(385, 60);
+    } else if (lvl === 2) {
+        // Level 2: The Maze (More vertical, mines)
+        platforms.push(new Platform(100, 520, 150, 20));
+        platforms.push(new Platform(350, 520, 150, 20));
+        platforms.push(new Platform(600, 520, 150, 20));
+        
+        platforms.push(new Platform(50, 420, 100, 20));
+        platforms.push(new Platform(250, 420, 300, 20));
+        platforms.push(new Platform(650, 420, 100, 20));
+        
+        platforms.push(new Platform(150, 320, 500, 20));
+        
+        platforms.push(new Platform(50, 220, 200, 20));
+        platforms.push(new Platform(550, 220, 200, 20));
+        
+        platforms.push(new Platform(250, 120, 300, 20));
+
+        enemies.push(new Enemy(250, 390, 250, 550, 'sentinel'));
+        enemies.push(new Enemy(250, 390, 250, 550, 'sentinel')); // Stacked speed diff
+        enemies.push(new Enemy(150, 290, 150, 650, 'sentinel'));
+        
+        enemies.push(new Enemy(200, 500, 0, 0, 'mine'));
+        enemies.push(new Enemy(600, 300, 0, 0, 'mine'));
+        enemies.push(new Enemy(400, 100, 0, 0, 'mine'));
+
+        goal = new Goal(385, 80);
+    } else {
+        // Level 3: The Core (Hard)
+        platforms.push(new Platform(0, 520, 200, 20));
+        platforms.push(new Platform(300, 520, 200, 20));
+        platforms.push(new Platform(600, 520, 200, 20));
+        
+        platforms.push(new Platform(100, 420, 600, 20));
+        
+        platforms.push(new Platform(0, 320, 150, 20));
+        platforms.push(new Platform(350, 320, 100, 20));
+        platforms.push(new Platform(650, 320, 150, 20));
+        
+        platforms.push(new Platform(100, 220, 600, 20));
+        
+        platforms.push(new Platform(300, 120, 200, 20));
+
+        for(let i=0; i<5; i++) {
+            enemies.push(new Enemy(Math.random()*700, 480, 0, 800, 'sentinel'));
+        }
+        enemies.push(new Enemy(350, 290, 0, 0, 'mine'));
+        enemies.push(new Enemy(150, 190, 0, 0, 'mine'));
+        enemies.push(new Enemy(550, 190, 0, 0, 'mine'));
+
+        goal = new Goal(385, 80);
+    }
+}
+
+// Game Logic
+function startGame() {
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('game-over-screen').classList.add('hidden');
+    score = 0;
+    lives = 3;
+    level = 1;
+    initLevel(level);
+    gameState = 'PLAYING';
+    updateHUD();
+    loop();
+}
+
+function resetGame() {
+    startGame();
+}
+
+function die() {
+    lives--;
+    createParticles(player.x, player.y, 20, '#00f3ff');
+    updateHUD();
+    
+    if (lives <= 0) {
+        gameOver();
+    } else {
+        // Respawn
+        player.x = 50;
+        player.y = canvas.height - 100;
+        player.velX = 0;
+        player.velY = 0;
+    }
+}
+
+function winLevel() {
+    score += 1000 * level;
+    level++;
+    createParticles(goal.x, goal.y, 50, '#fcee0a');
+    
+    if (level > 3) {
+        gameWin();
+    } else {
+        initLevel(level);
+        updateHUD();
+    }
+}
+
+function gameOver() {
+    gameState = 'GAMEOVER';
+    document.getElementById('end-title').innerText = "SYSTEM FAILURE";
+    document.getElementById('end-title').style.color = "var(--danger)";
+    document.getElementById('end-reason').innerText = "THE WARREN HAS ABSORBED YOU";
+    document.getElementById('final-score').innerText = "FINAL SCORE: " + score;
+    document.getElementById('game-over-screen').classList.remove('hidden');
+}
+
+function gameWin() {
+    gameState = 'WIN';
+    document.getElementById('end-title').innerText = "SYSTEM CORRUPTED";
+    document.getElementById('end-title').style.color = "var(--primary)";
+    document.getElementById('end-reason').innerText = "OMNICRON DEFEATED. REALITY RESTORED.";
+    document.getElementById('final-score').innerText = "FINAL SCORE: " + score;
+    document.getElementById('game-over-screen').classList.remove('hidden');
+}
+
+function updateHUD() {
+    document.getElementById('score-display').innerText = `SCORE: ${score.toString().padStart(5, '0')}`;
+    document.getElementById('level-display').innerText = `WARREN LVL: 0${level}`;
+    document.getElementById('lives-display').innerText = `LIVES: ${lives}`;
+    
+    if (lives === 1) {
+        document.getElementById('lives-display').classList.add('glitch-active');
+    } else {
+        document.getElementById('lives-display').classList.remove('glitch-active');
+    }
+}
+
+// Main Loop
+function loop() {
+    if (gameState !== 'PLAYING') return;
+
+    // Clear
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Update & Draw
+    platforms.forEach(p => p.draw());
+    
+    goal.update();
+    goal.draw();
+
+    enemies.forEach(e => {
+        e.update();
+        e.draw();
+    });
+
+    player.update();
+    player.draw();
+
+    // Particles
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].life <= 0) particles.splice(i, 1);
+    }
+
+    // Score increment for survival
+    if (frameCount % 60 === 0) score += 10;
+    if (frameCount % 60 === 0) updateHUD();
+
+    frameCount++;
+    animationId = requestAnimationFrame(loop);
+}
+
+// Initial Draw
+ctx.fillStyle = '#000';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+</script>
+</body>
+</html>
