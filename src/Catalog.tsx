@@ -5,6 +5,17 @@ interface CatalogProps {
   onSelectApp: (app: AppEntry) => void;
 }
 
+const FILTER_TAGS = [
+  "All_Entries",
+  "Pointless",
+  "Endless",
+  "Corrupted",
+  "Narrative",
+  "Interactive",
+  "Tool",
+  "Simulation",
+];
+
 function Card({
   entry,
   onSelect,
@@ -81,6 +92,21 @@ function Card({
             className={`h-px w-12 mt-4 mb-2 ${entry.missing ? "bg-white/10" : "bg-white/20 group-hover:bg-white/50 transition-colors"}`}
           ></div>
         </div>
+
+        {/* Tags */}
+        {entry.tags && entry.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {entry.tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 border border-white/8 text-white/25 rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
         <p
           className={`text-sm leading-relaxed line-clamp-3 font-light ${entry.missing ? "text-white/30" : "text-white/60"}`}
         >
@@ -116,12 +142,17 @@ function Card({
 
 export function Catalog({ onSelectApp }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState("All_Entries");
 
-  const filteredEntries = CATALOG_ENTRIES.filter(
-    (entry) =>
+  const filteredEntries = CATALOG_ENTRIES.filter((entry) => {
+    const matchesSearch =
       entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      entry.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+      entry.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTag =
+      selectedTag === "All_Entries" ||
+      (entry.tags && entry.tags.includes(selectedTag));
+    return matchesSearch && matchesTag;
+  });
 
   return (
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
@@ -134,7 +165,9 @@ export function Catalog({ onSelectApp }: CatalogProps) {
           <h1 className="text-white/90 text-3xl font-light tracking-widest uppercase font-display">
             The Void
           </h1>
-          <p className="text-white/40 text-[10px] font-mono tracking-widest uppercase">Archive // v2.0.0</p>
+          <p className="text-white/40 text-[10px] font-mono tracking-widest uppercase">
+            Archive // v2.0.0
+          </p>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
@@ -205,6 +238,10 @@ export function Catalog({ onSelectApp }: CatalogProps) {
             <div className="h-px w-full bg-white/10 rounded overflow-hidden">
               <div className="h-full bg-white/40 w-[85%]"></div>
             </div>
+            <div className="flex justify-between items-center text-[10px] text-white/20 font-mono tracking-widest mt-1">
+              <span>ENTRIES:</span>
+              <span className="text-white/40">{CATALOG_ENTRIES.length}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -218,7 +255,7 @@ export function Catalog({ onSelectApp }: CatalogProps) {
               The Archive
             </h2>
             <div className="hidden sm:flex px-3 py-1 bg-white/5 border border-white/10 text-[9px] text-white/50 font-mono tracking-widest uppercase rounded-full">
-              Index: NULL
+              {filteredEntries.length} of {CATALOG_ENTRIES.length} Entries
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -238,32 +275,44 @@ export function Catalog({ onSelectApp }: CatalogProps) {
         </header>
 
         {/* Filters / Tags */}
-        <div className="shrink-0 px-10 py-6 flex flex-wrap gap-3">
-          <button className="px-5 py-2 bg-white/10 border border-white/20 text-white text-[10px] font-light uppercase tracking-widest hover:bg-white/20 transition-all rounded-full cursor-pointer">
-            All_Entries
-          </button>
-          <button className="px-5 py-2 bg-transparent border border-white/10 text-white/50 text-[10px] font-light uppercase tracking-widest hover:border-white/30 hover:text-white transition-all rounded-full cursor-pointer">
-            Pointless
-          </button>
-          <button className="px-5 py-2 bg-transparent border border-white/10 text-white/50 text-[10px] font-light uppercase tracking-widest hover:border-white/30 hover:text-white transition-all rounded-full cursor-pointer">
-            Endless
-          </button>
-          <button className="px-5 py-2 bg-transparent border border-white/10 text-white/50 text-[10px] font-light uppercase tracking-widest hover:border-white/30 hover:text-white transition-all rounded-full cursor-pointer">
-            Corrupted
-          </button>
+        <div className="shrink-0 px-10 py-5 flex flex-wrap gap-2.5 border-b border-white/5">
+          {FILTER_TAGS.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setSelectedTag(tag)}
+              className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer ${
+                selectedTag === tag
+                  ? "bg-white/10 border-white/20 text-white"
+                  : "bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white"
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
         </div>
 
         {/* Grid Content */}
         <main className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-16">
-            {filteredEntries.map((entry) => (
-              <Card
-                key={entry.id}
-                entry={entry}
-                onSelect={() => !entry.missing && onSelectApp(entry)}
-              />
-            ))}
-          </div>
+          {filteredEntries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+              <span className="material-symbols-outlined text-5xl text-white/10 font-light">
+                search_off
+              </span>
+              <p className="text-white/20 font-mono text-xs tracking-widest uppercase">
+                Nothing found. The void returns nothing.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-16">
+              {filteredEntries.map((entry) => (
+                <Card
+                  key={entry.id}
+                  entry={entry}
+                  onSelect={() => !entry.missing && onSelectApp(entry)}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Footer Logs */}
           <div className="mt-auto pt-10 border-t border-white/10">
