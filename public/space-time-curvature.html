@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Interactive spacetime curvature visualization and cartography system"/>
+  <meta name="theme-color" content="#0b0d12"/>
+  <title>Curvature Cartographer | Spacetime Visualization</title>
+  
+  <style>
+    :root {
+      --bg-primary: #0b0d12;
+      --bg-secondary: #111318;
+      --text-primary: #e8eaf0;
+      --text-secondary: #9ca3af;
+      --accent: #60a5fa;
+      --accent-glow: rgba(96, 165, 250, 0.3);
+      --hud-bg: rgba(17, 19, 24, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* HUD Interface */
+    .hud {
+      position: fixed;
+      left: 16px;
+      top: 16px;
+      z-index: 10;
+      background: var(--hud-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      min-width: 320px;
+      max-width: 480px;
+      font-size: 13px;
+      line-height: 1.5;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      transition: opacity 0.3s ease;
+    }
+
+    .hud-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hud-title {
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.025em;
+    }
+
+    .hud-badge {
+      font-size: 10px;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .hud-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .stat-value.warning { color: var(--warning); }
+    .stat-value.danger { color: var(--danger); }
+    .stat-value.success { color: var(--success); }
+
+    .controls {
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .controls kbd {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 11px;
+      border: 1px solid var(--border);
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .control-group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* Settings Panel */
+    .settings-toggle {
+      position: fixed;
+      right: 16px;
+      top: 16px;
+      z-index: 20;
+      background: var(--hud-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+    }
+
+    .settings-toggle:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+    }
+
+    .settings-panel {
+      position: fixed;
+      right: 16px;
+      top: 64px;
+      z-index: 20;
+      background: var(--hud-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      width: 280px;
+      transform: translateX(calc(100% + 32px));
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+    }
+
+    .settings-panel.open {
+      transform: translateX(0);
+    }
+
+    .settings-title {
+      font-weight: 600;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .setting {
+      margin-bottom: 16px;
+    }
+
+    .setting-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+
+    .setting-value {
+      color: var(--accent);
+      font-family: monospace;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Performance Monitor */
+    .perf-monitor {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      z-index: 10;
+      background: var(--hud-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'SF Mono', monospace;
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: flex;
+      gap: 16px;
+    }
+
+    .perf-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .perf-bar {
+      width: 60px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .perf-fill {
+      height: 100%;
+      background: var(--success);
+      transition: width 0.3s ease, background 0.3s ease;
+    }
+
+    .perf-fill.warning { background: var(--warning); }
+    .perf-fill.danger { background: var(--danger); }
+
+    /* Loading State */
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      transition: opacity 0.5s ease, visibility 0.5s;
+    }
+
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .loader-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loader-text {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: fixed;
+      z-index: 30;
+      background: var(--hud-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      max-width: 200px;
+    }
+
+    .tooltip.visible {
+      opacity: 1;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .hud {
+        left: 8px;
+        top: 8px;
+        right: 8px;
+        min-width: auto;
+        max-width: none;
+      }
+      
+      .hud-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .settings-panel {
+        left: 8px;
+        right: 8px;
+        width: auto;
+        top: auto;
+        bottom: 8px;
+        max-height: 60vh;
+        transform: translateY(calc(100% + 16px));
+      }
+      
+      .settings-panel.open {
+        transform: translateY(0);
+      }
+      
+      .perf-monitor {
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        flex-wrap: wrap;
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loader">
+    <div class="loader-spinner"></div>
+    <div class="loader-text">Initializing Curvature Field...</div>
+  </div>
+
+  <!-- Canvas -->
+  <div id="canvas-container">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <!-- Main HUD -->
+  <div class="hud" id="hud">
+    <div class="hud-header">
+      <span class="hud-title">Curvature Cartographer</span>
+      <span class="hud-badge">v2.0</span>
+    </div>
+    
+    <div class="hud-grid" id="stats-grid">
+      <div class="stat">
+        <span class="stat-label">Local Curvature</span>
+        <span class="stat-value" id="stat-curv">0.000</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Gradient Magnitude</span>
+        <span class="stat-value" id="stat-grad">0.0000</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Refined Zones</span>
+        <span class="stat-value" id="stat-refined">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Clamp Events</span>
+        <span class="stat-value" id="stat-clamped">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Sources</span>
+        <span class="stat-value" id="stat-sources">2</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Zoom Level</span>
+        <span class="stat-value" id="stat-zoom">1.0x</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="controls-row">
+        <span class="control-group"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</span>
+        <span class="control-group"><kbd>Q</kbd><kbd>E</kbd> Rotate</span>
+        <span class="control-group"><kbd>Wheel</kbd> Zoom</span>
+      </div>
+      <div class="controls-row" style="margin-top: 8px;">
+        <span class="control-group"><kbd>Click</kbd> Add Source</span>
+        <span class="control-group"><kbd>Shift</kbd>+<kbd>Click</kbd> Remove</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <button class="settings-toggle" id="settings-btn" aria-label="Toggle settings">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  </button>
+
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-title">Simulation Parameters</div>
+    
+    <div class="setting">
+      <div class="setting-label">
+        <span>Grid Resolution</span>
+        <span class="setting-value" id="val-grid">36px</span>
+      </div>
+      <input type="range" id="grid-step" min="20" max="60" value="36" step="4">
+    </div>
+
+    <div class="setting">
+      <div class="setting-label">
+        <span>Ray Count</span>
+        <span class="setting-value" id="val-rays">64</span>
+      </div>
+      <input type="range" id="ray-count" min="32" max="128" value="64" step="8">
+    </div>
+
+    <div class="setting">
+      <div class="setting-label">
+        <span>Ray Steps</span>
+        <span class="setting-value" id="val-steps">70</span>
+      </div>
+      <input type="range" id="ray-steps" min="40" max="120" value="70" step="10">
+    </div>
+
+    <div class="setting">
+      <div class="setting-label">
+        <span>Gradient Clamp</span>
+        <span class="setting-value" id="val-grad">0.020</span>
+      </div>
+      <input type="range" id="max-grad" min="0.01" max="0.05" value="0.02" step="0.005">
+    </div>
+
+    <div class="setting">
+      <div class="setting-label">
+        <span>Damping Factor</span>
+        <span class="setting-value" id="val-damp">0.60</span>
+      </div>
+      <input type="range" id="damp-near" min="0.3" max="0.9" value="0.6" step="0.1">
+    </div>
+
+    <div class="setting">
+      <div class="setting-label">
+        <span>Bifurcation Threshold</span>
+        <span class="setting-value" id="val-bifurc">0.030</span>
+      </div>
+      <input type="range" id="refine-on" min="0.01" max="0.08" value="0.03" step="0.01">
+    </div>
+  </div>
+
+  <!-- Performance Monitor -->
+  <div class="perf-monitor" id="perf-monitor">
+    <div class="perf-item">
+      <span>FPS</span>
+      <div class="perf-bar">
+        <div class="perf-fill" id="fps-bar" style="width: 100%"></div>
+      </div>
+      <span id="fps-text">60</span>
+    </div>
+    <div class="perf-item">
+      <span>Frame</span>
+      <span id="frame-time">16ms</span>
+    </div>
+    <div class="perf-item">
+      <span>Objects</span>
+      <span id="object-count">0</span>
+    </div>
+  </div>
+
+  <!-- Tooltip -->
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    /**
+     * Curvature Cartographer v2.0
+     * Production-grade spacetime curvature visualization
+     */
+
+    'use strict';
+
+    // Configuration
+    const CONFIG = {
+      initialSources: [
+        { x: -180, y: 40, s: 1.8, r: 130, id: 'source-1' },
+        { x: 220, y: -60, s: 1.2, r: 170, id: 'source-2' }
+      ],
+      defaults: {
+        gridStep: 36,
+        rays: 64,
+        raySteps: 70,
+        dt: 1.0,
+        maxGrad: 0.020,
+        dampNear: 0.60,
+        refineOn: 0.030
+      },
+      limits: {
+        minZoom: 0.25,
+        maxZoom: 3.2,
+        maxSources: 20
+      },
+      performance: {
+        targetFps: 60,
+        frameHistory: 30
+      }
+    };
+
+    // State Management
+    class StateManager {
+      constructor() {
+        this.cam = { x: 0, y: 0, ang: 0, zoom: 1.0 };
+        this.vel = { fwd: 0, strafe: 0, rot: 0 };
+        this.sources = new Map();
+        this.budget = { ...CONFIG.defaults };
+        this.keys = new Set();
+        this.mouse = { x: 0, y: 0, worldX: 0, worldY: 0 };
+        this.stats = {
+          curv: 0,
+          grad: 0,
+          refined: 0,
+          clamped: 0,
+          fps: 60,
+          frameTime: 0
+        };
+        this.lastTime = performance.now();
+        this.frameHistory = [];
+        
+        // Initialize sources
+        CONFIG.initialSources.forEach(s => this.sources.set(s.id, { ...s }));
+      }
+
+      updateMouse(screenX, screenY, canvas) {
+        this.mouse.x = screenX;
+        this.mouse.y = screenY;
+        const world = this.screenToWorld(screenX, screenY, canvas);
+        this.mouse.worldX = world.x;
+        this.mouse.worldY = world.y;
+      }
+
+      screenToWorld(sx, sy, canvas) {
+        const cx = canvas.width / (2 * window.devicePixelRatio);
+        const cy = canvas.height / (2 * window.devicePixelRatio);
+        const x = (sx - cx) / this.cam.zoom;
+        const y = (sy - cy) / this.cam.zoom;
+        const ca = Math.cos(this.cam.ang);
+        const sa = Math.sin(this.cam.ang);
+        return {
+          x: this.cam.x + (x * ca - y * sa),
+          y: this.cam.y + (x * sa + y * ca)
+        };
+      }
+
+      worldToScreen(wx, wy, canvas) {
+        const dx = wx - this.cam.x;
+        const dy = wy - this.cam.y;
+        const ca = Math.cos(-this.cam.ang);
+        const sa = Math.sin(-this.cam.ang);
+        const cx = canvas.width / (2 * window.devicePixelRatio);
+        const cy = canvas.height / (2 * window.devicePixelRatio);
+        return {
+          x: (dx * ca - dy * sa) * this.cam.zoom + cx,
+          y: (dx * sa + dy * ca) * this.cam.zoom + cy
+        };
+      }
+
+      updateFPS(timestamp) {
+        const dt = timestamp - this.lastTime;
+        this.lastTime = timestamp;
+        this.stats.frameTime = dt;
+        
+        this.frameHistory.push(1000 / dt);
+        if (this.frameHistory.length > CONFIG.performance.frameHistory) {
+          this.frameHistory.shift();
+        }
+        
+        const avg = this.frameHistory.reduce((a, b) => a + b, 0) / this.frameHistory.length;
+        this.stats.fps = Math.round(avg);
+      }
+    }
+
+    // Physics Engine
+    class CurvaturePhysics {
+      constructor(state) {
+        this.state = state;
+      }
+
+      intensityAt(x, y) {
+        let I = 0;
+        for (const source of this.state.sources.values()) {
+          const dx = x - source.x;
+          const dy = y - source.y;
+          const d2 = dx * dx + dy * dy;
+          I += source.s * Math.exp(-d2 / (source.r * source.r));
+        }
+        return I;
+      }
+
+      gradIntensityAt(x, y) {
+        const e = 2.0;
+        const Ix1 = this.intensityAt(x + e, y);
+        const Ix0 = this.intensityAt(x - e, y);
+        const Iy1 = this.intensityAt(x, y + e);
+        const Iy0 = this.intensityAt(x, y - e);
+        return {
+          gx: (Ix1 - Ix0) / (2 * e),
+          gy: (Iy1 - Iy0) / (2 * e)
+        };
+      }
+
+      kFromI(I) {
+        const k = I / (1.0 + I);
+        return Math.max(0, Math.min(0.92, k));
+      }
+
+      bendGain(k) {
+        return 1.6 * k + 0.25 * k * k;
+      }
+
+      traceRay(x0, y0, dir0, steps, dtBase) {
+        let x = x0, y = y0;
+        let vx = Math.cos(dir0);
+        let vy = Math.sin(dir0);
+        const pts = [];
+        let clampCount = 0;
+        const { maxGrad, dampNear } = this.state.budget;
+
+        for (let i = 0; i < steps; i++) {
+          const I = this.intensityAt(x, y);
+          const k = this.kFromI(I);
+          const g = this.gradIntensityAt(x, y);
+
+          let { gx, gy } = g;
+          const gm = Math.hypot(gx, gy);
+          let clamped = false;
+
+          if (gm > maxGrad) {
+            const s = maxGrad / (gm + 1e-9);
+            gx *= s;
+            gy *= s;
+            clamped = true;
+            clampCount++;
+          }
+
+          const gain = this.bendGain(k);
+          const perp = (-vy * gx + vx * gy);
+          const ax = -vy * perp * gain;
+          const ay = vx * perp * gain;
+          const damp = 1.0 - dampNear * k;
+          const dt = dtBase * (0.55 + 0.45 * (1.0 - k));
+
+          vx = (vx + ax * dt) * damp;
+          vy = (vy + ay * dt) * damp;
+
+          const vm = Math.hypot(vx, vy) + 1e-9;
+          vx /= vm;
+          vy /= vm;
+
+          x += vx * 18 * dt;
+          y += vy * 18 * dt;
+
+          pts.push({ x, y, k, clamped });
+
+          // Early termination check
+          const sp = this.state.worldToScreen(x, y, this.canvas);
+          const margin = 200;
+          const width = this.canvas.width / window.devicePixelRatio;
+          const height = this.canvas.height / window.devicePixelRatio;
+          
+          if (sp.x < -margin || sp.x > width + margin || 
+              sp.y < -margin || sp.y > height + margin) {
+            break;
+          }
+        }
+
+        return { pts, clampCount };
+      }
+
+      traceRaysAdaptive(originX, originY, baseDir, rayCount, steps, dt) {
+        const rays = [];
+        let refined = 0;
+        let clampedTotal = 0;
+        const { refineOn } = this.state.budget;
+
+        // Coarse pass
+        for (let i = 0; i < rayCount; i++) {
+          const t = (i / (rayCount - 1)) * 1.15 - 0.575;
+          const dir = baseDir + t;
+          const out = this.traceRay(originX, originY, dir, steps, dt);
+          rays.push(out);
+          clampedTotal += out.clampCount;
+        }
+
+        // Refinement
+        const refinedRays = [];
+        for (let i = 0; i < rays.length - 1; i++) {
+          refinedRays.push(rays[i]);
+          const a = rays[i].pts;
+          const b = rays[i + 1].pts;
+          const idx = Math.min(a.length, b.length, Math.floor(steps * 0.55)) - 1;
+
+          if (idx > 5) {
+            const da = a[idx];
+            const db = b[idx];
+            const d = Math.hypot(da.x - db.x, da.y - db.y);
+            const travel = 18 * dt * idx + 1e-9;
+            const metric = d / travel;
+
+            if (metric > refineOn) {
+              refined += 2;
+              const dirA = baseDir + ((i / (rayCount - 1)) * 1.15 - 0.575);
+              const dirB = baseDir + (((i + 1) / (rayCount - 1)) * 1.15 - 0.575);
+              
+              const r1 = this.traceRay(originX, originY, dirA + (dirB - dirA) * 0.33, steps, dt);
+              const r2 = this.traceRay(originX, originY, dirA + (dirB - dirA) * 0.66, steps, dt);
+              
+              refinedRays.push(r1, r2);
+              clampedTotal += r1.clampCount + r2.clampCount;
+            }
+          }
+        }
+        
+        refinedRays.push(rays[rays.length - 1]);
+        return { rays: refinedRays, refined, clampedTotal };
+      }
+
+      setCanvas(canvas) {
+        this.canvas = canvas;
+      }
+    }
+
+    // Renderer
+    class Renderer {
+      constructor(canvas, state, physics) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d', { alpha: false });
+        this.state = state;
+        this.physics = physics;
+        this.dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        
+        this.resize();
+        physics.setCanvas(canvas);
+      }
+
+      resize() {
+        const { innerWidth, innerHeight } = window;
+        this.canvas.width = Math.floor(innerWidth * this.dpr);
+        this.canvas.height = Math.floor(innerHeight * this.dpr);
+        this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      }
+
+      clear() {
+        this.ctx.fillStyle = '#0b0d12';
+        this.ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+      }
+
+      drawGrid() {
+        const { gridStep } = this.state.budget;
+        const cols = Math.ceil(window.innerWidth / gridStep) + 2;
+        const rows = Math.ceil(window.innerHeight / gridStep) + 2;
+        const lines = [];
+
+        const warpWorld = (wx, wy) => {
+          const I = this.physics.intensityAt(wx, wy);
+          const k = this.physics.kFromI(I);
+          const g = this.physics.gradIntensityAt(wx, wy);
+          
+          let { gx, gy } = g;
+          const gm = Math.hypot(gx, gy);
+          if (gm > this.state.budget.maxGrad) {
+            const s = this.state.budget.maxGrad / (gm + 1e-9);
+            gx *= s;
+            gy *= s;
+          }
+
+          const w = 110 * k;
+          return { x: wx - gx * w, y: wy - gy * w, k };
+        };
+
+        // Vertical lines
+        for (let c = -1; c <= cols; c++) {
+          const pts = [];
+          for (let r = -1; r <= rows; r++) {
+            const sx = c * gridStep;
+            const sy = r * gridStep;
+            const world = this.state.screenToWorld(sx, sy, this.canvas);
+            const warped = warpWorld(world.x, world.y);
+            const screen = this.state.worldToScreen(warped.x, warped.y, this.canvas);
+            pts.push({ x: screen.x, y: screen.y, k: warped.k });
+          }
+          lines.push(pts);
+        }
+
+        // Horizontal lines
+        for (let r = -1; r <= rows; r++) {
+          const pts = [];
+          for (let c = -1; c <= cols; c++) {
+            const sx = c * gridStep;
+            const sy = r * gridStep;
+            const world = this.state.screenToWorld(sx, sy, this.canvas);
+            const warped = warpWorld(world.x, world.y);
+            const screen = this.state.worldToScreen(warped.x, warped.y, this.canvas);
+            pts.push({ x: screen.x, y: screen.y, k: warped.k });
+          }
+          lines.push(pts);
+        }
+
+        // Render
+        this.ctx.lineWidth = 1;
+        for (const pts of lines) {
+          this.ctx.beginPath();
+          for (let i = 0; i < pts.length; i++) {
+            const p = pts[i];
+            if (i === 0) this.ctx.moveTo(p.x, p.y);
+            else this.ctx.lineTo(p.x, p.y);
+          }
+          
+          let kk = 0;
+          for (const p of pts) kk += p.k;
+          kk /= pts.length;
+          
+          const a = 0.10 + 0.25 * kk;
+          this.ctx.strokeStyle = `rgba(220, 230, 255, ${a})`;
+          this.ctx.stroke();
+        }
+      }
+
+      drawSources() {
+        for (const source of this.state.sources.values()) {
+          const sp = this.state.worldToScreen(source.x, source.y, this.canvas);
+          const I = this.physics.intensityAt(source.x, source.y);
+          const k = this.physics.kFromI(I);
+          const r = 6 + 18 * k;
+
+          this.ctx.beginPath();
+          this.ctx.arc(sp.x, sp.y, r, 0, Math.PI * 2);
+          this.ctx.fillStyle = `rgba(255, 255, 255, ${0.12 + 0.35 * k})`;
+          this.ctx.fill();
+
+          this.ctx.beginPath();
+          this.ctx.arc(sp.x, sp.y, r * 2.2, 0, Math.PI * 2);
+          this.ctx.strokeStyle = `rgba(255, 255, 255, ${0.06 + 0.18 * k})`;
+          this.ctx.stroke();
+        }
+      }
+
+      drawRays() {
+        const ox = this.state.cam.x + Math.cos(this.state.cam.ang) * 18;
+        const oy = this.state.cam.y + Math.sin(this.state.cam.ang) * 18;
+        
+        const { rays, refined, clampedTotal } = this.physics.traceRaysAdaptive(
+          ox, oy, this.state.cam.ang, this.state.budget.rays, 
+          this.state.budget.raySteps, this.state.budget.dt
+        );
+
+        // Update stats
+        const I0 = this.physics.intensityAt(this.state.cam.x, this.state.cam.y);
+        const g0 = this.physics.gradIntensityAt(this.state.cam.x, this.state.cam.y);
+        this.state.stats.curv = this.physics.kFromI(I0);
+        this.state.stats.grad = Math.hypot(g0.gx, g0.gy);
+        this.state.stats.refined = refined;
+        this.state.stats.clamped = clampedTotal;
+
+        // Draw rays
+        for (const r of rays) {
+          const pts = r.pts;
+          if (pts.length < 2) continue;
+
+          this.ctx.beginPath();
+          const p0 = this.state.worldToScreen(ox, oy, this.canvas);
+          this.ctx.moveTo(p0.x, p0.y);
+
+          for (const pt of pts) {
+            const p = this.state.worldToScreen(pt.x, pt.y, this.canvas);
+            this.ctx.lineTo(p.x, p.y);
+          }
+
+          let kk = 0;
+          for (const p of pts) kk += p.k;
+          kk /= pts.length;
+          
+          const a = 0.12 + 0.45 * kk;
+          this.ctx.strokeStyle = `rgba(255, 255, 255, ${a})`;
+          this.ctx.stroke();
+        }
+
+        // Forward marker
+        const fp = this.state.worldToScreen(
+          ox + Math.cos(this.state.cam.ang) * 60,
+          oy + Math.sin(this.state.cam.ang) * 60,
+          this.canvas
+        );
+        this.ctx.beginPath();
+        this.ctx.arc(fp.x, fp.y, 3, 0, Math.PI * 2);
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.fill();
+      }
+    }
+
+    // Input Handler
+    class InputHandler {
+      constructor(state, renderer, physics) {
+        this.state = state;
+        this.renderer = renderer;
+        this.physics = physics;
+        this.setupEventListeners();
+      }
+
+      setupEventListeners() {
+        // Keyboard
+        window.addEventListener('keydown', (e) => {
+          this.state.keys.add(e.key.toLowerCase());
+          if (e.key === 'Escape') {
+            document.getElementById('settings-panel').classList.remove('open');
+          }
+        });
+        
+        window.addEventListener('keyup', (e) => {
+          this.state.keys.delete(e.key.toLowerCase());
+        });
+
+        // Mouse
+        const canvas = this.renderer.canvas;
+        
+        canvas.addEventListener('mousemove', (e) => {
+          this.state.updateMouse(e.clientX, e.clientY, canvas);
+          this.updateTooltip(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          const factor = Math.exp(-e.deltaY * 0.0012);
+          const newZoom = this.state.cam.zoom * factor;
+          this.state.cam.zoom = Math.max(
+            CONFIG.limits.minZoom, 
+            Math.min(CONFIG.limits.maxZoom, newZoom)
+          );
+        }, { passive: false });
+
+        canvas.addEventListener('click', (e) => {
+          this.handleClick(e);
+        });
+
+        // Window resize
+        window.addEventListener('resize', () => {
+          this.renderer.resize();
+        });
+      }
+
+      handleClick(e) {
+        const w = this.state.screenToWorld(e.clientX, e.clientY, this.renderer.canvas);
+
+        if (e.shiftKey) {
+          // Remove nearest
+          let best = null;
+          let bd = Infinity;
+          
+          for (const [id, source] of this.state.sources) {
+            const d = Math.hypot(source.x - w.x, source.y - w.y);
+            if (d < bd) {
+              bd = d;
+              best = id;
+            }
+          }
+          
+          if (best && bd < 120) {
+            this.state.sources.delete(best);
+          }
+        } else if (this.state.sources.size < CONFIG.limits.maxSources) {
+          // Add new
+          const s = 1.0 + 0.9 * (1.0 / this.state.cam.zoom);
+          const r = 150 + 60 * (1.0 / this.state.cam.zoom);
+          const id = `source-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          this.state.sources.set(id, { x: w.x, y: w.y, s, r, id });
+        }
+      }
+
+      updateControls(dt) {
+        const k = this.state.keys;
+        const speed = 240 * (1.0 / this.state.cam.zoom);
+        const rotSpeed = 1.8;
+
+        let fwd = 0, strafe = 0, rot = 0;
+        
+        if (k.has('w') || k.has('arrowup')) fwd += 1;
+        if (k.has('s') || k.has('arrowdown')) fwd -= 1;
+        if (k.has('a') || k.has('arrowleft')) strafe -= 1;
+        if (k.has('d') || k.has('arrowright')) strafe += 1;
+        if (k.has('q')) rot -= 1;
+        if (k.has('e')) rot += 1;
+
+        this.state.cam.ang += rot * rotSpeed * dt;
+
+        const ca = Math.cos(this.state.cam.ang);
+        const sa = Math.sin(this.state.cam.ang);
+        this.state.cam.x += (fwd * ca - strafe * sa) * speed * dt;
+        this.state.cam.y += (fwd * sa + strafe * ca) * speed * dt;
+      }
+
+      updateTooltip(x, y) {
+        const tooltip = document.getElementById('tooltip');
+        const I = this.physics.intensityAt(this.state.mouse.worldX, this.state.mouse.worldY);
+        const k = this.physics.kFromI(I);
+        
+        if (k > 0.01) {
+          tooltip.style.left = `${x + 12}px`;
+          tooltip.style.top = `${y + 12}px`;
+          tooltip.innerHTML = `
+            <div>Curvature: <strong>${k.toFixed(3)}</strong></div>
+            <div>Intensity: <strong>${I.toFixed(2)}</strong></div>
+            <div style="color: var(--text-secondary); margin-top: 4px; font-size: 11px;">
+              (${this.state.mouse.worldX.toFixed(0)}, ${this.state.mouse.worldY.toFixed(0)})
+            </div>
+          `;
+          tooltip.classList.add('visible');
+        } else {
+          tooltip.classList.remove('visible');
+        }
+      }
+    }
+
+    // UI Controller
+    class UIController {
+      constructor(state) {
+        this.state = state;
+        this.setupSettings();
+        this.updateLoop();
+      }
+
+      setupSettings() {
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        
+        settingsBtn.addEventListener('click', () => {
+          settingsPanel.classList.toggle('open');
+        });
+
+        // Parameter bindings
+        const bindings = [
+          { id: 'grid-step', key: 'gridStep', display: 'val-grid', suffix: 'px' },
+          { id: 'ray-count', key: 'rays', display: 'val-rays', suffix: '' },
+          { id: 'ray-steps', key: 'raySteps', display: 'val-steps', suffix: '' },
+          { id: 'max-grad', key: 'maxGrad', display: 'val-grad', suffix: '' },
+          { id: 'damp-near', key: 'dampNear', display: 'val-damp', suffix: '' },
+          { id: 'refine-on', key: 'refineOn', display: 'val-bifurc', suffix: '' }
+        ];
+
+        bindings.forEach(({ id, key, display, suffix }) => {
+          const input = document.getElementById(id);
+          const value = document.getElementById(display);
+          
+          input.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            this.state.budget[key] = val;
+            value.textContent = val + suffix;
+          });
+        });
+      }
+
+      updateStats() {
+        const s = this.state.stats;
+        
+        document.getElementById('stat-curv').textContent = s.curv.toFixed(3);
+        document.getElementById('stat-grad').textContent = s.grad.toFixed(4);
+        document.getElementById('stat-refined').textContent = s.refined;
+        document.getElementById('stat-clamped').textContent = s.clamped;
+        document.getElementById('stat-sources').textContent = this.state.sources.size;
+        document.getElementById('stat-zoom').textContent = this.state.cam.zoom.toFixed(1) + 'x';
+
+        // Color coding based on thresholds
+        document.getElementById('stat-curv').className = 'stat-value ' + 
+          (s.curv > 0.5 ? 'danger' : s.curv > 0.3 ? 'warning' : '');
+        document.getElementById('stat-grad').className = 'stat-value ' + 
+          (s.grad > 0.015 ? 'danger' : s.grad > 0.01 ? 'warning' : '');
+      }
+
+      updatePerformance() {
+        const fps = this.state.stats.fps;
+        const fpsBar = document.getElementById('fps-bar');
+        const fpsText = document.getElementById('fps-text');
+        const frameTime = document.getElementById('frame-time');
+        const objCount = document.getElementById('object-count');
+
+        const fpsPercent = Math.min(100, (fps / 60) * 100);
+        fpsBar.style.width = fpsPercent + '%';
+        fpsBar.className = 'perf-fill ' + 
+          (fps < 30 ? 'danger' : fps < 45 ? 'warning' : '');
+        
+        fpsText.textContent = fps;
+        frameTime.textContent = Math.round(this.state.stats.frameTime) + 'ms';
+        objCount.textContent = this.state.sources.size;
+      }
+
+      updateLoop() {
+        this.updateStats();
+        this.updatePerformance();
+        requestAnimationFrame(() => this.updateLoop());
+      }
+    }
+
+    // Main Application
+    class CurvatureApp {
+      constructor() {
+        this.canvas = document.getElementById('canvas');
+        this.state = new StateManager();
+        this.physics = new CurvaturePhysics(this.state);
+        this.renderer = new Renderer(this.canvas, this.state, this.physics);
+        this.input = new InputHandler(this.state, this.renderer, this.physics);
+        this.ui = new UIController(this.state);
+        
+        this.lastTime = performance.now();
+        this.init();
+      }
+
+      init() {
+        // Hide loader
+        setTimeout(() => {
+          document.getElementById('loader').classList.add('hidden');
+        }, 500);
+
+        // Start loop
+        requestAnimationFrame((t) => this.loop(t));
+      }
+
+      loop(timestamp) {
+        const dt = Math.min(0.033, (timestamp - this.lastTime) / 1000);
+        this.lastTime = timestamp;
+
+        this.state.updateFPS(timestamp);
+        this.input.updateControls(dt);
+
+        this.renderer.clear();
+        this.renderer.drawGrid();
+        this.renderer.drawRays();
+        this.renderer.drawSources();
+
+        requestAnimationFrame((t) => this.loop(t));
+      }
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => new CurvatureApp());
+    } else {
+      new CurvatureApp();
+    }
+  </script>
+</body>
+</html>
