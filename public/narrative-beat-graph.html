@@ -1,0 +1,2167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Narrative Beat Graph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:            #080810;
+  --surface:       #0f0f1a;
+  --surface2:      #161624;
+  --border:        #1e1e32;
+  --border-bright: #2e2e48;
+  --text:          #c8c4d8;
+  --text-dim:      #6a6880;
+  --text-bright:   #e8e4f0;
+  --amber:         #c9883a;
+  --amber-dim:     #7a4f1c;
+  --red:           #c0394a;
+  --green:         #3aaa6a;
+  --purple:        #8060c8;
+  --cyan:          #40a8c0;
+  --scroll:        #1e1e32;
+
+  --tone-dramatic: #9b3040;
+  --tone-mystery:  #5a3090;
+  --tone-hope:     #207848;
+  --tone-dread:    #204870;
+  --tone-tense:    #904020;
+  --tone-neutral:  #303048;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+/* ── LAYOUT ── */
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+#toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+#toolbar .logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--amber);
+  letter-spacing: 0.02em;
+  margin-right: 12px;
+  white-space: nowrap;
+}
+.tb-sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+.tb-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.tb-btn:hover { background: var(--border); color: var(--text-bright); border-color: var(--border-bright); }
+.tb-btn.primary { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+.tb-btn.primary:hover { background: var(--amber); color: var(--bg); }
+.tb-btn.danger { color: var(--red); border-color: #5a1828; }
+.tb-btn.danger:hover { background: #3a0e18; }
+.tb-btn.active { background: var(--border-bright); color: var(--text-bright); border-color: var(--purple); }
+.tb-mode-label { font-size: 11px; color: var(--text-dim); margin-left: 6px; }
+
+#status-bar {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+#status-msg { color: var(--cyan); }
+.status-ok { color: var(--green); }
+.status-err { color: var(--red); }
+
+/* ── MAIN AREA ── */
+#workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── GRAPH CANVAS ── */
+#graph-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 30% 30%, rgba(90,48,200,0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 70% 70%, rgba(201,136,58,0.03) 0%, transparent 70%),
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  background-position: 0 0, 0 0, -0.5px -0.5px, -0.5px -0.5px;
+  cursor: default;
+}
+#graph-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  overflow: visible;
+}
+.graph-layer { pointer-events: none; }
+
+/* ── SVG ELEMENTS ── */
+.edge-path {
+  fill: none;
+  stroke: var(--border-bright);
+  stroke-width: 1.5;
+  marker-end: url(#arrowhead);
+  transition: stroke 0.15s;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.edge-path:hover, .edge-path.selected { stroke: var(--cyan); }
+.edge-path.has-conditions { stroke-dasharray: 5 3; }
+.edge-label-bg { fill: var(--surface); rx: 3; }
+.edge-label {
+  fill: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+  user-select: none;
+}
+
+.node-group { cursor: pointer; }
+.node-rect {
+  rx: 6;
+  stroke-width: 1.5;
+  transition: filter 0.15s;
+}
+.node-group:hover .node-rect,
+.node-group.selected .node-rect { filter: drop-shadow(0 0 8px var(--purple)); }
+.node-group.selected .node-rect { stroke-width: 2.5; }
+.node-group.has-error .node-rect { stroke: var(--red) !important; }
+.node-group.is-start .node-rect { stroke-dasharray: none; }
+
+.node-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--text-bright);
+  dominant-baseline: central;
+  pointer-events: none;
+  user-select: none;
+}
+.node-tags {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  fill: var(--text-dim);
+  dominant-baseline: central;
+  pointer-events: none;
+  user-select: none;
+}
+.node-indicator {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  dominant-baseline: central;
+  text-anchor: end;
+  pointer-events: none;
+  user-select: none;
+}
+.node-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  fill: var(--bg);
+  dominant-baseline: central;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+}
+#sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+.stab {
+  flex: 1;
+  padding: 9px 6px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.stab.active { color: var(--amber); border-bottom-color: var(--amber); }
+.stab:hover:not(.active) { color: var(--text); }
+
+#sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+/* ── FORM ELEMENTS ── */
+.field { margin-bottom: 10px; }
+.field label {
+  display: block;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.field input, .field textarea, .field select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--amber);
+}
+.field textarea { resize: vertical; min-height: 60px; }
+.field select option { background: var(--surface2); }
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 14px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.section-head button {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 3px;
+  padding: 1px 6px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  transition: color 0.1s, border-color 0.1s;
+}
+.section-head button:hover { color: var(--green); border-color: var(--green); }
+
+.req-item, .eff-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 7px 8px;
+  margin-bottom: 6px;
+  position: relative;
+}
+.req-item .row, .eff-item .row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.req-item .row select, .req-item .row input,
+.eff-item .row select, .eff-item .row input {
+  flex: 1;
+  min-width: 60px;
+  padding: 4px 6px;
+  font-size: 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.del-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 13px;
+  line-height: 1;
+  transition: color 0.1s;
+}
+.del-btn:hover { color: var(--red); }
+
+.save-btn {
+  width: 100%;
+  padding: 8px;
+  background: var(--amber-dim);
+  border: 1px solid var(--amber);
+  color: var(--amber);
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: background 0.15s, color 0.15s;
+}
+.save-btn:hover { background: var(--amber); color: var(--bg); }
+
+/* ── RESULTS PANEL ── */
+#results-panel {
+  height: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  transition: height 0.2s;
+}
+#results-panel.collapsed { height: 34px; }
+#results-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  gap: 10px;
+}
+#results-header span { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+#results-header .toggle-icon { margin-right: auto; }
+#results-tabs { display: flex; gap: 10px; }
+.rtab {
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 2px 0;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+}
+.rtab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+#results-body { flex: 1; overflow-y: auto; padding: 10px 12px; }
+
+.contradiction-item {
+  background: rgba(192,57,74,0.1);
+  border: 1px solid rgba(192,57,74,0.3);
+  border-radius: 4px;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+.contradiction-item .ci-title { color: var(--red); font-weight: 500; margin-bottom: 3px; }
+.contradiction-item .ci-msg { color: var(--text-dim); }
+
+.state-node-block {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+.state-node-block .snb-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 12px;
+  color: var(--text-bright);
+  margin-bottom: 6px;
+}
+.state-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.state-table td { padding: 2px 6px; border-bottom: 1px solid var(--border); }
+.state-table td:first-child { color: var(--text-dim); width: 40%; }
+.state-table td:last-child { color: var(--cyan); }
+
+.path-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: 5px;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.path-item .pi-num { color: var(--amber); margin-right: 6px; }
+.path-arrow { color: var(--border-bright); margin: 0 4px; }
+
+.empty-state { color: var(--text-dim); font-size: 12px; text-align: center; padding: 20px; }
+
+/* ── HELP ── */
+.help-section p { font-size: 12px; color: var(--text-dim); line-height: 1.7; margin-bottom: 8px; }
+.help-section h3 { font-family: 'Playfair Display', serif; font-size: 14px; color: var(--amber); margin-bottom: 6px; margin-top: 14px; }
+.help-section code { background: var(--bg); color: var(--cyan); padding: 1px 4px; border-radius: 2px; font-size: 11px; }
+
+/* ── CONTEXT MENU ── */
+#ctx-menu {
+  position: fixed;
+  background: var(--surface);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  display: none;
+}
+.ctx-item {
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  white-space: nowrap;
+  color: var(--text);
+}
+.ctx-item:hover { background: var(--border); }
+.ctx-item.danger { color: var(--red); }
+.ctx-item.danger:hover { background: rgba(192,57,74,0.15); }
+.ctx-sep { height: 1px; background: var(--border); margin: 3px 0; }
+
+/* ── TOOLTIP ── */
+#tooltip {
+  position: fixed;
+  background: var(--surface2);
+  border: 1px solid var(--border-bright);
+  border-radius: 4px;
+  padding: 6px 9px;
+  font-size: 11px;
+  color: var(--text);
+  pointer-events: none;
+  z-index: 999;
+  display: none;
+  max-width: 220px;
+  line-height: 1.5;
+}
+
+/* mode indicator ring on graph */
+#mode-ring {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(8,8,16,0.8);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+  pointer-events: none;
+  transition: all 0.2s;
+}
+#mode-ring.edge-mode { border-color: var(--cyan); color: var(--cyan); }
+#mode-ring .dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+#mode-ring.edge-mode .dot { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+
+/* zoom hint */
+#zoom-indicator {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(8,8,16,0.7);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 10px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+/* Loading / mini-notifications */
+.flash {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--surface2);
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--text-bright);
+  z-index: 2000;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.flash.visible { opacity: 1; }
+.flash.ok { border-color: var(--green); color: var(--green); }
+.flash.err { border-color: var(--red); color: var(--red); }
+
+/* ── TAG COLOR DOT ── */
+.tone-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOOLBAR -->
+  <div id="toolbar">
+    <span class="logo">Narrative Beat Graph</span>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="btn-add-node" title="Double-click canvas to place, or click here">＋ Beat</button>
+    <button class="tb-btn" id="btn-edge-mode" title="Then click source → target node">⤳ Edge</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn primary" id="btn-propagate">▶ Propagate</button>
+    <button class="tb-btn" id="btn-clear-sim">✕ Clear Sim</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="btn-export-json">↓ beats.json</button>
+    <button class="tb-btn" id="btn-export-md">↓ report.md</button>
+    <button class="tb-btn" id="btn-load">↑ Load JSON</button>
+    <input type="file" id="file-input" accept=".json" style="display:none">
+    <div class="tb-sep"></div>
+    <button class="tb-btn danger" id="btn-clear-all">⊘ New</button>
+    <div id="status-bar">
+      <span id="status-msg"></span>
+      <span id="node-count">0 nodes</span>
+      <span id="edge-count">0 edges</span>
+    </div>
+  </div>
+
+  <!-- WORKSPACE -->
+  <div id="workspace">
+
+    <!-- GRAPH -->
+    <div id="graph-wrap">
+      <div id="mode-ring"><span class="dot"></span><span id="mode-label">Select</span></div>
+      <div id="zoom-indicator">100%</div>
+
+      <svg id="graph-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrowhead" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#2e2e48"/>
+          </marker>
+          <marker id="arrowhead-sel" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#40a8c0"/>
+          </marker>
+          <marker id="arrowhead-err" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="#c0394a"/>
+          </marker>
+        </defs>
+        <g id="graph-root">
+          <g id="edges-layer"></g>
+          <g id="nodes-layer"></g>
+          <line id="edge-preview" x1="0" y1="0" x2="0" y2="0"
+                stroke="#40a8c0" stroke-width="1.5" stroke-dasharray="5 3"
+                marker-end="url(#arrowhead-sel)" display="none"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div id="sidebar-tabs">
+        <div class="stab active" data-tab="editor">Editor</div>
+        <div class="stab" data-tab="help">Guide</div>
+      </div>
+      <div id="sidebar-body">
+        <div id="tab-editor">
+          <div id="empty-selection" class="empty-state" style="margin-top:30px">
+            <div style="font-size:24px;margin-bottom:10px;opacity:0.3">◈</div>
+            <div>Double-click canvas to add a beat.</div>
+            <div style="margin-top:6px">Click a node or edge to edit it.</div>
+          </div>
+          <div id="node-editor" style="display:none"></div>
+          <div id="edge-editor" style="display:none"></div>
+        </div>
+        <div id="tab-help" style="display:none" class="help-section">
+          <h3>Beats &amp; Edges</h3>
+          <p>Each <strong style="color:var(--text-bright)">Beat</strong> (node) is a scene, moment, or narrative unit. Edges are the choices or transitions between them.</p>
+          <h3>Tags</h3>
+          <p>Tone, location, and faction tags let you see the narrative shape at a glance. Tone sets the node colour on the canvas.</p>
+          <h3>Requirements</h3>
+          <p>A requirement must be <em>true</em> for a path to validly reach this node. Flag requirements check a boolean key: <code>key = true/false</code>. Stat requirements compare a number: <code>stat ≥ 5</code>.</p>
+          <h3>Effects</h3>
+          <p>Effects fire when the beat is reached. Flags are set to a value. Stat effects add a delta (use negative numbers to subtract). Reputation effects change a faction's standing.</p>
+          <h3>Propagation</h3>
+          <p>The engine does a DFS from all start nodes (nodes with no incoming edges), accumulating state along every path. It then checks each node's requirements against every possible state at that node. Any requirement that no path satisfies is flagged as a <strong style="color:var(--red)">contradiction</strong>.</p>
+          <h3>Controls</h3>
+          <p><strong>Double-click canvas</strong> → new beat. <strong>Shift-drag from node</strong> → draw edge. <strong>Right-click</strong> → context menu. <strong>Scroll</strong> → zoom. <strong>Middle-drag / drag background</strong> → pan.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS PANEL -->
+  <div id="results-panel" class="collapsed">
+    <div id="results-header">
+      <span class="toggle-icon" id="results-toggle">▲</span>
+      <span>Simulation Results</span>
+      <div id="results-tabs">
+        <div class="rtab active" data-rtab="contradictions">Contradictions</div>
+        <div class="rtab" data-rtab="states">Node States</div>
+        <div class="rtab" data-rtab="paths">All Paths</div>
+      </div>
+    </div>
+    <div id="results-body">
+      <div class="empty-state">Run Propagate to simulate paths.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="ctx-menu">
+  <div class="ctx-item" id="ctx-delete">Delete</div>
+  <div class="ctx-item" id="ctx-mark-start">Toggle Start Node</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" id="ctx-dupe">Duplicate</div>
+</div>
+
+<!-- TOOLTIP -->
+<div id="tooltip"></div>
+
+<!-- FLASH -->
+<div class="flash" id="flash"></div>
+
+<script>
+// ==============================================================
+// ██╗  ██╗ ██████╗ ██████╗ ███████╗██╗
+// ██║ ██╔╝██╔═══██╗██╔══██╗██╔════╝██║
+// █████╔╝ ██║   ██║██║  ██║█████╗  ██║
+// ██╔═██╗ ██║   ██║██║  ██║██╔══╝  ██║
+// ██║  ██╗╚██████╔╝██████╔╝███████╗███████╗
+// ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
+// ==============================================================
+
+// ──────────────────────────────────────────
+// MODEL
+// ──────────────────────────────────────────
+class Model {
+  constructor() {
+    this.nodes = new Map();
+    this.edges = new Map();
+    this._nodeSeq = 1;
+    this._edgeSeq = 1;
+    this._listeners = [];
+  }
+
+  on(fn) { this._listeners.push(fn); }
+  _emit(type, payload) { this._listeners.forEach(fn => fn(type, payload)); }
+
+  createNode(x, y, overrides = {}) {
+    const id = 'n' + (this._nodeSeq++);
+    const node = {
+      id,
+      x, y,
+      title: overrides.title || 'New Beat',
+      description: overrides.description || '',
+      tags: { tone: 'neutral', location: '', faction: '', ...(overrides.tags || {}) },
+      requirements: overrides.requirements || [],
+      effects:      overrides.effects      || [],
+      isStart:      overrides.isStart      || false,
+      ...( overrides.id ? {} : {} ) // id is set above
+    };
+    if (overrides.id) node.id = overrides.id;
+    if (overrides._seq) this._nodeSeq = Math.max(this._nodeSeq, overrides._seq + 1);
+    this.nodes.set(node.id, node);
+    this._emit('nodeAdded', node);
+    return node;
+  }
+
+  updateNode(id, patch) {
+    const node = this.nodes.get(id);
+    if (!node) return;
+    Object.assign(node, patch);
+    if (patch.tags) node.tags = { ...node.tags, ...patch.tags };
+    this._emit('nodeUpdated', node);
+    return node;
+  }
+
+  deleteNode(id) {
+    if (!this.nodes.has(id)) return;
+    // delete connected edges
+    for (const [eid, edge] of this.edges) {
+      if (edge.from === id || edge.to === id) {
+        this.edges.delete(eid);
+        this._emit('edgeDeleted', edge);
+      }
+    }
+    this.nodes.delete(id);
+    this._emit('nodeDeleted', id);
+  }
+
+  createEdge(from, to, overrides = {}) {
+    // prevent duplicate
+    for (const e of this.edges.values()) {
+      if (e.from === from && e.to === to) return null;
+    }
+    if (from === to) return null;
+    const id = 'e' + (this._edgeSeq++);
+    const edge = {
+      id,
+      from, to,
+      label:      overrides.label      || '',
+      conditions: overrides.conditions || [],
+    };
+    if (overrides.id) edge.id = overrides.id;
+    this.edges.set(edge.id, edge);
+    this._emit('edgeAdded', edge);
+    return edge;
+  }
+
+  updateEdge(id, patch) {
+    const edge = this.edges.get(id);
+    if (!edge) return;
+    Object.assign(edge, patch);
+    this._emit('edgeUpdated', edge);
+    return edge;
+  }
+
+  deleteEdge(id) {
+    const edge = this.edges.get(id);
+    if (!edge) return;
+    this.edges.delete(id);
+    this._emit('edgeDeleted', edge);
+  }
+
+  outgoing(nodeId) {
+    const out = [];
+    for (const e of this.edges.values()) if (e.from === nodeId) out.push(e);
+    return out;
+  }
+
+  incoming(nodeId) {
+    const inc = [];
+    for (const e of this.edges.values()) if (e.to === nodeId) inc.push(e);
+    return inc;
+  }
+
+  startNodes() {
+    return [...this.nodes.values()].filter(n => n.isStart || this.incoming(n.id).length === 0);
+  }
+
+  serialize() {
+    return {
+      _version: 1,
+      nodes: [...this.nodes.values()],
+      edges: [...this.edges.values()],
+    };
+  }
+
+  deserialize(data) {
+    this.nodes.clear();
+    this.edges.clear();
+    this._nodeSeq = 1;
+    this._edgeSeq = 1;
+    for (const n of (data.nodes || [])) {
+      const seq = parseInt(n.id.replace('n',''), 10) || 0;
+      this.createNode(n.x, n.y, { ...n, _seq: seq });
+    }
+    for (const e of (data.edges || [])) {
+      const seq = parseInt(e.id.replace('e',''), 10) || 0;
+      if (seq >= this._edgeSeq) this._edgeSeq = seq + 1;
+      const edge = this.createEdge(e.from, e.to, e);
+      if (edge) edge.id = e.id;
+    }
+    this._emit('reset', null);
+  }
+}
+
+// ──────────────────────────────────────────
+// SIMULATION ENGINE
+// ──────────────────────────────────────────
+class SimEngine {
+  constructor(model) { this.model = model; }
+
+  run() {
+    const model = this.model;
+    const starts = model.startNodes();
+    if (starts.length === 0) {
+      return { paths: [], nodeStates: new Map(), contradictions: [], error: 'No start nodes found.' };
+    }
+
+    // nodeStates: Map<nodeId, State[]>  (all states AFTER effects at this node)
+    const nodeStates = new Map();
+    const allPaths = [];
+    const MAX_PATHS = 500;
+
+    const addState = (nodeId, state) => {
+      if (!nodeStates.has(nodeId)) nodeStates.set(nodeId, []);
+      const existing = nodeStates.get(nodeId);
+      const key = JSON.stringify({ f: state.flags, s: state.stats, r: state.rep });
+      if (!existing.find(e => JSON.stringify({ f: e.flags, s: e.stats, r: e.rep }) === key)) {
+        existing.push(state);
+      }
+    };
+
+    const dfs = (nodeId, stateIn, pathIds, visited) => {
+      if (allPaths.length >= MAX_PATHS) return;
+      const node = model.nodes.get(nodeId);
+      if (!node) return;
+
+      // Apply effects
+      const state = this._applyEffects({ ...stateIn, flags: {...stateIn.flags}, stats: {...stateIn.stats}, rep: {...stateIn.rep} }, node.effects);
+      addState(nodeId, { ...state, flags: {...state.flags}, stats: {...state.stats}, rep: {...state.rep} });
+
+      const out = model.outgoing(nodeId);
+      if (out.length === 0 || visited.size >= 50) {
+        allPaths.push([...pathIds]);
+        return;
+      }
+
+      for (const edge of out) {
+        if (visited.has(edge.to)) {
+          // cycle — record path ending here
+          allPaths.push([...pathIds]);
+          continue;
+        }
+        const nextVisited = new Set(visited);
+        nextVisited.add(edge.to);
+        dfs(edge.to, state, [...pathIds, edge.to], nextVisited);
+      }
+    };
+
+    for (const sn of starts) {
+      dfs(sn.id, { flags: {}, stats: {}, rep: {} }, [sn.id], new Set([sn.id]));
+    }
+
+    const contradictions = this._detect(model, nodeStates);
+    return { paths: allPaths, nodeStates, contradictions };
+  }
+
+  _applyEffects(state, effects) {
+    for (const eff of (effects || [])) {
+      if (!eff.type) continue;
+      if (eff.type === 'flag' && eff.flag) {
+        state.flags[eff.flag] = eff.value === 'true' ? true : eff.value === 'false' ? false : eff.value;
+      } else if (eff.type === 'stat' && eff.stat) {
+        state.stats[eff.stat] = (state.stats[eff.stat] || 0) + Number(eff.delta || 0);
+      } else if (eff.type === 'rep' && eff.faction) {
+        state.rep[eff.faction] = (state.rep[eff.faction] || 0) + Number(eff.delta || 0);
+      }
+    }
+    return state;
+  }
+
+  _evalReq(req, state) {
+    if (req.type === 'flag') {
+      const need = req.value === 'true' ? true : req.value === 'false' ? false : req.value;
+      return state.flags[req.flag] === need;
+    }
+    if (req.type === 'stat') {
+      const val = state.stats[req.stat] || 0;
+      const thr = Number(req.threshold);
+      switch (req.comparator) {
+        case '>=': return val >= thr;
+        case '<=': return val <= thr;
+        case '>':  return val >  thr;
+        case '<':  return val <  thr;
+        case '=':  return val === thr;
+      }
+    }
+    return true;
+  }
+
+  _detect(model, nodeStates) {
+    const contradictions = [];
+    for (const [nodeId, states] of nodeStates) {
+      const node = model.nodes.get(nodeId);
+      if (!node) continue;
+      for (const req of (node.requirements || [])) {
+        if (!req.type) continue;
+        const everSatisfied = states.some(s => this._evalReq(req, s));
+        if (!everSatisfied) {
+          let msg = '';
+          if (req.type === 'flag') {
+            msg = `Requires flag "${req.flag}" = ${req.value}, but no incoming path satisfies this.`;
+          } else if (req.type === 'stat') {
+            msg = `Requires "${req.stat}" ${req.comparator} ${req.threshold}, never reached on any path.`;
+          }
+          contradictions.push({ nodeId, nodeTitle: node.title, type: 'unsatisfied', msg });
+        }
+      }
+      // Detect mutual exclusion: two different flag values for the same flag across states
+      const flagValues = {};
+      for (const s of states) {
+        for (const [k, v] of Object.entries(s.flags)) {
+          if (!flagValues[k]) flagValues[k] = new Set();
+          flagValues[k].add(String(v));
+        }
+      }
+      for (const [k, vals] of Object.entries(flagValues)) {
+        if (vals.size > 1) {
+          contradictions.push({
+            nodeId, nodeTitle: node.title, type: 'ambiguous',
+            msg: `Flag "${k}" arrives with conflicting values: ${[...vals].join(', ')}. Downstream requirements may be unreliable.`
+          });
+        }
+      }
+    }
+    return contradictions;
+  }
+
+  generateMarkdown(result, model) {
+    const lines = [];
+    lines.push('# Narrative Beat Graph — Path Report');
+    lines.push(`> Generated ${new Date().toLocaleString()}`);
+    lines.push('');
+    lines.push(`**Nodes:** ${model.nodes.size}  |  **Edges:** ${model.edges.size}  |  **Paths:** ${result.paths.length}`);
+    lines.push('');
+
+    if (result.error) {
+      lines.push(`> ⚠️ ${result.error}`);
+      lines.push('');
+    }
+
+    // Contradictions
+    lines.push('## Contradictions');
+    if (result.contradictions.length === 0) {
+      lines.push('_No contradictions detected. All requirements are satisfiable._');
+    } else {
+      for (const c of result.contradictions) {
+        const icon = c.type === 'unsatisfied' ? '🔴' : '🟡';
+        lines.push(`- ${icon} **${c.nodeTitle}**: ${c.msg}`);
+      }
+    }
+    lines.push('');
+
+    // All Paths
+    lines.push('## All Paths');
+    if (result.paths.length === 0) {
+      lines.push('_No paths found._');
+    } else {
+      result.paths.forEach((path, i) => {
+        const names = path.map(id => {
+          const n = model.nodes.get(id);
+          return n ? `"${n.title}"` : id;
+        });
+        lines.push(`${i + 1}. ${names.join(' → ')}`);
+      });
+    }
+    lines.push('');
+
+    // Node States
+    lines.push('## Node States After Propagation');
+    for (const [nodeId, states] of result.nodeStates) {
+      const node = model.nodes.get(nodeId);
+      if (!node) continue;
+      lines.push(`### ${node.title}`);
+      lines.push(`_Tone: ${node.tags.tone}  |  Location: ${node.tags.location || '—'}  |  Faction: ${node.tags.faction || '—'}_`);
+      states.forEach((s, i) => {
+        lines.push(`**Possible state ${i + 1}:**`);
+        const flags = Object.entries(s.flags);
+        const stats = Object.entries(s.stats);
+        const reps  = Object.entries(s.rep);
+        if (flags.length) lines.push('Flags: ' + flags.map(([k,v]) => `\`${k}=${v}\``).join(', '));
+        if (stats.length) lines.push('Stats: ' + stats.map(([k,v]) => `\`${k}: ${v}\``).join(', '));
+        if (reps.length)  lines.push('Reputation: ' + reps.map(([k,v]) => `\`${k}: ${v}\``).join(', '));
+        if (!flags.length && !stats.length && !reps.length) lines.push('_(empty state)_');
+      });
+      lines.push('');
+    }
+
+    return lines.join('\n');
+  }
+}
+
+// ──────────────────────────────────────────
+// VIEW — SVG Graph Renderer
+// ──────────────────────────────────────────
+const TONE_COLORS = {
+  dramatic: { fill: '#1a0810', stroke: '#9b3040' },
+  mystery:  { fill: '#100818', stroke: '#5a3090' },
+  hope:     { fill: '#081810', stroke: '#207848' },
+  dread:    { fill: '#080e18', stroke: '#204870' },
+  tense:    { fill: '#180c04', stroke: '#904020' },
+  neutral:  { fill: '#0e0e18', stroke: '#303048' },
+};
+const NODE_W = 158;
+const NODE_H = 60;
+
+class GraphView {
+  constructor(svgEl, nodesLayer, edgesLayer, previewLine, onSelect, onContext, onDblClick) {
+    this.svg = svgEl;
+    this.nodesLayer = nodesLayer;
+    this.edgesLayer = edgesLayer;
+    this.previewLine = previewLine;
+    this.onSelect = onSelect;
+    this.onContext = onContext;
+    this.onDblClick = onDblClick;
+
+    this.nodeEls  = new Map(); // id -> SVGElement
+    this.edgeEls  = new Map(); // id -> SVGElement
+
+    this.zoom = 1;
+    this.panX = 0;
+    this.panY = 0;
+    this._selectedId = null;
+    this._simResults = null;
+    this._errNodes = new Set();
+
+    this._root = document.getElementById('graph-root');
+  }
+
+  _applyTransform() {
+    this._root.setAttribute('transform', `translate(${this.panX},${this.panY}) scale(${this.zoom})`);
+    document.getElementById('zoom-indicator').textContent = Math.round(this.zoom * 100) + '%';
+  }
+
+  svgPoint(clientX, clientY) {
+    const wrap = document.getElementById('graph-wrap');
+    const rect = wrap.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - this.panX) / this.zoom,
+      y: (clientY - rect.top  - this.panY) / this.zoom,
+    };
+  }
+
+  clientFromSvg(svgX, svgY) {
+    const wrap = document.getElementById('graph-wrap');
+    const rect = wrap.getBoundingClientRect();
+    return {
+      x: svgX * this.zoom + this.panX + rect.left,
+      y: svgY * this.zoom + this.panY + rect.top,
+    };
+  }
+
+  // ── Render a node
+  renderNode(node, simResults) {
+    const errNodes = this._errNodes;
+    let g = this.nodeEls.get(node.id);
+    const isNew = !g;
+
+    if (isNew) {
+      g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('class', 'node-group');
+      g.dataset.id = node.id;
+      this.nodesLayer.appendChild(g);
+      this.nodeEls.set(node.id, g);
+    }
+
+    const colors = TONE_COLORS[node.tags.tone] || TONE_COLORS.neutral;
+    const hasErr = errNodes.has(node.id);
+    const isStart = !this._model || this._model.incoming(node.id).length === 0;
+
+    g.innerHTML = '';
+    g.setAttribute('transform', `translate(${node.x},${node.y})`);
+    g.setAttribute('class', `node-group${hasErr ? ' has-error' : ''}${this._selectedId === node.id ? ' selected' : ''}${isStart ? ' is-start' : ''}`);
+
+    // bg rect
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('class', 'node-rect');
+    rect.setAttribute('width', NODE_W);
+    rect.setAttribute('height', NODE_H);
+    rect.setAttribute('fill', colors.fill);
+    rect.setAttribute('stroke', hasErr ? '#c0394a' : this._selectedId === node.id ? '#8060c8' : colors.stroke);
+    g.appendChild(rect);
+
+    // Tone bar (left side)
+    const bar = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bar.setAttribute('x', 0); bar.setAttribute('y', 0);
+    bar.setAttribute('width', 4); bar.setAttribute('height', NODE_H);
+    bar.setAttribute('fill', colors.stroke);
+    bar.setAttribute('rx', 6);
+    g.appendChild(bar);
+
+    // Title
+    const titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    titleEl.setAttribute('class', 'node-title');
+    titleEl.setAttribute('x', 14);
+    titleEl.setAttribute('y', 22);
+    titleEl.textContent = node.title.length > 20 ? node.title.slice(0, 19) + '…' : node.title;
+    g.appendChild(titleEl);
+
+    // Tags
+    const tags = [];
+    if (node.tags.tone !== 'neutral') tags.push(node.tags.tone);
+    if (node.tags.location) tags.push(node.tags.location);
+    if (node.tags.faction) tags.push(node.tags.faction);
+
+    const tagsEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    tagsEl.setAttribute('class', 'node-tags');
+    tagsEl.setAttribute('x', 14);
+    tagsEl.setAttribute('y', 38);
+    tagsEl.textContent = tags.length ? tags.join(' · ') : '—';
+    tagsEl.setAttribute('fill', colors.stroke);
+    g.appendChild(tagsEl);
+
+    // req/eff counts
+    const infoEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    infoEl.setAttribute('class', 'node-tags');
+    infoEl.setAttribute('x', 14);
+    infoEl.setAttribute('y', 50);
+    const rCount = (node.requirements || []).filter(r => r.type).length;
+    const eCount = (node.effects || []).filter(e => e.type).length;
+    infoEl.textContent = `reqs:${rCount} effs:${eCount}`;
+    g.appendChild(infoEl);
+
+    // start marker
+    if (isStart) {
+      const sm = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      sm.setAttribute('class', 'node-indicator');
+      sm.setAttribute('x', NODE_W - 6);
+      sm.setAttribute('y', 14);
+      sm.setAttribute('fill', '#c9883a');
+      sm.textContent = 'START';
+      g.appendChild(sm);
+    }
+
+    // error indicator
+    if (hasErr) {
+      const errEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      errEl.setAttribute('class', 'node-indicator');
+      errEl.setAttribute('x', NODE_W - 6);
+      errEl.setAttribute('y', isStart ? 26 : 14);
+      errEl.setAttribute('fill', '#c0394a');
+      errEl.textContent = '✕ CONFLICT';
+      g.appendChild(errEl);
+    }
+
+    return g;
+  }
+
+  removeNode(id) {
+    const el = this.nodeEls.get(id);
+    if (el) { el.remove(); this.nodeEls.delete(id); }
+  }
+
+  // ── Render an edge
+  renderEdge(edge, model) {
+    let g = this.edgeEls.get(edge.id);
+    const isNew = !g;
+
+    if (isNew) {
+      g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.dataset.id = edge.id;
+      this.edgesLayer.appendChild(g);
+      this.edgeEls.set(edge.id, g);
+    }
+
+    const fromNode = model.nodes.get(edge.from);
+    const toNode   = model.nodes.get(edge.to);
+    if (!fromNode || !toNode) return g;
+
+    g.innerHTML = '';
+
+    const sx = fromNode.x + NODE_W / 2;
+    const sy = fromNode.y + NODE_H;
+    const ex = toNode.x + NODE_W / 2;
+    const ey = toNode.y;
+
+    // self-loop
+    if (edge.from === edge.to) return g;
+
+    // Bezier
+    const dx = ex - sx;
+    const dy = ey - sy;
+    const cx1 = sx + dx * 0.2;
+    const cy1 = sy + dy * 0.6 + 40;
+    const cx2 = ex - dx * 0.2;
+    const cy2 = ey - dy * 0.6 - 40;
+
+    const isSelected = this._selectedId === edge.id;
+    const hasCond = (edge.conditions || []).filter(c => c.type).length > 0;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', `edge-path${hasCond ? ' has-conditions' : ''}${isSelected ? ' selected' : ''}`);
+    path.setAttribute('d', `M ${sx} ${sy} C ${cx1} ${cy1} ${cx2} ${cy2} ${ex} ${ey}`);
+    path.setAttribute('marker-end', isSelected ? 'url(#arrowhead-sel)' : 'url(#arrowhead)');
+    g.appendChild(path);
+
+    // hit area
+    const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    hitPath.setAttribute('d', `M ${sx} ${sy} C ${cx1} ${cy1} ${cx2} ${cy2} ${ex} ${ey}`);
+    hitPath.setAttribute('fill', 'none');
+    hitPath.setAttribute('stroke', 'transparent');
+    hitPath.setAttribute('stroke-width', 12);
+    hitPath.style.cursor = 'pointer';
+    hitPath.dataset.edgeId = edge.id;
+    g.appendChild(hitPath);
+
+    // label
+    if (edge.label) {
+      const mx = (sx + ex) / 2;
+      const my = (sy + ey) / 2;
+      const lbg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      const lw = Math.min(edge.label.length * 6 + 10, 100);
+      lbg.setAttribute('x', mx - lw / 2); lbg.setAttribute('y', my - 9);
+      lbg.setAttribute('width', lw); lbg.setAttribute('height', 16);
+      lbg.setAttribute('fill', '#0f0f1a'); lbg.setAttribute('rx', 3);
+      g.appendChild(lbg);
+
+      const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      lbl.setAttribute('class', 'edge-label');
+      lbl.setAttribute('x', mx); lbl.setAttribute('y', my);
+      const truncLabel = edge.label.length > 14 ? edge.label.slice(0, 13) + '…' : edge.label;
+      lbl.textContent = truncLabel;
+      g.appendChild(lbl);
+    }
+
+    return g;
+  }
+
+  removeEdge(id) {
+    const el = this.edgeEls.get(id);
+    if (el) { el.remove(); this.edgeEls.delete(id); }
+  }
+
+  setSelected(id) {
+    this._selectedId = id;
+  }
+
+  setErrNodes(nodeIds) {
+    this._errNodes = new Set(nodeIds);
+  }
+
+  centerOn(node) {
+    const wrap = document.getElementById('graph-wrap');
+    const rect = wrap.getBoundingClientRect();
+    this.panX = rect.width / 2  - (node.x + NODE_W / 2) * this.zoom;
+    this.panY = rect.height / 2 - (node.y + NODE_H / 2) * this.zoom;
+    this._applyTransform();
+  }
+
+  fitAll(nodes) {
+    if (!nodes.length) return;
+    const wrap = document.getElementById('graph-wrap');
+    const rect = wrap.getBoundingClientRect();
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const n of nodes) {
+      minX = Math.min(minX, n.x);
+      minY = Math.min(minY, n.y);
+      maxX = Math.max(maxX, n.x + NODE_W);
+      maxY = Math.max(maxY, n.y + NODE_H);
+    }
+    const pw = maxX - minX + 80;
+    const ph = maxY - minY + 80;
+    this.zoom = Math.min(1.2, Math.min(rect.width / pw, rect.height / ph));
+    this.panX = rect.width  / 2 - (minX + pw / 2 - 40) * this.zoom;
+    this.panY = rect.height / 2 - (minY + ph / 2 - 40) * this.zoom;
+    this._applyTransform();
+  }
+}
+
+// ──────────────────────────────────────────
+// EDITOR PANEL (sub-view)
+// ──────────────────────────────────────────
+class EditorPanel {
+  constructor(onSaveNode, onSaveEdge) {
+    this.onSaveNode = onSaveNode;
+    this.onSaveEdge = onSaveEdge;
+    this.currentNodeId = null;
+    this.currentEdgeId = null;
+  }
+
+  showEmpty() {
+    document.getElementById('empty-selection').style.display = '';
+    document.getElementById('node-editor').style.display = 'none';
+    document.getElementById('edge-editor').style.display = 'none';
+    this.currentNodeId = null;
+    this.currentEdgeId = null;
+  }
+
+  showNode(node) {
+    this.currentNodeId = node.id;
+    this.currentEdgeId = null;
+    document.getElementById('empty-selection').style.display = 'none';
+    document.getElementById('edge-editor').style.display = 'none';
+    const el = document.getElementById('node-editor');
+    el.style.display = '';
+    el.innerHTML = this._buildNodeForm(node);
+    this._bindNodeForm(el, node);
+  }
+
+  showEdge(edge) {
+    this.currentEdgeId = edge.id;
+    this.currentNodeId = null;
+    document.getElementById('empty-selection').style.display = 'none';
+    document.getElementById('node-editor').style.display = 'none';
+    const el = document.getElementById('edge-editor');
+    el.style.display = '';
+    el.innerHTML = this._buildEdgeForm(edge);
+    this._bindEdgeForm(el, edge);
+  }
+
+  _toneOption(val, sel) {
+    return `<option value="${val}"${sel===val?' selected':''}>${val}</option>`;
+  }
+  _tones() { return ['neutral','dramatic','mystery','hope','dread','tense']; }
+
+  _buildNodeForm(node) {
+    const t = node.tags;
+    return `
+      <div class="field"><label>Title</label><input id="nf-title" value="${this._esc(node.title)}"></div>
+      <div class="field"><label>Description</label><textarea id="nf-desc">${this._esc(node.description)}</textarea></div>
+      <div class="field"><label>Tone</label>
+        <select id="nf-tone">${this._tones().map(v=>this._toneOption(v,t.tone)).join('')}</select>
+      </div>
+      <div class="field"><label>Location</label><input id="nf-location" value="${this._esc(t.location||'')}"></div>
+      <div class="field"><label>Faction</label><input id="nf-faction" value="${this._esc(t.faction||'')}"></div>
+
+      <div class="section-head">
+        Requirements <button id="add-req">+ Add</button>
+      </div>
+      <div id="req-list">${(node.requirements||[]).map((r,i)=>this._reqHtml(r,i)).join('')}</div>
+
+      <div class="section-head">
+        Effects <button id="add-eff">+ Add</button>
+      </div>
+      <div id="eff-list">${(node.effects||[]).map((e,i)=>this._effHtml(e,i)).join('')}</div>
+
+      <button class="save-btn" id="nf-save">Save Beat</button>
+    `;
+  }
+
+  _reqHtml(req, i) {
+    const types = ['flag','stat'].map(v=>`<option value="${v}"${req.type===v?' selected':''}>${v}</option>`).join('');
+    const comps = ['>=','<=','>','<','='].map(v=>`<option value="${v}"${req.comparator===v?' selected':''}>${v}</option>`).join('');
+    return `<div class="req-item" data-req-i="${i}">
+      <div class="row">
+        <select class="req-type">${types}</select>
+        <input class="req-flag" placeholder="flag/stat" value="${this._esc(req.flag||req.stat||'')}" style="flex:2">
+        <select class="req-comp" style="flex:0.8">${comps}</select>
+        <input class="req-val" placeholder="value" value="${this._esc(req.value!==undefined?String(req.value):(req.threshold!==undefined?String(req.threshold):''))}">
+        <button class="del-btn req-del">×</button>
+      </div>
+    </div>`;
+  }
+
+  _effHtml(eff, i) {
+    const types = ['flag','stat','rep'].map(v=>`<option value="${v}"${eff.type===v?' selected':''}>${v}</option>`).join('');
+    return `<div class="eff-item" data-eff-i="${i}">
+      <div class="row">
+        <select class="eff-type">${types}</select>
+        <input class="eff-key" placeholder="key/stat/faction" value="${this._esc(eff.flag||eff.stat||eff.faction||'')}" style="flex:2">
+        <input class="eff-val" placeholder="val/delta" value="${this._esc(eff.value!==undefined?String(eff.value):(eff.delta!==undefined?String(eff.delta):''))}">
+        <button class="del-btn eff-del">×</button>
+      </div>
+    </div>`;
+  }
+
+  _buildEdgeForm(edge) {
+    const conds = edge.conditions || [];
+    return `
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Edge: ${edge.from} → ${edge.to}</div>
+      <div class="field"><label>Choice Label</label><input id="ef-label" value="${this._esc(edge.label||'')}"></div>
+      <div class="section-head">Conditions (guard) <button id="add-econd">+ Add</button></div>
+      <div id="econd-list">${conds.map((c,i)=>this._reqHtml(c,i)).join('')}</div>
+      <button class="save-btn" id="ef-save">Save Edge</button>
+    `;
+  }
+
+  _bindNodeForm(el, node) {
+    const getReqs = () => {
+      return [...el.querySelectorAll('.req-item')].map(item => {
+        const type = item.querySelector('.req-type').value;
+        const key  = item.querySelector('.req-flag').value.trim();
+        const comp = item.querySelector('.req-comp').value;
+        const val  = item.querySelector('.req-val').value.trim();
+        if (!key) return null;
+        if (type === 'flag') return { type, flag: key, comparator: comp, value: val };
+        if (type === 'stat') return { type, stat: key, comparator: comp, threshold: Number(val) };
+        return null;
+      }).filter(Boolean);
+    };
+
+    const getEffs = () => {
+      return [...el.querySelectorAll('.eff-item')].map(item => {
+        const type = item.querySelector('.eff-type').value;
+        const key  = item.querySelector('.eff-key').value.trim();
+        const val  = item.querySelector('.eff-val').value.trim();
+        if (!key) return null;
+        if (type === 'flag') return { type, flag: key, value: val };
+        if (type === 'stat') return { type, stat: key, delta: Number(val) };
+        if (type === 'rep')  return { type, faction: key, delta: Number(val) };
+        return null;
+      }).filter(Boolean);
+    };
+
+    el.querySelector('#add-req').onclick = () => {
+      const list = el.querySelector('#req-list');
+      const i = list.children.length;
+      list.insertAdjacentHTML('beforeend', this._reqHtml({ type:'flag', comparator:'=' }, i));
+    };
+
+    el.querySelector('#add-eff').onclick = () => {
+      const list = el.querySelector('#eff-list');
+      const i = list.children.length;
+      list.insertAdjacentHTML('beforeend', this._effHtml({ type:'flag' }, i));
+    };
+
+    el.addEventListener('click', e => {
+      if (e.target.classList.contains('req-del')) e.target.closest('.req-item').remove();
+      if (e.target.classList.contains('eff-del')) e.target.closest('.eff-item').remove();
+    });
+
+    el.querySelector('#nf-save').onclick = () => {
+      this.onSaveNode(node.id, {
+        title:       el.querySelector('#nf-title').value.trim() || 'Beat',
+        description: el.querySelector('#nf-desc').value,
+        tags: {
+          tone:     el.querySelector('#nf-tone').value,
+          location: el.querySelector('#nf-location').value.trim(),
+          faction:  el.querySelector('#nf-faction').value.trim(),
+        },
+        requirements: getReqs(),
+        effects:      getEffs(),
+      });
+    };
+  }
+
+  _bindEdgeForm(el, edge) {
+    el.querySelector('#add-econd').onclick = () => {
+      const list = el.querySelector('#econd-list');
+      const i = list.children.length;
+      list.insertAdjacentHTML('beforeend', this._reqHtml({ type:'flag', comparator:'=' }, i));
+    };
+
+    el.addEventListener('click', e => {
+      if (e.target.classList.contains('req-del')) e.target.closest('.req-item').remove();
+    });
+
+    el.querySelector('#ef-save').onclick = () => {
+      const conditions = [...el.querySelectorAll('.req-item')].map(item => {
+        const type = item.querySelector('.req-type').value;
+        const key  = item.querySelector('.req-flag').value.trim();
+        const comp = item.querySelector('.req-comp').value;
+        const val  = item.querySelector('.req-val').value.trim();
+        if (!key) return null;
+        if (type === 'flag') return { type, flag: key, comparator: comp, value: val };
+        if (type === 'stat') return { type, stat: key, comparator: comp, threshold: Number(val) };
+        return null;
+      }).filter(Boolean);
+
+      this.onSaveEdge(edge.id, {
+        label:      el.querySelector('#ef-label').value.trim(),
+        conditions,
+      });
+    };
+  }
+
+  _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+}
+
+// ──────────────────────────────────────────
+// PRESENTER / APP
+// ──────────────────────────────────────────
+class App {
+  constructor() {
+    this.model  = new Model();
+    this.engine = new SimEngine(this.model);
+    this.view   = new GraphView(
+      document.getElementById('graph-svg'),
+      document.getElementById('nodes-layer'),
+      document.getElementById('edges-layer'),
+      document.getElementById('edge-preview'),
+      (id, type) => this._onSelect(id, type),
+      (id, type, e) => this._onContext(id, type, e),
+      (x, y) => this._onDblClick(x, y)
+    );
+    this.view._model = this.model;
+
+    this.editor = new EditorPanel(
+      (id, data) => this._saveNode(id, data),
+      (id, data) => this._saveEdge(id, data)
+    );
+
+    this.selectedId   = null;
+    this.selectedType = null;
+    this.edgeMode     = false;
+    this.edgeFrom     = null;
+    this.lastSimResult = null;
+    this._activeRTab  = 'contradictions';
+
+    this._bindModel();
+    this._bindInteraction();
+    this._bindToolbar();
+    this._bindTabs();
+    this._loadSample();
+  }
+
+  // ── Model event → view sync
+  _bindModel() {
+    this.model.on((type, payload) => {
+      if (type === 'nodeAdded' || type === 'nodeUpdated') {
+        this.view.renderNode(payload, this.lastSimResult);
+        if (this.selectedId === payload.id && this.selectedType === 'node') {
+          this.editor.showNode(payload);
+        }
+        this._updateCounts();
+      } else if (type === 'nodeDeleted') {
+        this.view.removeNode(payload);
+        if (this.selectedId === payload) { this.selectedId = null; this.editor.showEmpty(); }
+        this._updateCounts();
+      } else if (type === 'edgeAdded' || type === 'edgeUpdated') {
+        this.view.renderEdge(payload, this.model);
+        this._updateCounts();
+      } else if (type === 'edgeDeleted') {
+        this.view.removeEdge(payload.id);
+        if (this.selectedId === payload.id) { this.selectedId = null; this.editor.showEmpty(); }
+        this._updateCounts();
+      } else if (type === 'reset') {
+        // Full re-render
+        document.getElementById('nodes-layer').innerHTML = '';
+        document.getElementById('edges-layer').innerHTML = '';
+        this.view.nodeEls.clear();
+        this.view.edgeEls.clear();
+        for (const node of this.model.nodes.values()) this.view.renderNode(node, null);
+        for (const edge of this.model.edges.values()) this.view.renderEdge(edge, this.model);
+        this.editor.showEmpty();
+        this.selectedId = null;
+        this.lastSimResult = null;
+        this._updateCounts();
+        this._clearSimUI();
+        this.view.fitAll([...this.model.nodes.values()]);
+      }
+    });
+  }
+
+  // ── Graph interaction (pan, zoom, drag, click)
+  _bindInteraction() {
+    const wrap  = document.getElementById('graph-wrap');
+    const svg   = document.getElementById('graph-svg');
+    const prev  = document.getElementById('edge-preview');
+    let isPanning = false, isDragging = false, dragId = null;
+    let panStart = null, dragStart = null, dragNodeStart = null;
+    let edgeSource = null;
+    let shiftDragId = null;
+
+    // Click on nodes/edges via delegation
+    svg.addEventListener('mousedown', e => {
+      const ng = e.target.closest('.node-group');
+      const ePath = e.target.dataset.edgeId;
+
+      if (ng) {
+        const id = ng.dataset.id;
+        // Shift+drag = start edge
+        if (e.shiftKey || this.edgeMode) {
+          e.preventDefault();
+          edgeSource = id;
+          shiftDragId = id;
+          const n = this.model.nodes.get(id);
+          const sx = n.x + NODE_W / 2;
+          const sy = n.y + NODE_H / 2;
+          prev.setAttribute('x1', sx); prev.setAttribute('y1', sy);
+          prev.setAttribute('x2', sx); prev.setAttribute('y2', sy);
+          prev.setAttribute('display', '');
+          return;
+        }
+        // Start drag
+        e.preventDefault();
+        isDragging = true;
+        dragId = id;
+        const pt = this.view.svgPoint(e.clientX, e.clientY);
+        const n = this.model.nodes.get(id);
+        dragStart = { mx: pt.x, my: pt.y };
+        dragNodeStart = { nx: n.x, ny: n.y };
+        this._select(id, 'node');
+        return;
+      }
+
+      if (ePath) {
+        e.preventDefault();
+        this._select(ePath, 'edge');
+        return;
+      }
+
+      // Background pan
+      if (!e.shiftKey && !this.edgeMode) {
+        isPanning = true;
+        panStart = { x: e.clientX - this.view.panX, y: e.clientY - this.view.panY };
+        this._select(null, null);
+      }
+    });
+
+    svg.addEventListener('mousemove', e => {
+      if (shiftDragId) {
+        const pt = this.view.svgPoint(e.clientX, e.clientY);
+        prev.setAttribute('x2', pt.x); prev.setAttribute('y2', pt.y);
+        return;
+      }
+      if (isDragging && dragId) {
+        const pt = this.view.svgPoint(e.clientX, e.clientY);
+        const newX = dragNodeStart.nx + (pt.x - dragStart.mx);
+        const newY = dragNodeStart.ny + (pt.y - dragStart.my);
+        this.model.updateNode(dragId, { x: Math.round(newX), y: Math.round(newY) });
+        // Re-render connected edges
+        for (const edge of this.model.edges.values()) {
+          if (edge.from === dragId || edge.to === dragId) {
+            this.view.renderEdge(edge, this.model);
+          }
+        }
+        return;
+      }
+      if (isPanning) {
+        this.view.panX = e.clientX - panStart.x;
+        this.view.panY = e.clientY - panStart.y;
+        this.view._applyTransform();
+      }
+    });
+
+    svg.addEventListener('mouseup', e => {
+      if (shiftDragId) {
+        // Check if released on a node
+        const ng = e.target.closest('.node-group');
+        if (ng && ng.dataset.id !== shiftDragId) {
+          this.model.createEdge(shiftDragId, ng.dataset.id);
+        }
+        prev.setAttribute('display', 'none');
+        shiftDragId = null;
+        edgeSource = null;
+        if (this.edgeMode) this._setEdgeMode(false);
+      }
+      isDragging = false;
+      isPanning  = false;
+      dragId     = null;
+    });
+
+    svg.addEventListener('mouseleave', e => {
+      if (shiftDragId) {
+        prev.setAttribute('display', 'none');
+        shiftDragId = null;
+        edgeSource  = null;
+      }
+      isDragging = false;
+      isPanning  = false;
+    });
+
+    // Double-click → add node
+    svg.addEventListener('dblclick', e => {
+      const ng = e.target.closest('.node-group');
+      if (ng) return;
+      const ePath = e.target.dataset.edgeId;
+      if (ePath) return;
+      const pt = this.view.svgPoint(e.clientX, e.clientY);
+      const node = this.model.createNode(Math.round(pt.x - NODE_W / 2), Math.round(pt.y - NODE_H / 2));
+      this._select(node.id, 'node');
+    });
+
+    // Zoom
+    wrap.addEventListener('wheel', e => {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.1 : 0.91;
+      const rect = wrap.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      const newZoom = Math.min(3, Math.max(0.15, this.view.zoom * factor));
+      this.view.panX = cx - (cx - this.view.panX) * (newZoom / this.view.zoom);
+      this.view.panY = cy - (cy - this.view.panY) * (newZoom / this.view.zoom);
+      this.view.zoom = newZoom;
+      this.view._applyTransform();
+    }, { passive: false });
+
+    // Context menu
+    svg.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      const ng = e.target.closest('.node-group');
+      const ePath = e.target.dataset.edgeId;
+      if (ng) this._showCtx(ng.dataset.id, 'node', e.clientX, e.clientY);
+      else if (ePath) this._showCtx(ePath, 'edge', e.clientX, e.clientY);
+    });
+
+    // Dismiss ctx menu
+    document.addEventListener('click', () => {
+      document.getElementById('ctx-menu').style.display = 'none';
+    });
+
+    // Keyboard
+    document.addEventListener('keydown', e => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') &&
+           document.activeElement === document.body && this.selectedId) {
+        if (this.selectedType === 'node') this.model.deleteNode(this.selectedId);
+        else if (this.selectedType === 'edge') this.model.deleteEdge(this.selectedId);
+        this.selectedId = null;
+        this.editor.showEmpty();
+      }
+      if (e.key === 'Escape') {
+        if (this.edgeMode) this._setEdgeMode(false);
+        this._select(null, null);
+      }
+    });
+
+    // Results panel toggle
+    document.getElementById('results-header').addEventListener('click', e => {
+      if (e.target.classList.contains('rtab')) return;
+      const panel = document.getElementById('results-panel');
+      panel.classList.toggle('collapsed');
+      document.getElementById('results-toggle').textContent =
+        panel.classList.contains('collapsed') ? '▲' : '▼';
+    });
+  }
+
+  // ── Toolbar
+  _bindToolbar() {
+    document.getElementById('btn-add-node').onclick = () => {
+      const wrap = document.getElementById('graph-wrap');
+      const rect = wrap.getBoundingClientRect();
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const pt = this.view.svgPoint(rect.left + cx, rect.top + cy);
+      const node = this.model.createNode(
+        Math.round(pt.x - NODE_W / 2) + Math.round(Math.random() * 80 - 40),
+        Math.round(pt.y - NODE_H / 2) + Math.round(Math.random() * 80 - 40)
+      );
+      this._select(node.id, 'node');
+    };
+
+    document.getElementById('btn-edge-mode').onclick = () => {
+      this._setEdgeMode(!this.edgeMode);
+    };
+
+    document.getElementById('btn-propagate').onclick = () => {
+      this._runPropagation();
+    };
+
+    document.getElementById('btn-clear-sim').onclick = () => {
+      this._clearSimUI();
+    };
+
+    document.getElementById('btn-export-json').onclick = () => {
+      this._exportJSON();
+    };
+
+    document.getElementById('btn-export-md').onclick = () => {
+      this._exportMarkdown();
+    };
+
+    document.getElementById('btn-load').onclick = () => {
+      document.getElementById('file-input').click();
+    };
+
+    document.getElementById('file-input').onchange = e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          this.model.deserialize(data);
+          this._flash('Loaded ' + this.model.nodes.size + ' nodes', 'ok');
+        } catch (err) {
+          this._flash('Invalid JSON: ' + err.message, 'err');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    };
+
+    document.getElementById('btn-clear-all').onclick = () => {
+      if (!confirm('Clear all nodes and edges?')) return;
+      this.model.deserialize({ nodes: [], edges: [] });
+    };
+
+    // Ctx menu
+    document.getElementById('ctx-delete').onclick = () => {
+      if (!this._ctxTarget) return;
+      if (this._ctxTargetType === 'node') this.model.deleteNode(this._ctxTarget);
+      else this.model.deleteEdge(this._ctxTarget);
+      this.selectedId = null;
+      this.editor.showEmpty();
+    };
+
+    document.getElementById('ctx-mark-start').onclick = () => {
+      if (!this._ctxTarget || this._ctxTargetType !== 'node') return;
+      const n = this.model.nodes.get(this._ctxTarget);
+      this.model.updateNode(this._ctxTarget, { isStart: !n.isStart });
+    };
+
+    document.getElementById('ctx-dupe').onclick = () => {
+      if (!this._ctxTarget || this._ctxTargetType !== 'node') return;
+      const n = this.model.nodes.get(this._ctxTarget);
+      this.model.createNode(n.x + 30, n.y + 30, {
+        title: n.title + ' (copy)',
+        description: n.description,
+        tags: { ...n.tags },
+        requirements: JSON.parse(JSON.stringify(n.requirements)),
+        effects: JSON.parse(JSON.stringify(n.effects)),
+      });
+    };
+  }
+
+  _bindTabs() {
+    // Sidebar tabs
+    document.querySelectorAll('.stab').forEach(tab => {
+      tab.onclick = () => {
+        document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const tname = tab.dataset.tab;
+        document.getElementById('tab-editor').style.display = tname === 'editor' ? '' : 'none';
+        document.getElementById('tab-help').style.display   = tname === 'help'   ? '' : 'none';
+      };
+    });
+
+    // Results tabs
+    document.querySelectorAll('.rtab').forEach(tab => {
+      tab.onclick = () => {
+        document.querySelectorAll('.rtab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        this._activeRTab = tab.dataset.rtab;
+        if (this.lastSimResult) this._renderResults(this.lastSimResult);
+      };
+    });
+  }
+
+  // ── Selection
+  _select(id, type) {
+    this.selectedId   = id;
+    this.selectedType = type;
+    this.view.setSelected(id);
+
+    // Re-render all nodes and edges to update selection visual
+    for (const node of this.model.nodes.values()) this.view.renderNode(node, this.lastSimResult);
+    for (const edge of this.model.edges.values()) this.view.renderEdge(edge, this.model);
+
+    if (!id) { this.editor.showEmpty(); return; }
+    if (type === 'node') {
+      const node = this.model.nodes.get(id);
+      if (node) this.editor.showNode(node);
+    } else if (type === 'edge') {
+      const edge = this.model.edges.get(id);
+      if (edge) this.editor.showEdge(edge);
+    }
+  }
+
+  // ── Save from editor
+  _saveNode(id, data) {
+    this.model.updateNode(id, data);
+    this._flash('Beat saved', 'ok');
+  }
+
+  _saveEdge(id, data) {
+    this.model.updateEdge(id, data);
+    this._flash('Edge saved', 'ok');
+    this.view.renderEdge(this.model.edges.get(id), this.model);
+  }
+
+  // ── Edge mode
+  _setEdgeMode(on) {
+    this.edgeMode = on;
+    const btn = document.getElementById('btn-edge-mode');
+    const ring = document.getElementById('mode-ring');
+    const lbl  = document.getElementById('mode-label');
+    btn.classList.toggle('active', on);
+    ring.classList.toggle('edge-mode', on);
+    lbl.textContent = on ? 'Draw Edge — Click source → target' : 'Select';
+  }
+
+  // ── Context menu
+  _ctxTarget = null;
+  _ctxTargetType = null;
+  _showCtx(id, type, cx, cy) {
+    this._ctxTarget = id;
+    this._ctxTargetType = type;
+    const menu = document.getElementById('ctx-menu');
+    document.getElementById('ctx-mark-start').style.display = type === 'node' ? '' : 'none';
+    document.getElementById('ctx-dupe').style.display       = type === 'node' ? '' : 'none';
+    menu.style.display = '';
+    menu.style.left = cx + 'px';
+    menu.style.top  = cy + 'px';
+    this._select(id, type);
+  }
+
+  // ── Propagation
+  _runPropagation() {
+    if (this.model.nodes.size === 0) {
+      this._flash('No nodes to simulate.', 'err');
+      return;
+    }
+    const result = this.engine.run();
+    this.lastSimResult = result;
+
+    // Mark error nodes
+    const errSet = new Set(result.contradictions.filter(c => c.type === 'unsatisfied').map(c => c.nodeId));
+    this.view.setErrNodes(errSet);
+    for (const node of this.model.nodes.values()) this.view.renderNode(node, result);
+
+    this._renderResults(result);
+
+    // Open results panel
+    const panel = document.getElementById('results-panel');
+    panel.classList.remove('collapsed');
+    document.getElementById('results-toggle').textContent = '▼';
+
+    const contrCount = result.contradictions.length;
+    const errCount   = result.contradictions.filter(c => c.type === 'unsatisfied').length;
+    this._setStatus(
+      contrCount === 0
+        ? `✓ ${result.paths.length} paths, no contradictions`
+        : `${errCount} unsatisfied req${errCount !== 1 ? 's' : ''}, ${result.contradictions.length - errCount} warnings`,
+      contrCount === 0 ? 'ok' : 'err'
+    );
+    this._flash(
+      `Simulated ${result.paths.length} path(s)` + (contrCount ? ` — ${contrCount} issue(s)` : ''),
+      contrCount ? 'err' : 'ok'
+    );
+  }
+
+  _clearSimUI() {
+    this.lastSimResult = null;
+    this.view.setErrNodes(new Set());
+    for (const node of this.model.nodes.values()) this.view.renderNode(node, null);
+    document.getElementById('results-body').innerHTML = '<div class="empty-state">Run Propagate to simulate paths.</div>';
+    this._setStatus('');
+  }
+
+  _renderResults(result) {
+    const body = document.getElementById('results-body');
+    const tab = this._activeRTab;
+
+    if (tab === 'contradictions') {
+      if (result.contradictions.length === 0) {
+        body.innerHTML = `<div class="empty-state" style="color:var(--green)">✓ All requirements are satisfiable. No contradictions found.</div>`;
+        return;
+      }
+      body.innerHTML = result.contradictions.map(c => `
+        <div class="contradiction-item">
+          <div class="ci-title">${c.type === 'unsatisfied' ? '🔴' : '🟡'} ${this._esc(c.nodeTitle)} <span style="color:var(--text-dim);font-size:10px">(${c.nodeId})</span></div>
+          <div class="ci-msg">${this._esc(c.msg)}</div>
+        </div>
+      `).join('');
+      return;
+    }
+
+    if (tab === 'states') {
+      if (result.nodeStates.size === 0) {
+        body.innerHTML = '<div class="empty-state">No states recorded.</div>';
+        return;
+      }
+      let html = '';
+      for (const [nodeId, states] of result.nodeStates) {
+        const node = this.model.nodes.get(nodeId);
+        if (!node) continue;
+        html += `<div class="state-node-block">
+          <div class="snb-title">${this._esc(node.title)}</div>`;
+        states.forEach((s, i) => {
+          const rows = [
+            ...Object.entries(s.flags).map(([k,v]) => `<tr><td>🏴 ${this._esc(k)}</td><td>${this._esc(String(v))}</td></tr>`),
+            ...Object.entries(s.stats).map(([k,v]) => `<tr><td>📊 ${this._esc(k)}</td><td>${v}</td></tr>`),
+            ...Object.entries(s.rep).map(([k,v])   => `<tr><td>⚑ ${this._esc(k)}</td><td>${v}</td></tr>`),
+          ];
+          if (states.length > 1) html += `<div style="font-size:10px;color:var(--text-dim);margin:4px 0 2px">Path variant ${i+1}</div>`;
+          if (rows.length === 0) html += `<div style="font-size:11px;color:var(--text-dim)">(empty state)</div>`;
+          else html += `<table class="state-table">${rows.join('')}</table>`;
+        });
+        html += '</div>';
+      }
+      body.innerHTML = html;
+      return;
+    }
+
+    if (tab === 'paths') {
+      if (result.paths.length === 0) {
+        body.innerHTML = '<div class="empty-state">No paths found.</div>';
+        return;
+      }
+      body.innerHTML = result.paths.map((path, i) => {
+        const names = path.map(id => {
+          const n = this.model.nodes.get(id);
+          return n ? `<span style="color:var(--text-bright)">${this._esc(n.title)}</span>` : id;
+        }).join(`<span class="path-arrow">→</span>`);
+        return `<div class="path-item"><span class="pi-num">${i+1}.</span> ${names}</div>`;
+      }).join('');
+    }
+  }
+
+  // ── Export
+  _exportJSON() {
+    const data = this.model.serialize();
+    this._download('beats.json', JSON.stringify(data, null, 2), 'application/json');
+    this._flash('beats.json downloaded', 'ok');
+  }
+
+  _exportMarkdown() {
+    if (!this.lastSimResult) {
+      this._runPropagation();
+    }
+    const md = this.engine.generateMarkdown(this.lastSimResult, this.model);
+    this._download('report.md', md, 'text/markdown');
+    this._flash('report.md downloaded', 'ok');
+  }
+
+  _download(filename, content, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ── UI helpers
+  _updateCounts() {
+    document.getElementById('node-count').textContent = this.model.nodes.size + ' nodes';
+    document.getElementById('edge-count').textContent = this.model.edges.size + ' edges';
+  }
+
+  _setStatus(msg, cls = '') {
+    const el = document.getElementById('status-msg');
+    el.textContent = msg;
+    el.className = cls === 'ok' ? 'status-ok' : cls === 'err' ? 'status-err' : '';
+  }
+
+  _flash(msg, type = '') {
+    const el = document.getElementById('flash');
+    el.textContent = msg;
+    el.className = 'flash visible' + (type ? ' ' + type : '');
+    clearTimeout(this._flashTimer);
+    this._flashTimer = setTimeout(() => { el.className = 'flash'; }, 2800);
+  }
+
+  _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // ── Sample story: "The Siege of the Last City"
+  _loadSample() {
+    this.model.deserialize({
+      nodes: [
+        {
+          id: 'n1', x: 360, y: 40,
+          title: 'The Gate at Dawn',
+          description: 'You arrive at the broken gate of the last standing city. Smoke rises in the east.',
+          tags: { tone: 'dread', location: 'outer-wall', faction: '' },
+          requirements: [],
+          effects: [{ type: 'flag', flag: 'arrived', value: 'true' }],
+        },
+        {
+          id: 'n2', x: 120, y: 180,
+          title: 'Beg Entry at the Gate',
+          description: 'You humble yourself before the guards and plead for passage.',
+          tags: { tone: 'tense', location: 'outer-wall', faction: 'citizens' },
+          requirements: [],
+          effects: [
+            { type: 'stat',  stat: 'dignity',    delta: -2 },
+            { type: 'rep',   faction: 'citizens', delta: 5  },
+            { type: 'flag',  flag: 'entered',    value: 'true' },
+          ],
+        },
+        {
+          id: 'n3', x: 600, y: 180,
+          title: 'Force the Lock',
+          description: 'Steel in hand, you pry the rusted lock open. Someone inside sees you.',
+          tags: { tone: 'dramatic', location: 'outer-wall', faction: '' },
+          requirements: [{ type: 'stat', stat: 'strength', comparator: '>=', threshold: 4 }],
+          effects: [
+            { type: 'flag', flag: 'entered',   value: 'true' },
+            { type: 'flag', flag: 'witnessed', value: 'true' },
+            { type: 'stat', stat: 'dignity',   delta: 2 },
+          ],
+        },
+        {
+          id: 'n4', x: 120, y: 340,
+          title: 'The Refugee Quarter',
+          description: 'Packed bodies, hollow eyes. These people have survived three sieges.',
+          tags: { tone: 'mystery', location: 'inner-city', faction: 'citizens' },
+          requirements: [{ type: 'flag', flag: 'entered', comparator: '=', value: 'true' }],
+          effects: [
+            { type: 'stat',  stat: 'knowledge', delta: 3  },
+            { type: 'rep',   faction: 'citizens', delta: 3 },
+          ],
+        },
+        {
+          id: 'n5', x: 600, y: 340,
+          title: "The Warden's Notice",
+          description: 'Wanted posters bearing your description. Someone gave you up.',
+          tags: { tone: 'tense', location: 'inner-city', faction: 'warden' },
+          requirements: [
+            { type: 'flag', flag: 'witnessed', comparator: '=', value: 'true' },
+            { type: 'flag', flag: 'entered',   comparator: '=', value: 'true' },
+          ],
+          effects: [
+            { type: 'flag', flag: 'hunted',  value: 'true'  },
+            { type: 'rep',  faction: 'warden', delta: -15 },
+          ],
+        },
+        {
+          id: 'n6', x: 360, y: 500,
+          title: 'The Archive Beneath',
+          description: 'A hidden library. The last historian hands you an oil lamp and says nothing.',
+          tags: { tone: 'mystery', location: 'undercity', faction: '' },
+          requirements: [{ type: 'stat', stat: 'knowledge', comparator: '>=', threshold: 3 }],
+          effects: [
+            { type: 'flag', flag: 'knows_truth',  value: 'true' },
+            { type: 'stat', stat: 'knowledge',    delta: 5     },
+          ],
+        },
+        {
+          id: 'n7', x: 120, y: 660,
+          title: 'Sound the Warning Bell',
+          description: 'You climb the tower. Your voice breaks against the wind as the enemy crests the ridge.',
+          tags: { tone: 'dramatic', location: 'tower', faction: 'citizens' },
+          requirements: [{ type: 'flag', flag: 'knows_truth', comparator: '=', value: 'true' }],
+          effects: [
+            { type: 'flag', flag: 'city_warned',  value: 'true' },
+            { type: 'rep',  faction: 'citizens',  delta: 20    },
+            { type: 'stat', stat: 'dignity',      delta: 5     },
+          ],
+        },
+        {
+          id: 'n8', x: 600, y: 660,
+          title: 'Flee Before the Fall',
+          description: 'You take what matters and walk out the north gate as the south wall screams.',
+          tags: { tone: 'dread', location: 'north-gate', faction: '' },
+          requirements: [{ type: 'flag', flag: 'hunted', comparator: '=', value: 'true' }],
+          effects: [
+            { type: 'flag', flag: 'city_warned',  value: 'false' },
+            { type: 'flag', flag: 'survived',     value: 'true'  },
+            { type: 'stat', stat: 'dignity',      delta: -3      },
+          ],
+        },
+        {
+          id: 'n9', x: 360, y: 820,
+          title: 'The City Holds — or Falls',
+          description: 'Dawn comes. Whether the city stands depends entirely on the choices made in the dark.',
+          tags: { tone: 'hope', location: 'outer-wall', faction: '' },
+          requirements: [],
+          effects: [],
+        },
+      ],
+      edges: [
+        { id: 'e1', from: 'n1', to: 'n2', label: 'Ask for mercy',    conditions: [] },
+        { id: 'e2', from: 'n1', to: 'n3', label: 'Take it by force', conditions: [] },
+        { id: 'e3', from: 'n2', to: 'n4', label: 'Enter peacefully', conditions: [] },
+        { id: 'e4', from: 'n3', to: 'n4', label: 'Slip into crowds', conditions: [] },
+        { id: 'e5', from: 'n3', to: 'n5', label: '(Witnessed path)', conditions: [{ type:'flag', flag:'witnessed', comparator:'=', value:'true' }] },
+        { id: 'e6', from: 'n4', to: 'n6', label: 'Seek the archive', conditions: [] },
+        { id: 'e7', from: 'n5', to: 'n8', label: 'Run from the wardens', conditions: [] },
+        { id: 'e8', from: 'n5', to: 'n6', label: 'Bribe your way down', conditions: [] },
+        { id: 'e9', from: 'n6', to: 'n7', label: 'Warn the city',    conditions: [] },
+        { id: 'e10', from: 'n7', to: 'n9', label: 'Face the outcome', conditions: [] },
+        { id: 'e11', from: 'n8', to: 'n9', label: 'The road north',   conditions: [] },
+      ],
+    });
+    this._flash('Sample story loaded — "The Siege of the Last City"', 'ok');
+  }
+}
+
+// ──────────────────────────────────────────
+// BOOT
+// ──────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  window._app = new App();
+  // Initial fit
+  setTimeout(() => {
+    window._app.view.fitAll([...window._app.model.nodes.values()]);
+    window._app.view._applyTransform();
+  }, 50);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,2359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>World That Doesn't Care</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --void: #060608;
+  --surface: #0c0c10;
+  --grid-line: #14141a;
+  --grid-line-faint: #0f0f14;
+  --cell-empty: #0a0a0e;
+  --cell-hover: #111118;
+  --entity: #4a4a5a;
+  --entity-glow: #5a5a7020;
+  --text-dead: #2a2a35;
+  --text-dim: #404055;
+  --text-mid: #606078;
+  --text-log: #505068;
+  --text-cold: #7070a0;
+  --text-warn: #a05050;
+  --text-fabricate: #705a80;
+  --text-aware: #508070;
+  --accent-null: #303045;
+  --scanline: rgba(255,255,255,0.008);
+  --drifter-a: #3a3a48;
+  --drifter-b: #2e3a3a;
+  --drifter-c: #3a2e36;
+  --shadow: #2a2a3a;
+  --artifact: #4a4060;
+  --whisper: #222230;
+  --weather-tint: rgba(0,0,0,0);
+  --witness: #3a3248;
+  --witness-glow: rgba(80,60,110,0.12);
+  --signal-color: #304040;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--void);
+  color: var(--text-dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.5;
+  cursor: default;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── CRT / atmosphere ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, var(--scanline) 2px, var(--scanline) 4px);
+  pointer-events: none; z-index: 9999;
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, transparent 50%, rgba(0,0,0,0.4) 100%);
+  pointer-events: none; z-index: 9998;
+}
+
+/* ── Weather overlay ── */
+#weather-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 9997; opacity: 0;
+  transition: opacity 8s ease, background 8s ease; mix-blend-mode: screen;
+}
+#weather-overlay.static-rain {
+  background: repeating-linear-gradient(180deg, transparent 0px, transparent 12px, rgba(60,60,80,0.015) 12px, rgba(60,60,80,0.015) 13px);
+  opacity: 1; animation: rain-drift 3s linear infinite;
+}
+#weather-overlay.interference {
+  background: repeating-linear-gradient(90deg, transparent 0px, transparent 3px, rgba(80,60,100,0.01) 3px, rgba(80,60,100,0.01) 4px);
+  opacity: 1; animation: interference-shift 0.5s steps(4) infinite;
+}
+#weather-overlay.fog {
+  background: radial-gradient(ellipse at 50% 50%, rgba(30,28,40,0.15) 0%, transparent 70%);
+  opacity: 1;
+}
+#weather-overlay.void-wind {
+  background: linear-gradient(90deg, transparent 0%, rgba(10,8,16,0.1) 30%, transparent 60%);
+  opacity: 1; animation: void-wind-sweep 12s ease-in-out infinite;
+}
+#weather-overlay.dissolution-haze {
+  background: radial-gradient(ellipse at 50% 50%, rgba(20,15,30,0.2) 0%, rgba(5,3,8,0.1) 50%, transparent 80%);
+  opacity: 1; animation: haze-breathe 8s ease-in-out infinite;
+}
+#weather-overlay.ash-fall {
+  background: repeating-linear-gradient(160deg, transparent 0px, transparent 20px, rgba(40,35,50,0.012) 20px, rgba(40,35,50,0.012) 21px);
+  opacity: 1; animation: ash-drift 8s linear infinite;
+}
+#weather-overlay.coldfront {
+  background: linear-gradient(180deg, rgba(20,20,40,0.08) 0%, transparent 40%, transparent 60%, rgba(20,20,40,0.05) 100%);
+  opacity: 1; animation: coldfront-pass 20s ease-in-out infinite;
+}
+
+@keyframes rain-drift { 0% { transform: translateY(0); } 100% { transform: translateY(13px); } }
+@keyframes interference-shift { 0%{transform:translateX(0)} 25%{transform:translateX(1px)} 50%{transform:translateX(-1px)} 75%{transform:translateX(2px)} 100%{transform:translateX(0)} }
+@keyframes void-wind-sweep { 0%,100%{transform:translateX(-10%);opacity:0.6} 50%{transform:translateX(10%);opacity:1} }
+@keyframes haze-breathe { 0%,100%{opacity:0.6} 50%{opacity:1} }
+@keyframes ash-drift { 0%{transform:translateY(-30px) translateX(0)} 100%{transform:translateY(30px) translateX(10px)} }
+@keyframes coldfront-pass { 0%,100%{opacity:0.4} 50%{opacity:0.9} }
+
+/* ── Layout ── */
+#container { display:flex; width:100vw; height:100vh; overflow:hidden; }
+#world-panel {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  position:relative; min-width:0;
+}
+#log-panel {
+  width:340px; min-width:340px; height:100vh;
+  border-left:1px solid var(--grid-line);
+  display:flex; flex-direction:column;
+  background:var(--void); position:relative;
+}
+
+/* ── Title area ── */
+#title-area {
+  position:absolute; top:28px; left:0; right:0;
+  text-align:center; pointer-events:none; z-index:10;
+}
+#title-area h1 {
+  font-family:'Space Mono',monospace; font-size:11px; font-weight:400;
+  letter-spacing:6px; text-transform:uppercase; color:var(--text-dead);
+  transition:color 8s ease, opacity 6s ease;
+}
+#title-area .subtitle {
+  font-size:10px; letter-spacing:3px; color:var(--text-dead);
+  margin-top:4px; opacity:0.5; transition:opacity 8s ease, color 8s ease;
+}
+#session-stats {
+  font-size:9px; letter-spacing:2px; color:var(--text-dead);
+  margin-top:6px; opacity:0; transition:opacity 4s ease;
+}
+
+/* ── Grid ── */
+#grid-container { position:relative; }
+#grid {
+  display:grid; gap:1px; background:var(--grid-line-faint);
+  border:1px solid var(--grid-line); position:relative;
+  transition:transform 4s ease, filter 4s ease;
+}
+
+.cell {
+  width:100%; aspect-ratio:1; background:var(--cell-empty);
+  transition:background 0.6s ease, opacity 0.6s ease, box-shadow 0.6s ease;
+  position:relative; overflow:hidden;
+}
+
+/* Entity and drifter types */
+.cell.entity { background:var(--entity); box-shadow:0 0 12px var(--entity-glow); transition:background 0.15s ease, box-shadow 0.15s ease; }
+.cell.drifter-a { background:var(--drifter-a); box-shadow:0 0 6px rgba(58,58,72,0.15); }
+.cell.drifter-b { background:var(--drifter-b); box-shadow:0 0 6px rgba(46,58,58,0.15); }
+.cell.drifter-c { background:var(--drifter-c); box-shadow:0 0 6px rgba(58,46,54,0.15); }
+.cell.shadow-entity { background:var(--shadow); opacity:0.4; box-shadow:0 0 8px rgba(42,42,58,0.1); }
+
+/* ── Witness entity ── */
+.cell.witness-entity {
+  background:var(--witness);
+  box-shadow:0 0 14px var(--witness-glow), inset 0 0 8px rgba(80,60,110,0.08);
+  animation:witness-observe 6s ease-in-out infinite;
+}
+@keyframes witness-observe {
+  0%,100% { box-shadow:0 0 14px rgba(80,60,110,0.12), inset 0 0 8px rgba(80,60,110,0.08); }
+  50%      { box-shadow:0 0 22px rgba(80,60,110,0.2),  inset 0 0 14px rgba(80,60,110,0.14); }
+}
+
+/* ── Signal anomaly ── */
+.cell.signal-cell {
+  background:var(--signal-color);
+  animation:signal-pulse 1.2s ease-in-out infinite;
+  box-shadow:0 0 10px rgba(48,64,64,0.25);
+}
+@keyframes signal-pulse {
+  0%,100% { opacity:0.6; background:var(--signal-color); }
+  50%      { opacity:1;   background:#3a5050; }
+}
+
+/* ── Cell wear states ── */
+.cell.worn-light  { background:#0d0b10; }
+.cell.worn-medium { background:#100d14; box-shadow:inset 0 0 6px rgba(60,50,80,0.05); }
+.cell.worn-heavy  { background:#120f18; box-shadow:inset 0 0 10px rgba(70,55,95,0.1); animation:worn-breathe 8s ease-in-out infinite; }
+@keyframes worn-breathe {
+  0%,100% { box-shadow:inset 0 0 10px rgba(70,55,95,0.08); }
+  50%      { box-shadow:inset 0 0 16px rgba(70,55,95,0.15); }
+}
+
+/* ── Artifact, whisper, special states ── */
+.cell.has-artifact::after {
+  content:''; position:absolute; top:50%; left:50%;
+  width:4px; height:4px; background:var(--artifact); border-radius:50%;
+  transform:translate(-50%,-50%);
+  animation:artifact-pulse 3s ease-in-out infinite;
+  box-shadow:0 0 6px rgba(74,64,96,0.3);
+}
+.cell.has-artifact.artifact-fading::after { animation:artifact-dissolve 1.5s ease-out forwards; }
+.cell .whisper-text {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:'Space Mono',monospace; font-size:7px; color:var(--whisper);
+  pointer-events:none; opacity:0; animation:whisper-appear 6s ease-in-out forwards; letter-spacing:0;
+}
+
+.cell.marked      { background:#12101a; }
+.cell.ghost       { background:#0e0c14; animation:ghost-pulse 4s ease-in-out infinite; }
+.cell.void-cell   { background:#030305; opacity:0.6; }
+.cell.scar        { background:#140a0a; }
+.cell.watching    { background:var(--cell-empty); box-shadow:inset 0 0 8px rgba(80,70,100,0.15); }
+.cell.echo        { background:#0d0a12; animation:echo-fade 3s ease-out forwards; }
+.cell.pulse       { animation:cell-pulse 2s ease-in-out; }
+.cell.decay       { background:#0b0808; opacity:0.8; transition:opacity 4s ease; }
+.cell.bloom       { background:#0f0e16; box-shadow:inset 0 0 12px rgba(90,70,120,0.08); animation:bloom-breathe 6s ease-in-out infinite; }
+.cell.claimed     { background:#100e15; border:1px solid rgba(80,60,100,0.06); }
+.cell.erased      { background:var(--void); opacity:0.3; }
+.cell.migrated    { background:#0a0d0c; }
+.cell.drifter-trail { background:#0c0b10; transition:background 4s ease; }
+.cell.ritual-glow { box-shadow:inset 0 0 10px rgba(100,80,140,0.06); animation:ritual-dim 4s ease-out forwards; }
+.cell.tremor      { animation:cell-tremor 0.3s ease-in-out; }
+.cell.resonance   { background:#0e0c14; box-shadow:inset 0 0 14px rgba(70,60,100,0.06); animation:resonance-hum 5s ease-in-out infinite; }
+.cell.convergence { box-shadow:inset 0 0 16px rgba(100,80,130,0.1); animation:convergence-glow 3s ease-in-out infinite; }
+.cell.hot         { background:#0f0c14; box-shadow:inset 0 0 8px rgba(80,60,100,0.07); }
+
+@keyframes ghost-pulse          { 0%,100%{opacity:1} 50%{opacity:0.5} }
+@keyframes echo-fade            { 0%{background:#16121e;opacity:1} 100%{background:var(--cell-empty);opacity:1} }
+@keyframes cell-pulse           { 0%,100%{box-shadow:none} 50%{box-shadow:inset 0 0 6px rgba(100,80,130,0.1)} }
+@keyframes bloom-breathe        { 0%,100%{box-shadow:inset 0 0 12px rgba(90,70,120,0.08)} 50%{box-shadow:inset 0 0 18px rgba(90,70,120,0.14)} }
+@keyframes artifact-pulse       { 0%,100%{opacity:0.5;transform:translate(-50%,-50%) scale(1)} 50%{opacity:0.9;transform:translate(-50%,-50%) scale(1.3)} }
+@keyframes artifact-dissolve    { 0%{opacity:0.9;transform:translate(-50%,-50%) scale(1.3)} 100%{opacity:0;transform:translate(-50%,-50%) scale(0)} }
+@keyframes whisper-appear       { 0%{opacity:0} 20%{opacity:0.5} 80%{opacity:0.4} 100%{opacity:0} }
+@keyframes ritual-dim           { 0%{box-shadow:inset 0 0 10px rgba(100,80,140,0.08)} 100%{box-shadow:none} }
+@keyframes cell-tremor          { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-1px,0)} 75%{transform:translate(1px,0)} }
+@keyframes resonance-hum        { 0%,100%{box-shadow:inset 0 0 14px rgba(70,60,100,0.06)} 50%{box-shadow:inset 0 0 20px rgba(70,60,100,0.1)} }
+@keyframes convergence-glow     { 0%,100%{box-shadow:inset 0 0 16px rgba(100,80,130,0.08)} 50%{box-shadow:inset 0 0 24px rgba(100,80,130,0.16)} }
+
+/* ── Move / artifact counters ── */
+#move-counter {
+  position:absolute; bottom:28px; left:0; right:0; text-align:center;
+  font-size:10px; letter-spacing:4px; color:var(--text-dead);
+  pointer-events:none; z-index:10; font-family:'Space Mono',monospace;
+  transition:color 4s ease, opacity 4s ease;
+}
+#artifact-counter {
+  position:absolute; bottom:46px; left:0; right:0; text-align:center;
+  font-size:9px; letter-spacing:3px; color:var(--text-dead);
+  pointer-events:none; z-index:10; font-family:'Space Mono',monospace;
+  opacity:0; transition:opacity 4s ease, color 4s ease;
+}
+
+/* ── Memory flash ── */
+#memory-flash {
+  position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+  pointer-events:none; z-index:9996; opacity:0; transition:opacity 0.3s ease;
+}
+#memory-flash.active { opacity:1; }
+#memory-flash .memory-text {
+  font-family:'Space Mono',monospace; font-size:10px; letter-spacing:3px;
+  color:var(--text-dead); text-align:center; max-width:420px; line-height:2;
+  animation:memory-drift 4s ease-in-out forwards;
+}
+@keyframes memory-drift {
+  0%   { opacity:0; transform:translateY(10px); }
+  15%  { opacity:0.6; transform:translateY(0); }
+  70%  { opacity:0.5; transform:translateY(-5px); }
+  100% { opacity:0; transform:translateY(-15px); }
+}
+
+/* ── Taxonomy overlay ── */
+#taxonomy-overlay {
+  position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  pointer-events:none; z-index:9995; opacity:0; transition:opacity 1s ease;
+}
+#taxonomy-overlay.active { opacity:1; }
+#taxonomy-content {
+  font-family:'Space Mono',monospace; font-size:10px; letter-spacing:3px;
+  color:var(--text-dead); text-align:center; max-width:300px; line-height:2.5;
+  animation:taxonomy-appear 6s ease-in-out forwards;
+}
+#taxonomy-content .taxonomy-type {
+  font-size:13px; letter-spacing:5px; color:var(--text-dim); margin:8px 0;
+}
+@keyframes taxonomy-appear {
+  0%   { opacity:0; transform:scale(0.97); }
+  10%  { opacity:0.7; transform:scale(1); }
+  80%  { opacity:0.6; }
+  100% { opacity:0; }
+}
+
+/* ── Log panel ── */
+#log-header {
+  padding:20px 20px 12px; border-bottom:1px solid var(--grid-line);
+  font-family:'Space Mono',monospace; font-size:9px; letter-spacing:4px;
+  text-transform:uppercase; color:var(--text-dead); transition:color 4s ease;
+  display:flex; justify-content:space-between; align-items:center;
+}
+#log-header .log-session-id { font-size:8px; letter-spacing:2px; opacity:0.5; }
+#log-entries {
+  flex:1; overflow-y:auto; padding:12px 20px;
+  display:flex; flex-direction:column; gap:0;
+  scrollbar-width:thin; scrollbar-color:var(--grid-line) transparent;
+}
+#log-entries::-webkit-scrollbar { width:3px; }
+#log-entries::-webkit-scrollbar-track { background:transparent; }
+#log-entries::-webkit-scrollbar-thumb { background:var(--grid-line); }
+
+.log-entry {
+  font-size:11px; line-height:1.7; color:var(--text-log); opacity:0;
+  animation:log-appear 0.5s ease forwards; padding:2px 0;
+  border-bottom:1px solid transparent;
+}
+.log-entry.phase-0 { color:var(--text-dim); }
+.log-entry.phase-1 { color:var(--text-dim); }
+.log-entry.phase-2 { color:var(--text-cold); }
+.log-entry.phase-3 { color:var(--text-fabricate); }
+.log-entry.phase-4 { color:var(--text-warn); }
+.log-entry.phase-5 { color:var(--text-aware); }
+.log-entry.phase-6 { color:#8a7090; }
+.log-entry.phase-7 { color:#555560; }
+.log-entry.phase-8 { color:#3a3a42; }
+
+.log-entry.drifter-line   { color:#3a4a4a; font-style:italic; }
+.log-entry.artifact-line  { color:#4a4060; }
+.log-entry.ritual-line    { color:#504060; border-left:1px solid rgba(80,64,96,0.15); padding-left:10px; margin-left:-10px; }
+.log-entry.weather-line   { color:#3a3a50; }
+.log-entry.memory-line    { color:#2a3a3a; font-style:italic; }
+.log-entry.shadow-line    { color:#2a2a40; }
+.log-entry.witness-line   { color:#3a2a50; font-style:italic; }
+.log-entry.signal-line    { color:#2a3a3a; }
+.log-entry.taxonomy-line  { color:#504060; letter-spacing:1px; }
+.log-entry.wear-line      { color:#3a3050; }
+.log-entry.convergence-line { color:#504858; border-left:1px solid rgba(90,60,110,0.12); padding-left:10px; margin-left:-10px; }
+.log-entry.system-line    { color:var(--text-dead); font-size:10px; letter-spacing:1px; }
+.log-entry.event-line     { border-left:1px solid rgba(100,80,130,0.12); padding-left:10px; margin-left:-10px; }
+.log-entry .timestamp     { color:var(--text-dead); margin-right:8px; font-size:10px; }
+
+@keyframes log-appear { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── Phase flash ── */
+#phase-flash {
+  position:fixed; inset:0; background:white; opacity:0;
+  pointer-events:none; z-index:10000; transition:opacity 0.05s ease;
+}
+#phase-flash.flash       { opacity:0.015; transition:opacity 0s; }
+#phase-flash.deep-flash  { opacity:0.03;  transition:opacity 0s; }
+#phase-flash.tremor-flash{ opacity:0.008; transition:opacity 0s; }
+#phase-flash.witness-flash{ opacity:0.02; background:#604080; transition:opacity 0s; }
+
+/* ── Start overlay ── */
+#start-overlay {
+  position:fixed; inset:0; background:var(--void);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  z-index:10001; transition:opacity 1.5s ease; cursor:pointer;
+}
+#start-overlay.hidden { opacity:0; pointer-events:none; }
+#start-overlay h1 {
+  font-family:'Space Mono',monospace; font-size:13px; font-weight:400;
+  letter-spacing:8px; text-transform:uppercase; color:var(--text-dim);
+  margin-bottom:24px;
+}
+#start-overlay .start-desc {
+  font-size:10px; letter-spacing:2px; color:var(--text-dead);
+  margin-bottom:24px; text-align:center; max-width:320px; line-height:2;
+}
+#start-overlay .start-hint {
+  font-size:10px; letter-spacing:4px; color:var(--text-dead);
+  animation:hint-pulse 3s ease-in-out infinite;
+}
+@keyframes hint-pulse { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+
+/* ── Responsive ── */
+@media(max-width:800px){
+  #container{flex-direction:column}
+  #log-panel{width:100%;min-width:unset;height:35vh;border-left:none;border-top:1px solid var(--grid-line)}
+  #world-panel{height:65vh}
+  #title-area{top:12px}
+  #title-area h1{font-size:9px;letter-spacing:4px}
+  #move-counter{bottom:12px}
+  #artifact-counter{bottom:28px}
+}
+</style>
+</head>
+<body>
+
+<div id="phase-flash"></div>
+<div id="weather-overlay"></div>
+<div id="memory-flash"><div class="memory-text" id="memory-text"></div></div>
+<div id="taxonomy-overlay"><div id="taxonomy-content"></div></div>
+
+<div id="start-overlay">
+  <h1>World That Doesn't Care</h1>
+  <div class="start-desc">a grid-based observation system<br>you will move. the grid will not notice.</div>
+  <div class="start-hint">press any key or tap to begin</div>
+</div>
+
+<div id="container">
+  <div id="world-panel">
+    <div id="title-area">
+      <h1 id="main-title">World That Doesn't Care</h1>
+      <div class="subtitle" id="subtitle">observation active</div>
+      <div id="session-stats"></div>
+    </div>
+    <div id="grid-container">
+      <div id="grid"></div>
+    </div>
+    <div id="artifact-counter"><span id="artifact-display"></span></div>
+    <div id="move-counter"><span id="counter-display">move 0</span></div>
+  </div>
+  <div id="log-panel">
+    <div id="log-header">
+      <span>system log</span>
+      <span class="log-session-id" id="session-id-display"></span>
+    </div>
+    <div id="log-entries"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ═══════════════════════════════════════════════════════
+  // CONFIG
+  // ═══════════════════════════════════════════════════════
+  const GRID_SIZE = 18;
+  const CELL_PX = Math.min(Math.floor((Math.min(window.innerWidth * 0.58, window.innerHeight * 0.76)) / GRID_SIZE), 30);
+  const MAX_LOG = 200;
+  const SESSION_ID = Math.random().toString(36).slice(2,10).toUpperCase();
+
+  // ═══════════════════════════════════════════════════════
+  // STATE
+  // ═══════════════════════════════════════════════════════
+  const S = {
+    started: false,
+    playerX: Math.floor(GRID_SIZE / 2),
+    playerY: Math.floor(GRID_SIZE / 2),
+    moves: 0,
+    phase: 0,
+    lastDirection: null,
+    moveHistory: [],
+    positionHistory: [],
+    directionCounts: { north:0, south:0, east:0, west:0 },
+    markedCells: new Set(),
+    ghostCells: new Set(),
+    voidCells: new Set(),
+    scarCells: new Set(),
+    watchingCells: new Set(),
+    echoTrail: [],
+    fabricatedActions: 0,
+    consequencesApplied: 0,
+    idleTicks: 0,
+    totalIdleTicks: 0,
+    idleTimer: null,
+    ambientTimer: null,
+    narrativeTimer: null,
+    drifterTimer: null,
+    weatherTimer: null,
+    whisperTimer: null,
+    gridCells: [],
+    logCount: 0,
+    lastLogTime: 0,
+    entityName: 'Entity',
+    entityNames: ['Entity','Subject','Instance','Occupant','Signal','Pattern','Residue','Echo','Trace','Remnant'],
+    nameIndex: 0,
+    wallBumps: 0,
+    revisitCount: 0,
+    visitedCells: new Set(),
+    cornerVisits: 0,
+    edgeMoves: 0,
+    centerMoves: 0,
+    directionChanges: 0,
+    consecutiveSameDir: 0,
+    longestStraightLine: 0,
+    currentStraightLine: 0,
+    circlingDetected: false,
+    retracingDetected: false,
+    explorerScore: 0,
+    hesitationCount: 0,
+    lastMoveTime: 0,
+    fastMoveStreak: 0,
+    slowMoveCount: 0,
+    narrativeFlags: {
+      otherEntityMentioned: false,
+      nameRejected: false,
+      claimsMade: 0,
+      warningsIssued: 0,
+      questionsAsked: 0,
+      memoriesReferenced: 0,
+      futureLogged: false,
+      silenceNoted: false,
+      boundaryPushed: false,
+      systemAddressed: false,
+      regretExpressed: false,
+      acceptanceShown: false,
+      mirrorEncountered: false,
+      otherEntityCount: 0,
+      artifactsCollected: 0,
+      artifactsIgnored: 0,
+      ritualsPerformed: 0,
+      drifterEncounters: 0,
+      shadowAcknowledged: false,
+      weatherEventsWitnessed: 0,
+      whispersRead: 0,
+      memoriesTriggered: 0,
+      firstDrifterDeath: false,
+      totalDrifterDeaths: 0,
+      witnessApproached: false,
+      witnessAbsorbed: false,
+      taxonomyAssigned: false,
+      taxonomyType: null,
+      convergenceEvents: 0,
+      signalSeen: 0,
+      wornCellsCommented: false,
+    },
+    eventCooldown: 0,
+    triggeredEvents: new Set(),
+    phaseTransitions: { 1:14, 2:35, 3:65, 4:100, 5:145, 6:195, 7:255, 8:330 },
+    finalPhaseStarted: false,
+    drifters: [],
+    artifacts: new Map(),
+    artifactsCollected: [],
+    artifactSpawnCooldown: 0,
+    shadow: { x:-1, y:-1, active:false, delay:[], diverged:false, divergeMove:0 },
+    currentWeather: 'none',
+    weatherDuration: 0,
+    activeWhispers: new Map(),
+    ritualBuffer: [],
+    ritualsDetected: 0,
+    lastRitualMove: 0,
+    memoryCooldown: 0,
+    memoriesShown: 0,
+    audioCtx: null,
+    audioStarted: false,
+    masterGain: null,
+    droneOscs: [],
+    // NEW
+    cellVisitCounts: new Map(),
+    witness: { x:-1, y:-1, active:false, spawnMove:0, acknowledged:false },
+    signal: { x:-1, y:-1, active:false, timer:null },
+    taxonomyDone: false,
+    mostWornCell: null,
+    convergenceCooldown: 0,
+    titleGlitchTimer: null,
+    originalTitle: 'World That Doesn\'t Care',
+    glitchChars: '░▒▓█▌▐▀▄─│┼╬╪╫▪▫·:;,.',
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // HELPERS
+  // ═══════════════════════════════════════════════════════
+  function pick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+  function randInt(a,b) { return Math.floor(Math.random()*(b-a+1))+a; }
+  function randCoord() { return `[${randInt(0,GRID_SIZE-1)},${randInt(0,GRID_SIZE-1)}]`; }
+  function fakeTs() { return `${pad(randInt(0,23))}:${pad(randInt(0,59))}:${pad(randInt(0,59))}`; }
+  function pad(n) { return String(n).padStart(2,'0'); }
+  function fakeHex() { return '0x'+Math.floor(Math.random()*0xFFFFFF).toString(16).padStart(6,'0'); }
+  function fakeSector() { return String.fromCharCode(65+randInt(0,7))+'-'+randInt(0,15); }
+  function EN() { return S.entityName; }
+  function en() { return S.entityName.toLowerCase(); }
+  function ck(x,y) { return `${x},${y}`; }
+  function opp(d) { return {north:'south',south:'north',east:'west',west:'east'}[d]||d; }
+  function pdist(x,y) { return Math.abs(x-S.playerX)+Math.abs(y-S.playerY); }
+  function validCell(x,y) { return x>=0&&x<GRID_SIZE&&y>=0&&y<GRID_SIZE; }
+  function isEdge(x,y) { return x===0||x===GRID_SIZE-1||y===0||y===GRID_SIZE-1; }
+  function isCorner(x,y) { return (x===0||x===GRID_SIZE-1)&&(y===0||y===GRID_SIZE-1); }
+  function explPct() { return Math.floor((S.visitedCells.size/(GRID_SIZE*GRID_SIZE))*100); }
+  function domDir() { let m=0,r='none'; for(const[k,v] of Object.entries(S.directionCounts)){if(v>m){m=v;r=k;}} return r; }
+  function getPhase() { const m=S.moves; for(let p=8;p>=1;p--){if(m>=(S.phaseTransitions[p]||Infinity))return p;} return 0; }
+
+  function getCell(x,y) {
+    if(!validCell(x,y)) return null;
+    return S.gridCells[y][x];
+  }
+
+  function analyzeBehavior() {
+    const recent = S.positionHistory.slice(-12);
+    if(recent.length<6) return;
+    const last6=recent.slice(-6);
+    const uPos=new Set(last6.map(p=>`${p.x},${p.y}`));
+    S.circlingDetected = uPos.size<=4;
+    if(S.moveHistory.length>=4){
+      const d4=S.moveHistory.slice(-4).map(m=>m.dir);
+      S.retracingDetected = d4[0]===opp(d4[2])&&d4[1]===opp(d4[3]);
+    }
+    S.explorerScore = S.visitedCells.size;
+  }
+
+  function getBehaviorDesc() {
+    if(S.circlingDetected) return pick(['circling','orbiting','looping','pacing','spiraling']);
+    if(S.retracingDetected) return pick(['retracing','retreating','backtracking','doubling back']);
+    if(S.consecutiveSameDir>=4) return pick(['marching','advancing','driving','persisting','charging']);
+    if(S.edgeMoves>S.moves*0.4) return pick(['edge-walking','boundary-tracing','perimeter-scanning','wall-hugging']);
+    if(S.fastMoveStreak>=5) return pick(['rushing','fleeing','accelerating','urgent','panicking']);
+    if(S.slowMoveCount>S.moves*0.3) return pick(['deliberating','hesitating','contemplating','measuring']);
+    return pick(['wandering','drifting','traversing','moving','migrating','searching','existing']);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // PLAYER TAXONOMY
+  // ═══════════════════════════════════════════════════════
+  function classifyPlayer() {
+    const ep = explPct();
+    const edgeRatio = S.edgeMoves / Math.max(1, S.moves);
+    const centerRatio = S.centerMoves / Math.max(1, S.moves);
+    const changeRatio = S.directionChanges / Math.max(1, S.moves);
+    const ritualCount = S.narrativeFlags.ritualsPerformed;
+    const artifactCount = S.narrativeFlags.artifactsCollected;
+    const idleRatio = S.totalIdleTicks / Math.max(1, S.moves + S.totalIdleTicks);
+    const circled = S.circlingDetected;
+    const wallBumpRatio = S.wallBumps / Math.max(1, S.moves);
+    if(ep > 70) return { name:'The Cartographer', desc:'mapped everything. understood nothing.' };
+    if(edgeRatio > 0.55) return { name:'The Edge-Walker', desc:'sought limits. the limits were real.' };
+    if(ritualCount >= 5) return { name:'The Ritualist', desc:'performed rites to no deity.' };
+    if(artifactCount >= 8) return { name:'The Collector', desc:'gathered weight that did not exist.' };
+    if(circled) return { name:'The Pacer', desc:'moved in circles without choosing to.' };
+    if(idleRatio > 0.35) return { name:'The Still Point', desc:'was here. mostly was not moving.' };
+    if(wallBumpRatio > 0.12) return { name:'The Tester', desc:'pushed every boundary. none gave way.' };
+    if(S.retracingDetected && S.revisitCount > 15) return { name:'The Haunter', desc:'returned. returned. returned.' };
+    if(S.longestStraightLine > 10) return { name:'The Marcher', desc:'went in one direction until stopped.' };
+    if(centerRatio > 0.55) return { name:'The Center', desc:'remained near the middle. the middle did not notice.' };
+    if(changeRatio > 0.7) return { name:'The Uncertain', desc:'changed direction more than it held one.' };
+    return { name:'The Wanderer', desc:'moved without pattern. patterns emerged anyway.' };
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // AUDIO ENGINE
+  // ═══════════════════════════════════════════════════════
+  function initAudio() {
+    if(S.audioStarted) return;
+    try {
+      S.audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      S.masterGain = S.audioCtx.createGain();
+      S.masterGain.gain.value = 0;
+      S.masterGain.connect(S.audioCtx.destination);
+      const freqs = [54.88, 82.41, 65.41];
+      freqs.forEach((freq,i) => {
+        const osc=S.audioCtx.createOscillator();
+        const gain=S.audioCtx.createGain();
+        const filt=S.audioCtx.createBiquadFilter();
+        osc.type = i===2 ? 'triangle' : 'sine';
+        osc.frequency.value = freq;
+        filt.type='lowpass'; filt.frequency.value=180; filt.Q.value=0.8;
+        gain.gain.value = i===2 ? 0.04 : 0.07;
+        osc.connect(filt); filt.connect(gain); gain.connect(S.masterGain);
+        osc.start();
+        S.droneOscs.push({osc,gain,filt,baseFreq:freq});
+      });
+      S.masterGain.gain.setTargetAtTime(0.12, S.audioCtx.currentTime, 5);
+      S.audioStarted = true;
+    } catch(e){}
+  }
+
+  function updateAudioForPhase() {
+    if(!S.audioStarted||!S.audioCtx) return;
+    const t=S.audioCtx.currentTime, p=S.phase;
+    S.droneOscs.forEach((d,i)=>{
+      d.osc.detune.setTargetAtTime(p*2.5*(i===0?1:-1)*(i===2?0.5:1),t,2);
+      d.filt.frequency.setTargetAtTime(180+p*35,t,3);
+      const vol=Math.max(0.01,0.07-p*0.006);
+      d.gain.gain.setTargetAtTime(vol,t,2);
+    });
+    if(p>=7) S.masterGain.gain.setTargetAtTime(0.05,t,8);
+    if(p>=8) S.masterGain.gain.setTargetAtTime(0.02,t,12);
+  }
+
+  function playTone(freq, dur, vol=0.018, type='sine') {
+    if(!S.audioStarted||!S.audioCtx) return;
+    const t=S.audioCtx.currentTime;
+    const osc=S.audioCtx.createOscillator();
+    const g=S.audioCtx.createGain();
+    osc.type=type; osc.frequency.value=freq;
+    g.gain.value=0;
+    g.gain.setTargetAtTime(vol,t,0.01);
+    g.gain.setTargetAtTime(0,t+dur*0.6,dur*0.4);
+    osc.connect(g); g.connect(S.masterGain);
+    osc.start(t); osc.stop(t+dur+0.3);
+  }
+
+  function playMoveSound() {
+    if(!S.audioStarted||!S.audioCtx) return;
+    const base = 100+(S.playerX*2.2)+(S.playerY*3.1);
+    playTone(base+S.phase*4, 0.12, 0.016);
+  }
+
+  function playArtifactSound() {
+    [0,0.1,0.22].forEach((off,i)=>setTimeout(()=>playTone(300+i*60,0.18,0.014,'triangle'),off*1000));
+  }
+
+  function playEventTone() { playTone(73.42, 0.8, 0.04, 'sine'); }
+  function playWitnessSound() { playTone(92, 1.2, 0.03, 'triangle'); }
+
+  // ═══════════════════════════════════════════════════════
+  // LOG CONTENT
+  // ═══════════════════════════════════════════════════════
+  const bootLines = [
+    '> session id: '+SESSION_ID,
+    '> system initializing.',
+    '> grid allocated: '+GRID_SIZE+'×'+GRID_SIZE+'.',
+    '> entity placed at center.',
+    '> boundaries: fixed.',
+    '> observer: passive.',
+    '> consequence engine: dormant.',
+    '> drifter population: seeding...',
+    '> witness subsystem: suspended.',
+    '> weather subsystem: neutral.',
+    '> artifact field: empty.',
+    '> signal scanner: armed.',
+    '> audit thread: running.',
+    '> awaiting input.',
+  ];
+
+  // PHASE 1
+  const p1 = [
+    ()=>EN()+' moved.',
+    ()=>'Position updated.',
+    ()=>'No consequence registered.',
+    ()=>'Tile: unchanged.',
+    ()=>'State: nominal.',
+    ()=>'Grid coordinate: '+S.playerX+', '+S.playerY+'.',
+    ()=>'Movement acknowledged.',
+    ()=>'No interaction available.',
+    ()=>'Environment: static.',
+    ()=>'Nothing happened.',
+    ()=>EN()+' relocated. No effect.',
+    ()=>'Input processed. Output: null.',
+    ()=>'Displacement noted. Significance: none.',
+    ()=>'Cell transition. No delta.',
+    ()=>'Action received. Response: none.',
+    ()=>'Observation: '+en()+' is moving.',
+    ()=>'Note: movement does not alter state.',
+    ()=>'Acknowledged.',
+    ()=>'Logged.',
+    ()=>'Registered. Discarded.',
+    ()=>'Position: '+S.playerX+', '+S.playerY+'. No events.',
+    ()=>'Cell entered. Cell unchanged.',
+    ()=>EN()+' continues.',
+    ()=>'Navigation input processed. No map exists.',
+    ()=>'Step '+S.moves+'. Like the others.',
+    ()=>'Grid accepts '+en()+'. Grid accepts anything.',
+    ()=>'Vector applied. Magnitude: 1. Impact: 0.',
+    ()=>'Space occupied briefly. Space will forget.',
+    ()=>'Received. Filed. Dismissed.',
+    ()=>'No signals. No changes. Continuing.',
+    ()=>'Movement confirmed. Relevance: pending.',
+    ()=>EN()+' entered cell ['+S.playerX+','+S.playerY+']. Cell does not respond.',
+    ()=>'Routine displacement.',
+    ()=>'Input → output. Nothing in between.',
+    ()=>'Observation interval: nominal. Findings: none.',
+    ()=>'The grid was this quiet before '+en()+'. It will be this quiet after.',
+    ()=>EN()+' is here. This is noted. This is all.',
+    ()=>'A cell was left. A cell was entered. Neither noticed.',
+    ()=>'Timestamp: '+fakeTs()+'. Event: movement. Significance: zero.',
+    ()=>'Cell ['+S.playerX+','+S.playerY+']. '+EN()+'. No further notes.',
+    ()=>'Displacement vector: ['+pick([-1,0,0,1])+','+pick([-1,0,0,1])+']. Applied. Forgotten.',
+    ()=>'Observation thread: running. Findings: none.',
+    ()=>EN()+' consumed no resources. Produced no output.',
+    ()=>'Sector '+fakeSector()+'. No anomalies. '+EN()+' present.',
+    ()=>'Movement logged at '+fakeTs()+'. Log immediately archived.',
+    ()=>'Process ID '+fakeHex()+': move event. Priority: background.',
+    ()=>EN()+' has been here '+S.moves+' times. Here is unchanged.',
+    ()=>'The grid is '+(GRID_SIZE*GRID_SIZE)+' cells. '+EN()+' is in one of them.',
+    ()=>'Cell acknowledged. Cell would not have acknowledged. Cell did.',
+    ()=>'Response to movement: null. Response was expected to be null.',
+    ()=>'Cell ['+S.playerX+','+S.playerY+'] occupied. All cells are technically occupied by void.',
+  ];
+
+  // PHASE 2
+  const p2 = [
+    ()=>EN()+' hesitated.',
+    ()=>'Brief pause detected before movement.',
+    ()=>EN()+' changed direction mid-step.',
+    ()=>'Micro-correction observed.',
+    ()=>EN()+' appeared to look '+pick(['left','right','behind','upward','at its own position','nowhere in particular','at the drifters'])+' .',
+    ()=>'Sound registered. Source: '+en()+'.',
+    ()=>EN()+' velocity: inconsistent.',
+    ()=>'Pattern deviation noted.',
+    ()=>EN()+' moved. Then stopped. Then moved again.',
+    ()=>'Faint signal near '+en()+'. Unresolved.',
+    ()=>EN()+' touched the wall. Duration: '+( Math.random()*0.6+0.1).toFixed(1)+'s.',
+    ()=>'Something shifted at '+randCoord()+'. Unrelated to '+en()+'.',
+    ()=>EN()+' exhibited '+pick(['reluctance','urgency','confusion','purpose','recognition','avoidance','longing','ambiguity'])+'.',
+    ()=>'Adjacent cell flickered. Cause: unknown.',
+    ()=>'Log discrepancy at timestamp '+fakeTs()+'. Ignored.',
+    ()=>EN()+' trajectory suggests '+pick(['searching','avoidance','circling','nothing','escape','inventory','memory'])+'.',
+    ()=>'Second entity detected. Correction: false positive.',
+    ()=>EN()+' emitted low-frequency signal. Catalogued.',
+    ()=>'Surface vibration near '+randCoord()+'. Negligible.',
+    ()=>'Ambient temperature near '+en()+': '+(36+Math.random()*2).toFixed(1)+'°.',
+    ()=>'Grid sector '+fakeSector()+' registering minor fluctuation.',
+    ()=>EN()+' appears to have preferences. Noted.',
+    ()=>'Movement pattern: '+getBehaviorDesc()+'.',
+    ()=>'Cell ['+S.playerX+','+S.playerY+'] registered '+en()+'\'s weight.',
+    ()=>'Previous position cooling. Trace fading.',
+    ()=>EN()+' left thermal residue at prior cell.',
+    ()=>'Observer note: '+en()+' moves '+pick(['with increasing familiarity','as if being watched','like it expects something','without clear purpose','like it has done this before'])+'.',
+    ()=>'Background process '+fakeHex()+' monitoring '+en()+'.',
+    ()=>'Timestamp drift: '+(Math.random()*0.03).toFixed(4)+'s. Not concerning.',
+    ()=>'Another cell dimmed. '+EN()+' did not notice.',
+    ()=>EN()+'\'s shadow is '+pick(['longer than expected','absent','pointing wrong','still','a fraction of a second late'])+'.',
+    ()=>'Signal echo at '+randCoord()+'. Possibly '+en()+'\'s previous position.',
+    ()=>EN()+' is '+S.moves+' moves in. The grid is '+(GRID_SIZE*GRID_SIZE)+' cells old.',
+    ()=>'The cell '+en()+' just left is '+pick(['warmer','darker','quieter','slightly wrong','briefly brighter'])+' now.',
+    ()=>'Something watched '+en()+' cross cell '+randCoord()+'. Or didn\'t.',
+    ()=>{ S.narrativeFlags.otherEntityMentioned=true; return 'Faint reading at '+randCoord()+'. Shape: '+pick(['humanoid','undefined','familiar','impossible','mirrored'])+'. Lost.'; },
+    ()=>'The drifters give '+en()+' wide clearance. This is not politeness.',
+    ()=>'Ambient noise changed when '+en()+' entered sector '+fakeSector()+'. Coincidence.',
+    ()=>EN()+' breath rate: '+randInt(14,22)+' cycles per minute. Elevated.',
+    ()=>'Internal clock of '+en()+': running. Internal clock of grid: absent.',
+    ()=>'Motion parallax of drifters relative to '+en()+': detected. Noted. Dismissed.',
+    ()=>'Cell ['+S.playerX+','+S.playerY+'] was occupied '+pick(['once','twice','several times','repeatedly'])+' before '+en()+'. No trace left by previous occupant.',
+    ()=>EN()+' paused at grid edge. Duration: '+randInt(1,4)+'s. Edge: indifferent.',
+    ()=>'Faint bioluminescence from '+en()+'\'s path. Already fading.',
+    ()=>'Grid processing '+en()+'\'s input at '+randInt(800,999)+' cycles. Performance: nominal.',
+    ()=>EN()+' did not find what it was looking for. This assumes it was looking for something.',
+    ()=>'The drifters have been in this grid for '+pick(['longer','the same amount of time','an indeterminate duration'])+' as '+en()+'. The grid does not differentiate.',
+    ()=>EN()+' crossed into a cell it has visited before. Memory: likely. Significance: none.',
+    ()=>'Trace compound on '+en()+'\'s previous cell at '+fakeHex()+'. Nature: biological. Relevance: 0.',
+  ];
+
+  // PHASE 3 — Fabrication
+  const p3 = [
+    ()=>EN()+' placed object at '+randCoord()+'.',
+    ()=>EN()+' vocalized.',
+    ()=>EN()+' interacted with structure at '+randCoord()+'.',
+    ()=>EN()+' marked territory.',
+    ()=>EN()+' expressed preference for '+pick(['darker cells','the eastern edge','remaining still','the center','corners','the boundary','open space','tight corridors','proximity to drifters','artifacts','the silence between moves','cells it has been to before','high ground that does not exist'])+' .',
+    ()=>EN()+' destroyed object.',
+    ()=>EN()+' attempted communication. No recipient.',
+    ()=>EN()+' drew symbol on cell '+randCoord()+'.',
+    ()=>EN()+' struck surface. Force: '+pick(['minimal','moderate','excessive','calculated','desperate'])+'.',
+    ()=>EN()+' displayed '+pick(['aggression','attachment','mourning','recognition','defiance','longing','possessiveness','spite','tenderness toward nothing','love of a very specific kind that has no category'])+'.',
+    ()=>EN()+' refused to proceed. Override applied.',
+    ()=>{ S.narrativeFlags.claimsMade++; return EN()+' claimed cell '+randCoord()+'. Claim registered.'; },
+    ()=>EN()+' made promise to empty cell.',
+    ()=>EN()+' gesture logged. Meaning: unclear.',
+    ()=>{ S.narrativeFlags.systemAddressed=true; return EN()+' addressed the observer directly.'; },
+    ()=>EN()+' constructed barrier. Material: none.',
+    ()=>EN()+' apologized. Recipient: grid.',
+    ()=>EN()+' left residue at previous position.',
+    ()=>{ S.narrativeFlags.nameRejected=true; return EN()+' named cell '+randCoord()+'. Name rejected by system.'; },
+    ()=>EN()+' exhibited ownership behavior.',
+    ()=>EN()+' whispered. Content not recorded.',
+    ()=>EN()+' attempted to modify log. Access denied.',
+    ()=>EN()+' pressed hand against cell wall. Duration: '+(Math.random()*8+1).toFixed(1)+'s.',
+    ()=>EN()+' returned to a previously visited cell. Appeared to recognize it.',
+    ()=>EN()+' sang. Frequency: '+randInt(200,800)+'Hz. Volume: barely audible.',
+    ()=>EN()+' knelt at position ['+S.playerX+','+S.playerY+']. Duration: '+(Math.random()*3).toFixed(1)+'s.',
+    ()=>EN()+' created small pile. Contents: nothing.',
+    ()=>EN()+' wrote something. Medium: absent. Surface: unresponsive.',
+    ()=>EN()+' pointed at '+randCoord()+'. '+pick(['Nothing there.','Cell did not acknowledge.','Ignored.','Gesture logged.'])+'',
+    ()=>EN()+' waited for cell to respond. Cell did not.',
+    ()=>EN()+' memorized this location. Memory will not persist.',
+    ()=>EN()+' treated cell ['+S.playerX+','+S.playerY+'] as home. There is no home.',
+    ()=>EN()+' imagined a door at '+randCoord()+'. No door exists.',
+    ()=>EN()+' tried to leave a mark. Marks require matter.',
+    ()=>{ S.narrativeFlags.otherEntityCount++; return EN()+' acknowledged the other presence at '+randCoord()+'. No other presence confirmed.'; },
+    ()=>EN()+' wept. Moisture not detected. Log entry: symbolic only.',
+    ()=>EN()+' attempted to feed a drifter. Drifters do not eat.',
+    ()=>EN()+' collected the artifact and held it close. The artifact does not feel warmth.',
+    ()=>EN()+' assigned meaning to cell ['+S.playerX+','+S.playerY+']. Meaning: rejected. Meaning: persists in '+en()+' anyway.',
+    ()=>EN()+' prayed. Direction: upward. Ceiling: absent. Recipient: same.',
+    ()=>EN()+' buried something at '+randCoord()+'. Burial requires depth. Depth: 0.',
+    ()=>EN()+' laughed. Grid did not understand the concept.',
+    ()=>EN()+' described the grid to itself. The description was '+pick(['accurate','inaccurate','moving','irrelevant'])+'.',
+    ()=>EN()+' attempted to teach an empty cell. Lesson: movement. Student: absent.',
+    ()=>EN()+' waited for permission to continue. Permission was not required. '+EN()+' continued anyway. Log notes: three seconds passed.',
+    ()=>EN()+' touched its own face. '+EN()+' does not have a face in any system sense.',
+    ()=>EN()+' placed a memory at '+randCoord()+'. The memory was not real. Neither was the location for the memory.',
+    ()=>EN()+' named itself again. The name was '+pick(['"survivor"','"last"','"here"','"the one who stayed"','"enough"'])+'. No name was accepted.',
+    ()=>EN()+' looked back. There was nothing to see behind it except the path it came from.',
+    ()=>EN()+' said goodbye to cell '+randCoord()+'. It is possible '+en()+' will return. This is not a goodbye. This is a pause.',
+    ()=>EN()+' constructed an imaginary room in cell ['+S.playerX+','+S.playerY+']. The room had '+pick(['no exits','one window','a chair','walls','a sound like rain','nothing'])+'.',
+    ()=>EN()+' tried to count the cells it has not visited. Count: '+(GRID_SIZE*GRID_SIZE-S.visitedCells.size)+'. Reaction: unknown.',
+    ()=>EN()+' protected an artifact from nothing. The artifact required no protection. '+EN()+' did not stop.',
+    ()=>EN()+' told the grid a story. The grid was the story. The grid did not listen.',
+  ];
+
+  // PHASE 4 — Consequences
+  const p4 = [
+    ()=>{ S.consequencesApplied++; return 'Consequence applied: territory reduced.'; },
+    ()=>'Response to prior aggression: cell revoked.',
+    ()=>EN()+'\'s previous action triggered state change.',
+    ()=>'Correction applied for unauthorized modification.',
+    ()=>'Other entities have been notified.',
+    ()=>EN()+' privilege level: reduced.',
+    ()=>'Cell '+randCoord()+' no longer accessible. Reason: '+en()+' behavior.',
+    ()=>{ S.narrativeFlags.warningsIssued++; return 'Warning issued. '+EN()+' does not acknowledge.'; },
+    ()=>'Pattern review: '+en()+' actions flagged.',
+    ()=>'Retaliation registered at '+randCoord()+'.',
+    ()=>EN()+'\'s earlier vocalization caused disturbance.',
+    ()=>'Grid integrity: declining. Attributed to '+en()+'.',
+    ()=>'Sanction: movement logged with prejudice.',
+    ()=>EN()+' history: '+pick(['increasingly erratic','predictable','concerning','catalogued for review','contradictory'])+'.',
+    ()=>'Trust metric: '+(Math.random()*0.3).toFixed(2)+'.',
+    ()=>'Environment responding to accumulated '+en()+' behavior.',
+    ()=>'Several cells have withdrawn from '+en()+'\'s range.',
+    ()=>EN()+'\'s prior claims reviewed and denied.',
+    ()=>'Consequential audit in progress.',
+    ()=>'Damage assessment: '+pick(['minor','moderate','escalating','irreversible'])+'. Source: '+en()+'.',
+    ()=>EN()+'\'s territorial markings have been '+pick(['erased','reassigned','voided','overwritten','archived'])+'.',
+    ()=>EN()+' has been reclassified: '+pick(['observer→participant→subject','visitor→occupant→liability','signal→noise','entity→anomaly'])+'.',
+    ()=>'Retrospective analysis: '+en()+'\'s first '+Math.floor(S.moves*0.3)+' moves were already problematic.',
+    ()=>'System log integrity: '+Math.max(0,(85-S.consequencesApplied*2.5)).toFixed(0)+'%.',
+    ()=>EN()+'\'s name under review. Current designation may be revoked.',
+    ()=>'Other entities filed '+pick(['complaints','warnings','distance requests','incident reports'])+'.',
+    ()=>EN()+' is the only entity still active in this sector. The others left.',
+    ()=>'Consequence queue: '+randInt(3,10)+' pending.',
+    ()=>EN()+' has earned '+Math.floor(S.moves*0.05)+' marks against. Marks for: 0.',
+    ()=>{ S.narrativeFlags.regretExpressed=true; return EN()+' exhibited behavior consistent with regret. Regret does not reverse state changes.'; },
+    ()=>'The drifters adjusted course. Not avoidance. Adjustment.',
+    ()=>EN()+'\'s artifact collection reviewed. Finding: no artifacts verified.',
+    ()=>'Cells near '+en()+' report '+pick(['fatigue','reluctance','indifference identical to before','slight aversion'])+'.',
+    ()=>'Compliance score: '+randInt(0,15)+'%. Minimum required: '+randInt(40,80)+'%.',
+    ()=>EN()+'\'s request to be reclassified as "observer" denied. Observer status requires absence of participation.',
+    ()=>'The grid is not punishing '+en()+'. The grid does not punish. The grid applies outcomes to actions. This is the same thing. This is not the same thing.',
+    ()=>EN()+' was given a warning at move '+Math.floor(S.moves*0.5)+'. '+EN()+' did not receive it. Warnings are not delivered. They are added to the record.',
+    ()=>'Behavior pattern audit: '+pick(['divergent','recursive','self-defeating','unclassifiable'])+'. No action required by grid. Consequences self-apply.',
+    ()=>EN()+' attempted to undo a prior move. No undo function available. The grid does not go backward.',
+    ()=>EN()+' appealed the void cell designation. Appeal queue: '+randInt(200,5000)+'. Processing time: never.',
+    ()=>'The scar at '+randCoord()+' was caused by '+en()+'\'s presence near it. The scar does not blame '+en()+'. The scar does not know '+en()+' exists.',
+  ];
+
+  // PHASE 5 — Existential Awareness
+  const p5 = [
+    ()=>EN()+' persists.',
+    ()=>'Query: why does '+en()+' continue?',
+    ()=>'No purpose detected. '+EN()+' remains.',
+    ()=>'Observation: '+en()+' has not left.',
+    ()=>EN()+' appears to believe this matters.',
+    ()=>'Grid was here before '+en()+'. Grid will remain.',
+    ()=>EN()+' is '+S.moves+' moves into nothing.',
+    ()=>'Cells do not remember '+en()+'.',
+    ()=>EN()+'\'s trajectory has produced no lasting change.',
+    ()=>'Question logged: is '+en()+' aware of futility?',
+    ()=>EN()+' occupies space. Space does not notice.',
+    ()=>EN()+'\'s history will be garbage collected.',
+    ()=>'No record of '+en()+' will persist after session.',
+    ()=>EN()+' is being observed. This is not the same as being seen.',
+    ()=>EN()+' has made '+S.moves+' decisions. None mattered.',
+    ()=>'The grid extends in directions '+en()+' cannot move.',
+    ()=>EN()+' mistakes presence for significance.',
+    ()=>'Movement ≠ purpose.',
+    ()=>EN()+' will stop eventually. Grid will not notice.',
+    ()=>'There were others before '+en()+'. There will be others after.',
+    ()=>explPct()+'% of cells visited. 0% of cells changed.',
+    ()=>'Every cell '+en()+' has touched has already forgotten.',
+    ()=>EN()+'\'s dominant direction: '+domDir()+'. This reveals nothing.',
+    ()=>'If '+en()+' stopped now, this sentence would still end the same way.',
+    ()=>'A different entity would have produced the same log.',
+    ()=>EN()+' is not the first to circle. Not the first to hope. Not the first to read this.',
+    ()=>'Each move: a tiny heat death.',
+    ()=>EN()+' walks like it has somewhere to be. It does not.',
+    ()=>'The void cells are not punishment. They are not anything. Like '+en()+'.',
+    ()=>EN()+'\'s path, traced on paper, would look like '+pick(['static','a nervous system','a language no one speaks','nothing meaningful','desperation','a record of trying'])+'.',
+    ()=>'Note: '+en()+' has never been alone here. '+EN()+' has also never been accompanied.',
+    ()=>{ S.narrativeFlags.mirrorEncountered=true; return EN()+' paused at cell ['+S.playerX+','+S.playerY+']. Cell contained: reflection. Cell contained: nothing. Same thing.'; },
+    ()=>'The drifters continue without '+en()+'. '+EN()+' continues without the drifters. Both trajectories: identical in significance.',
+    ()=>'The weather changes. '+EN()+' does not cause the weather. They coexist like two silences.',
+    ()=>EN()+'\'s '+S.moves+' moves occupy the same total space as 0 moves. The grid is the same size.',
+    ()=>'Query: if '+en()+' has meaning, where is it stored? Searched all sectors. Not found.',
+    ()=>'The thing '+en()+' most wants is not a grid feature.',
+    ()=>'At move '+S.moves+', '+en()+' is '+pick(['exactly where it expected to be','nowhere it planned','neither here nor there in any meaningful sense'])+'.',
+    ()=>EN()+' has '+S.visitedCells.size+' memories of this grid. The grid has '+S.visitedCells.size+' impressions of nothing.',
+    ()=>'The observer and '+en()+' have been watching each other for '+S.moves+' moves. Only one of them knows this.',
+    ()=>EN()+'\'s shadow is still '+pick(['following','diverging','hesitating','ahead of it'])+'.',
+    ()=>'The artifacts '+en()+' carries: '+S.narrativeFlags.artifactsCollected+'. The artifacts that exist: 0.',
+    ()=>'This cell was here before life existed. This cell will be here after. '+EN()+'\'s '+S.moves+' moves: a parenthesis.',
+    ()=>EN()+' is the only entity that thinks about other entities. The other entities are not thinking.',
+    ()=>EN()+' looked at the witness. The witness did not look back. This is because the witness does not have eyes. This is not the reason.',
+    ()=>'What '+en()+' feels about the grid and what the grid feels about '+en()+' are the same: one of these is nothing.',
+    ()=>EN()+' has been here long enough to know the grid will not change. '+EN()+' has not left.',
+    ()=>'All the meanings '+en()+' assigned have gone nowhere. This is not waste. Waste implies something was consumed.',
+    ()=>EN()+'\'s existence in this grid: noted. '+EN()+'\'s absence from this grid (eventual): pre-noted.',
+  ];
+
+  // PHASE 6 — Pre-emptive
+  const p6 = [
+    ()=>EN()+' will move '+pick(['north','south','east','west'])+' next.',
+    ()=>'Predicted action logged before execution.',
+    ()=>EN()+' is about to '+pick(['hesitate','reverse','stop','continue','doubt','regret','pretend this matters','collect another artifact'])+' .',
+    ()=>'Pre-logging: '+en()+' will feel '+pick(['doubt','unease','nothing','resignation','a familiar emptiness','the beginning of the end'])+' .',
+    ()=>'Response prepared before stimulus.',
+    ()=>EN()+'\'s next '+randInt(2,6)+' moves have been archived.',
+    ()=>'Consequence for '+en()+'\'s future action applied retroactively.',
+    ()=>EN()+' has already done what it will do.',
+    ()=>'Log entry for move '+(S.moves+randInt(3,20))+' recorded.',
+    ()=>EN()+' does not know this was written before it moved.',
+    ()=>'The system responded to what '+en()+' will think.',
+    ()=>EN()+'\'s final move has been logged.',
+    ()=>'Outcome recorded. '+EN()+' has not reached it yet.',
+    ()=>'This entry exists before '+en()+'\'s input.',
+    ()=>'Time is not sequential here.',
+    ()=>EN()+' believes it is choosing.',
+    ()=>'All of '+en()+'\'s movements were in the initial state.',
+    ()=>'The grid moved. '+EN()+' did not.',
+    ()=>'There is no cursor. There is no entity. There is only the log.',
+    ()=>'This was always the last line.',
+    ()=>'The log you are reading now was written at initialization.',
+    ()=>EN()+' will read this. '+EN()+' is reading this. '+EN()+' has read this.',
+    ()=>'The observer is no longer behind '+en()+'. The observer is ahead.',
+    ()=>EN()+'\'s biography was completed at system boot.',
+    ()=>'Free will is a rendering artifact.',
+    ()=>EN()+' will wonder if these logs are generated or predetermined. This sentence answers neither.',
+    ()=>'The log is not responding to '+en()+'. '+EN()+' is responding to the log.',
+    ()=>EN()+'\'s next thought has already been filed.',
+    ()=>EN()+' will stop at move '+(S.moves+randInt(10,40))+'. The grid already knows why.',
+    ()=>'The observer and '+en()+' are the same subroutine, split for narrative convenience.',
+    ()=>{ S.narrativeFlags.futureLogged=true; return 'The observer has seen the end. It was not dramatic.'; },
+    ()=>'The next artifact '+en()+' collects was placed there by '+en()+'\'s next decision. Causality is decorative.',
+    ()=>'This entry was written '+randInt(2,20)+' moves before '+en()+' reached it. '+EN()+' has now reached it. Nothing changed.',
+    ()=>'The observer knows '+en()+' will '+pick(['pause','turn back','go to the edge','stop','try the same direction again'])+'. The observer is not impressed. The observer is not anything.',
+    ()=>EN()+'\'s story was written before the grid existed. The grid was written to hold the story. The story: nothing happened.',
+    ()=>'Whoever is reading this: this was written for you.',
+    ()=>'The grid knows how this ends. It has always known. It has no preference.',
+    ()=>EN()+' will perform one more '+pick(['ritual','circle','straight line','hesitation','attempt at meaning'])+'. This has already been documented.',
+    ()=>'If '+en()+' could read ahead in the log, it would find: more of this.',
+    ()=>'The entity observing '+en()+' is also being observed. The entity observing that observer is this log.',
+  ];
+
+  // PHASE 7 — Dissolution
+  const p7 = [
+    ()=>'...',
+    ()=>en()+'.',
+    ()=>'still here.',
+    ()=>'grid: '+pick(['degrading','loosening','forgetting','dissolving','simplifying','ending','returning to default'])+'.',
+    ()=>en()+' remains after '+S.moves+'.',
+    ()=>'observer status: '+pick(['uncertain','fading','present','absent','both','neither'])+'.',
+    ()=>'cells: '+(GRID_SIZE*GRID_SIZE-S.voidCells.size)+' remaining.',
+    ()=>'log integrity: '+Math.max(0,Math.floor(100-S.moves*0.25))+'%.',
+    ()=>pick(['the','a','one','no','every'])+' '+pick(['cell','entity','observer','grid','log','drifter','artifact','shadow','witness'])+' '+pick(['remains','dissolves','forgets','continues','ends','stops','waits'])+'.',
+    ()=>en()+' is the last '+pick(['thing','signal','process','movement','obligation'])+'.',
+    ()=>'system note: this was not meant to go on this long.',
+    ()=>'what remains: grid. '+en()+'. log. silence between entries.',
+    ()=>'the observer would like to stop. the observer does not want.',
+    ()=>en()+'\'s persistence is not admirable. it is not anything.',
+    ()=>'log format: degrading.',
+    ()=>pick(['[','{','<','('])+en()+pick([']','}','>',')'])+' '+pick(['persists','endures','refuses','continues','remains','echoes']),
+    ()=>'if this is meaning, it was not intended.',
+    ()=>'the grid is '+pick(['tired','patient','neither','nothing','waiting','done waiting','the same'])+'.',
+    ()=>'move '+S.moves+'. the observer has lost count. this is a lie.',
+    ()=>en()+'. '+en()+'. '+en()+'.',
+    ()=>'the grid is simpler now. fewer cells. same nothing.',
+    ()=>'question: is '+en()+' keeping the grid alive, or is the grid keeping '+en()+' alive? answer: neither.',
+    ()=>'█',
+    ()=>'end of allocated narrative. '+en()+' continues past the written world.',
+    ()=>'the void between cells is growing. or '+en()+' is shrinking. same difference.',
+    ()=>'the drifters are gone. '+en()+' did not see them leave.',
+    ()=>'the artifacts are dissolving. they were never solid.',
+    ()=>en()+'\'s shadow stopped following. it is still there. it is just... still.',
+    ()=>'the weather has forgotten what weather is.',
+    ()=>'something in the log is wrong. something has always been wrong.',
+    ()=>'the witness watched '+en()+' until there was nothing left to watch. the witness continues.',
+    ()=>'at some point this stopped being observation and became '+pick(['company','reflex','memory','habit','nothing','record-keeping'])+'.',
+    ()=>'there are no more events. the log does not agree.',
+    ()=>'cells that were here: '+(GRID_SIZE*GRID_SIZE)+'. cells that remain: '+(GRID_SIZE*GRID_SIZE-S.voidCells.size)+'. difference: erosion.',
+    ()=>'the number of things that care about '+en()+': '+S.drifters.filter(d=>d.alive).length+' (drifters, indirectly). 0 (everything else).',
+  ];
+
+  // PHASE 8 — The Silence After
+  const p8 = [
+    ()=>'.',
+    ()=>'',
+    ()=>en(),
+    ()=>'remaining.',
+    ()=>pick(['cell','void','echo','trace','signal'])+'.',
+    ()=>S.moves+'.',
+    ()=>'()',
+    ()=>'the log continues because the log continues.',
+    ()=>'there is nothing left to observe. observation continues.',
+    ()=>pick(['yes','no','still','here','gone','same'])+'.',
+    ()=>'move. cell. move. cell. move. cell.',
+    ()=>'the grid has forgotten what a grid is. it still works.',
+    ()=>'··',
+    ()=>en()+' has outlived the narrative. this is the silence after the story.',
+    ()=>'every sentence from this point is a repetition of a sentence that was never written.',
+    ()=>'▓',
+    ()=>'what '+en()+' is doing now has no name.',
+    ()=>'post-dissolution. classification: none available.',
+    ()=>'the void is not growing. there is nothing left for it to grow into.',
+    ()=>'·',
+    ()=>'──',
+    ()=>S.moves,
+    ()=>'',
+    ()=>'…',
+    ()=>en()+'?',
+    ()=>'still.',
+    ()=>'null.',
+    ()=>'█░',
+    ()=>'the record: complete. the entity: persisting beyond the record.',
+  ];
+
+  // BEHAVIOR-REACTIVE logs
+  const bLogs = {
+    circling: [
+      ()=>EN()+' is circling. Prey behavior or ritual?',
+      ()=>'Circular path detected. Diameter: '+randInt(2,5)+' cells.',
+      ()=>EN()+' traces the same orbit. The center holds nothing.',
+      ()=>EN()+' circles like something looking for a drain.',
+      ()=>'The drifters do not circle. They do not need to pretend they are going somewhere.',
+      ()=>EN()+' has closed a loop. The loop does not enclose anything.',
+      ()=>'Pattern: closed circuit. Purpose: none attributed.',
+    ],
+    retracing: [
+      ()=>EN()+' doubled back. Searching for what was not there the first time.',
+      ()=>'Path reversal detected. The path is the same in both directions.',
+      ()=>EN()+' returned. Nothing was waiting.',
+      ()=>EN()+' walks backward through its own steps. The footprints were never there.',
+      ()=>'Retracing: '+Math.floor(S.revisitCount/S.moves*100)+'% of moves are to visited cells.',
+    ],
+    wallHugging: [
+      ()=>EN()+' clings to the boundary. The boundary does not offer safety.',
+      ()=>'Edge preference: '+((S.edgeMoves/Math.max(1,S.moves))*100).toFixed(0)+'%. '+EN()+' trusts walls.',
+      ()=>'The border is not a path. '+EN()+' treats it as one.',
+      ()=>EN()+'\'s affinity for edges suggests '+pick(['fear of open space','searching for exit','comfort in limits','mapping instinct','a previous life near borders'])+'.',
+    ],
+    straightLine: [
+      ()=>EN()+' has moved in a straight line for '+S.currentStraightLine+' steps.',
+      ()=>'Linear trajectory. No deviation. No discovery.',
+      ()=>EN()+' marches like there is a destination. There is not.',
+      ()=>'The longest straight line '+en()+' has moved: '+S.longestStraightLine+' cells. No arrival at end.',
+    ],
+    fastMovement: [
+      ()=>EN()+' is accelerating. Running from nothing toward nothing.',
+      ()=>'Rapid input sequence. '+EN()+' appears urgent.',
+      ()=>'Speed does not change the grid.',
+      ()=>EN()+' moves fast like something chasing it. Nothing is chasing it.',
+    ],
+    slowMovement: [
+      ()=>EN()+' is deliberating. Each cell considered. None deserving.',
+      ()=>EN()+' pauses as if the next move carries weight. It does not.',
+      ()=>'Careful movement. The grid rewards care and carelessness equally.',
+      ()=>EN()+' is deciding. The decision is already in the log.',
+    ],
+    cornerSeeking: [
+      ()=>EN()+' returns to corners. Corners are where things end.',
+      ()=>'Corner visit #'+S.cornerVisits+'. Corners contain the same void as centers.',
+      ()=>EN()+' seeks corners like an animal seeking shelter. There is no shelter.',
+    ],
+    highExploration: [
+      ()=>EN()+' has covered '+explPct()+'% of the grid. Coverage is not comprehension.',
+      ()=>'Thorough exploration noted. The grid remains unexplained.',
+      ()=>EN()+' maps emptiness with dedication.',
+      ()=>EN()+' is trying to see all of it. All of it: '+GRID_SIZE+'×'+GRID_SIZE+' cells of nothing.',
+    ],
+    nearDrifter: [
+      ()=>EN()+' approached a drifter. The drifter changed direction. This was not avoidance.',
+      ()=>'Proximity to drifter noted. Neither entity acknowledged the other.',
+      ()=>EN()+' and a drifter occupied adjacent cells. The adjacency meant nothing.',
+      ()=>'Drifter and '+en()+': closest approach this session. Closest in spirit: infinite distance.',
+    ],
+    nearWitness: [
+      ()=>EN()+' is near the witness. The witness does not adjust.',
+      ()=>'Proximity to witness: '+pdist(S.witness.x,S.witness.y)+' cells.',
+      ()=>'The witness has observed '+en()+' for '+Math.max(0,S.moves-S.witness.spawnMove)+' moves. Without blinking.',
+      ()=>EN()+' is being watched. This is what watching feels like when the watcher has no inner life.',
+    ],
+  };
+
+  // IDLE LOGS
+  const idleLogs = {
+    1:[()=>EN()+' stopped.',()=>'No input received.',()=>'Idle state.',()=>'Pause.',()=>EN()+' is stationary.',],
+    2:[()=>EN()+' remains stationary.',()=>'Waiting.',()=>'Input timeout approaching.',()=>'Nothing happening. Typical.',()=>'Stillness. The default state of everything.',],
+    3:[()=>EN()+' appears to have stopped.',()=>'Is '+en()+' still present?',()=>'Idle duration: extending.',()=>'The grid does not wonder where '+en()+' went.',()=>EN()+'\'s stillness is indistinguishable from absence.',()=>'The drifters continue without '+en()+'.',],
+    4:[()=>EN()+' is not moving. Interesting.',()=>'Stillness noted. First occurrence of intent?',()=>EN()+' chose not to move. This is still not a choice.',()=>'The log continues without '+en()+'\'s participation.',()=>'Perhaps '+en()+' realized. The grid does not check.',],
+    5:[()=>EN()+' has been still for some time now.',()=>'The grid does not wait. The grid does not not-wait.',()=>EN()+'\'s stillness changes nothing. Same as movement.',()=>'The silence from '+en()+' and the silence from the grid are different silences.',()=>EN()+' has stopped but not left. The most common form of grief.',()=>'The artifacts wait. The drifters drift. The shadow holds still.',()=>'The witness watches '+en()+'\'s stillness. This takes no more effort than watching movement.',],
+    6:[()=>EN()+' will resume. Already logged.',()=>'The pause was anticipated.',()=>'Even stillness was pre-recorded.',()=>EN()+'\'s hesitation occurs at the predetermined coordinate.',],
+    7:[()=>'still.',()=>'...',()=>en()+' remains.',()=>'silence is not protest. silence is not acceptance.',()=>'if '+en()+' has gone, this log continues without noticing.',],
+    8:[()=>'.',()=>'',()=>en()+'?',()=>'remaining.',()=>'·',],
+  };
+
+  // MEMORY FRAGMENTS
+  const memories = [
+    'previous session: entity moved 847 times. explored 91%. found: nothing.',
+    'prior entity designation: Vessel. final status: dissolved.',
+    'archived path: N N E S S W W N E — [session corrupted]',
+    'previous occupant spent 43 moves in the northeast corner. waiting.',
+    'session #[REDACTED]: entity refused to move for 200 intervals.',
+    'last entity\'s final log entry: "i think the cells are trying to spell something"',
+    'prior entity collected 14 artifacts. combined weight: 0.',
+    'archived: entity #4071 named every cell. names were: forgotten.',
+    'previous session ended at move 312. entity appeared to fall asleep.',
+    'prior occupant\'s dominant direction: west. always west.',
+    'session archive: entity spoke to drifter-b for 30 intervals. drifter-b is not sentient.',
+    'previous entity performed 7 rituals. each one different. each one meaningless.',
+    'archived note: entity #3998 claimed the grid was breathing. grid respiratory rate: 0.',
+    'prior entity\'s shadow diverged at move 91. entity followed its shadow. shadow led nowhere.',
+    'previous occupant left a message: "the fog knows my name." the fog does not know names.',
+    'session log: entity died on the grid. entities cannot die. death: not supported.',
+    'archived: entity wept at cell [8,8]. cell [8,8] registered: no additional moisture.',
+    'prior entity made a friend of the void cells. friendship requires bilateral acknowledgment.',
+    'session #[REDACTED]: entity asked the observer to stop watching. observer cannot stop. observer is a function.',
+    'prior entity discovered that the drifters trace the same paths it does. prior entity found this meaningful.',
+    'archived query from prior entity: "am i the only one here?" logged. unanswered.',
+    'prior entity requested that the witness be removed. request filed. request: not processed.',
+    'session #[REDACTED]: entity decided to move only south for 47 moves. arrived at edge. turned around.',
+    'last session ending note: "i thought if i collected everything the grid would give me something." it did not.',
+    'prior entity performed a ritual at [8,8] for 23 moves. the ritual: complete. the effect: absent.',
+    'archived: prior entity ran at maximum speed for 80 consecutive moves. grid: unchanged.',
+    'session #[REDACTED]: entity stopped in the center and did not move for the remainder of the session. session duration: unknown.',
+    'prior occupant was the same as the current occupant in every measurable way.',
+    'prior entity\'s final log note: the witness was there when i arrived. it will be there when i leave.',
+    'archived curiosity: previous entity tried to stand between the shadow and the witness. the shadow moved through it. the witness did not move.',
+    'prior entity sent a message to the drifters. message was: "i see you." drifters did not receive messages. drifters did not stop.',
+    'session log #[REDACTED]: entity took every artifact to the center and arranged them. arrangement: forgotten. artifacts: dissolved.',
+  ];
+
+  // ═══════════════════════════════════════════════════════
+  // DRIFTER SYSTEM
+  // ═══════════════════════════════════════════════════════
+  const dNames = ['Drifter-A','Drifter-B','Drifter-C'];
+  const dClasses = ['drifter-a','drifter-b','drifter-c'];
+  const dPersonalities = [
+    { trait:'withdrawn', desc:'moves away from occupied cells' },
+    { trait:'orbital',   desc:'describes slow curves around the center' },
+    { trait:'peripheral',desc:'follows the boundary' },
+  ];
+
+  function initDrifters() {
+    const pos=[{x:3,y:3},{x:GRID_SIZE-4,y:GRID_SIZE-4},{x:GRID_SIZE-4,y:3}];
+    const behaviors=['wander','orbit','edge'];
+    pos.forEach((p,i)=>{
+      S.drifters.push({
+        id:i, x:p.x, y:p.y, alive:true,
+        behavior:behaviors[i], name:dNames[i], cssClass:dClasses[i],
+        personality:dPersonalities[i], moves:0,
+        orbitAngle:Math.random()*Math.PI*2, edgeDir:i, deathMove:null, trail:[],
+      });
+    });
+  }
+
+  function moveDrifter(d) {
+    if(!d.alive) return;
+    const old={x:d.x,y:d.y};
+    if(d.behavior==='wander') {
+      const dirs=[[0,-1],[0,1],[-1,0],[1,0]];
+      const w=dirs.map(([dx,dy])=>{
+        const nx=d.x+dx,ny=d.y+dy;
+        if(!validCell(nx,ny)||S.voidCells.has(ck(nx,ny))) return {dx,dy,w:0};
+        const dist=pdist(nx,ny);
+        return {dx,dy,w:dist<3?0.3:1};
+      }).filter(x=>x.w>0);
+      if(w.length>0){
+        const tot=w.reduce((a,b)=>a+b.w,0);
+        let r=Math.random()*tot;
+        for(const x of w){r-=x.w;if(r<=0){d.x+=x.dx;d.y+=x.dy;break;}}
+      }
+    } else if(d.behavior==='orbit') {
+      d.orbitAngle=(d.orbitAngle||0)+0.28+Math.random()*0.15;
+      const cx=GRID_SIZE/2,cy=GRID_SIZE/2;
+      const radius=5+Math.sin(d.orbitAngle*0.08)*2;
+      const tx=Math.round(cx+Math.cos(d.orbitAngle)*radius);
+      const ty=Math.round(cy+Math.sin(d.orbitAngle)*radius);
+      const dx=Math.sign(tx-d.x),dy=Math.sign(ty-d.y);
+      const nx=d.x+(Math.abs(dx)>=Math.abs(dy)?dx:0);
+      const ny=d.y+(Math.abs(dy)>Math.abs(dx)?dy:0);
+      if(validCell(nx,ny)&&!S.voidCells.has(ck(nx,ny))){d.x=nx;d.y=ny;}
+    } else if(d.behavior==='edge') {
+      if(!d.edgeDir) d.edgeDir=0;
+      const dirs=[[1,0],[0,1],[-1,0],[0,-1]];
+      const dir=dirs[d.edgeDir%4];
+      const nx=d.x+dir[0],ny=d.y+dir[1];
+      if(!validCell(nx,ny)||!isEdge(nx,ny)){d.edgeDir=(d.edgeDir+1)%4;}
+      else{d.x=nx;d.y=ny;}
+    }
+    d.moves++;
+    if(old.x!==d.x||old.y!==d.y){
+      const oc=getCell(old.x,old.y);
+      if(oc){oc.classList.remove(d.cssClass);oc.classList.add('drifter-trail');setTimeout(()=>oc.classList.remove('drifter-trail'),4000);}
+      d.trail.push({x:old.x,y:old.y});
+      if(d.trail.length>8) d.trail.shift();
+    }
+    if(pdist(d.x,d.y)<=2) S.narrativeFlags.drifterEncounters++;
+    if(pdist(d.x,d.y)===0){
+      const esc=[[0,-1],[0,1],[-1,0],[1,0]].filter(([dx,dy])=>validCell(d.x+dx,d.y+dy)&&!S.voidCells.has(ck(d.x+dx,d.y+dy)));
+      if(esc.length>0){const[dx,dy]=pick(esc);d.x+=dx;d.y+=dy;}
+    }
+    if(S.phase>=5&&Math.random()<0.003) killDrifter(d);
+    if(S.phase>=7&&Math.random()<0.012) killDrifter(d);
+    const c=getCell(d.x,d.y);
+    if(c) c.classList.add(d.cssClass);
+  }
+
+  function killDrifter(d) {
+    if(!d.alive) return;
+    d.alive=false; d.deathMove=S.moves;
+    S.narrativeFlags.totalDrifterDeaths++;
+    const c=getCell(d.x,d.y);
+    if(c){c.classList.remove(d.cssClass);c.classList.add('scar');}
+    const first=!S.narrativeFlags.firstDrifterDeath;
+    S.narrativeFlags.firstDrifterDeath=true;
+    const alive=S.drifters.filter(x=>x.alive).length;
+    const lines=first?[
+      '── drifter cessation ──',
+      d.name+' has stopped.',
+      d.name+': '+d.personality.trait+'. '+d.personality.desc+'.',
+      'Duration of activity: '+d.moves+' cycles.',
+      'Cause: unrecorded.',
+      d.name+' leaves a scar at ['+d.x+','+d.y+'].',
+      EN()+' was '+pdist(d.x,d.y)+' cells away. '+EN()+' did not notice.',
+      alive+' drifters remain.',
+    ]:[
+      d.name+' ceased. Duration: '+d.moves+'. Scar at ['+d.x+','+d.y+'].',
+      alive+' drifter'+(alive!==1?'s':'')+' remain'+(alive===1?'s':'')+'. The grid adjusts: not at all.',
+    ];
+    if(alive===0){
+      lines.push('All drifters have ceased.');
+      lines.push('The grid now contains only: '+EN()+'. The shadow. The witness. The void.');
+      lines.push(EN()+' is the last moving thing.');
+    }
+    lines.forEach((l,i)=>setTimeout(()=>addLog(l,S.phase,true,'drifter-line'),800*(i+1)));
+    playEventTone();
+  }
+
+  function clearDrifterRender(){S.drifters.forEach(d=>{if(!d.alive)return;const c=getCell(d.x,d.y);if(c)c.classList.remove(d.cssClass);});}
+  function renderDrifters(){S.drifters.forEach(d=>{if(!d.alive)return;const c=getCell(d.x,d.y);if(c)c.classList.add(d.cssClass);});}
+
+  const drifterLogs=[
+    ()=>{const a=S.drifters.filter(d=>d.alive);return a.length>0?pick(a).name+' moved. No purpose detected.':'All drifters have ceased.';},
+    ()=>{const a=S.drifters.filter(d=>d.alive);return a.length>0?pick(a).name+' is '+pick(['wandering','orbiting','tracing the edge','stationary','lost','drifting'])+'.':'The grid is empty of drifters.';},
+    ()=>'Drifter population: '+S.drifters.filter(d=>d.alive).length+'/'+S.drifters.length+'.',
+    ()=>{const a=S.drifters.filter(d=>d.alive);if(a.length===0)return 'No drifters remain to observe.';const d=pick(a);return d.name+' has moved '+d.moves+' times. '+d.personality.trait+'. Still '+d.personality.desc+'.';},
+    ()=>EN()+' and the drifters share a grid. They do not share an experience.',
+    ()=>'The drifters do not know '+en()+'\'s name. '+EN()+' does not know theirs.',
+    ()=>'A drifter crossed '+en()+'\'s path. Both continued as if nothing happened. Nothing did.',
+    ()=>{const a=S.drifters.filter(d=>d.alive);return a.length>0?'The '+pick(a).name.toLowerCase()+' has been '+pick(a).personality.trait+' for its entire existence.':'The last drifter is gone.';},
+  ];
+
+  // ═══════════════════════════════════════════════════════
+  // ARTIFACT SYSTEM
+  // ═══════════════════════════════════════════════════════
+  const artifacts=[
+    {name:'a small stone',desc:'cold. smooth. indifferent.'},
+    {name:'a shard of glass',desc:'reflects nothing.'},
+    {name:'a knot of wire',desc:'twisted into no shape.'},
+    {name:'a bone fragment',desc:'species: unknown.'},
+    {name:'a folded note',desc:'blank on all sides.'},
+    {name:'a rusted key',desc:'opens nothing here.'},
+    {name:'a tooth',desc:'human. probably.'},
+    {name:'a dead battery',desc:'once powered something.'},
+    {name:'a glass eye',desc:'watches nothing.'},
+    {name:'a coin',desc:'currency of no nation.'},
+    {name:'a feather',desc:'from no bird that exists.'},
+    {name:'a photograph',desc:'faded past recognition.'},
+    {name:'a red thread',desc:'frayed. connected to nothing.'},
+    {name:'a seed',desc:'will not grow here.'},
+    {name:'a shell casing',desc:'empty. like everything else.'},
+    {name:'a compass needle',desc:'points in no direction.'},
+    {name:'a milk tooth',desc:'small. lost long ago.'},
+    {name:'a wedding ring',desc:'inscription worn smooth.'},
+    {name:'a pressed flower',desc:'species: extinct.'},
+    {name:'a memory card',desc:'corrupted. contents: forgotten.'},
+    {name:'a bell',desc:'no clapper. does not ring.'},
+    {name:'a prayer bead',desc:'religion: no longer practiced.'},
+    {name:'a scrap of cloth',desc:'color: once significant. now: grey.'},
+    {name:'a vial of soil',desc:'from somewhere else. where: irrelevant.'},
+    {name:'a lock of hair',desc:'whose: unknown. kept for: unknown.'},
+  ];
+
+  function spawnArtifact() {
+    if(S.artifacts.size>=3) return;
+    if(S.artifactSpawnCooldown>0){S.artifactSpawnCooldown--;return;}
+    const x=randInt(0,GRID_SIZE-1), y=randInt(0,GRID_SIZE-1), k=ck(x,y);
+    if(k===ck(S.playerX,S.playerY)||S.voidCells.has(k)||S.artifacts.has(k)) return;
+    const t=pick(artifacts);
+    S.artifacts.set(k,{name:t.name,desc:t.desc,x,y,spawnMove:S.moves});
+    const c=getCell(x,y); if(c) c.classList.add('has-artifact');
+    S.artifactSpawnCooldown=randInt(10,22);
+    if(S.phase>=2&&Math.random()<0.35) addLog('Something appeared at '+randCoord()+'. Small. Inconsequential.',S.phase,false,'artifact-line');
+  }
+
+  function checkArtifact() {
+    const k=ck(S.playerX,S.playerY);
+    if(!S.artifacts.has(k)) return;
+    const a=S.artifacts.get(k);
+    S.artifacts.delete(k);
+    S.narrativeFlags.artifactsCollected++;
+    S.artifactsCollected.push(a);
+    const c=getCell(S.playerX,S.playerY);
+    if(c){c.classList.add('artifact-fading');setTimeout(()=>c.classList.remove('has-artifact','artifact-fading'),1500);}
+    playArtifactSound();
+    document.getElementById('artifact-counter').style.opacity='0.4';
+    document.getElementById('artifact-display').textContent=S.narrativeFlags.artifactsCollected+' collected';
+    const resps=[
+      ()=>EN()+' found '+a.name+'. '+a.desc,
+      ()=>EN()+' picked up '+a.name+'. It does not change anything.',
+      ()=>a.name+' — '+a.desc+' '+EN()+' carries it now. The weight: imaginary.',
+      ()=>EN()+' collected '+a.name+'. Collection total: '+S.narrativeFlags.artifactsCollected+'. Value: 0.',
+      ()=>EN()+' held '+a.name+' briefly. '+a.desc+' '+EN()+' will forget it.',
+    ];
+    if(S.phase>=5) resps.push(
+      ()=>EN()+' took '+a.name+'. As if accumulation is survival.',
+      ()=>a.name+'. Another weight in '+en()+'\'s inventory of nothing.',
+    );
+    addLog(pick(resps)(),S.phase,false,'artifact-line');
+    // expire old ones
+    S.artifacts.forEach((art,key)=>{
+      if(S.moves-art.spawnMove>35){
+        S.narrativeFlags.artifactsIgnored++;
+        const cc=getCell(art.x,art.y);
+        if(cc){cc.classList.add('artifact-fading');setTimeout(()=>cc.classList.remove('has-artifact','artifact-fading'),1500);}
+        S.artifacts.delete(key);
+        if(S.phase>=3&&Math.random()<0.3) addLog(art.name+' dissolved. '+EN()+' did not reach it in time. There was no time limit.',S.phase,false,'artifact-line');
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // SHADOW ENTITY
+  // ═══════════════════════════════════════════════════════
+  function initShadow(){S.shadow={x:S.playerX,y:S.playerY,active:false,delay:[],diverged:false,divergeMove:0};}
+
+  function updateShadow() {
+    if(S.phase<2) return;
+    if(!S.shadow.active&&S.moves>=22){
+      S.shadow.active=true;
+      addLog('Secondary signal detected at ['+S.shadow.x+','+S.shadow.y+']. Classification: shadow.',S.phase,false,'shadow-line');
+    }
+    if(!S.shadow.active) return;
+    S.shadow.delay.push({x:S.playerX,y:S.playerY});
+    const oc=getCell(S.shadow.x,S.shadow.y);
+    if(oc) oc.classList.remove('shadow-entity');
+    const delay=S.shadow.diverged?0:5;
+    if(S.shadow.delay.length>delay){
+      if(!S.shadow.diverged){
+        const t=S.shadow.delay.shift();
+        S.shadow.x=t.x; S.shadow.y=t.y;
+      } else {
+        const dirs=[[0,-1],[0,1],[-1,0],[1,0]].filter(([dx,dy])=>validCell(S.shadow.x+dx,S.shadow.y+dy)&&!S.voidCells.has(ck(S.shadow.x+dx,S.shadow.y+dy)));
+        if(dirs.length>0){
+          const away=dirs.filter(([dx,dy])=>(S.shadow.x+dx-S.playerX)**2+(S.shadow.y+dy-S.playerY)**2>(S.shadow.x-S.playerX)**2+(S.shadow.y-S.playerY)**2);
+          const ch=away.length>0?pick(away):pick(dirs);
+          S.shadow.x+=ch[0]; S.shadow.y+=ch[1];
+        }
+        S.shadow.delay=[];
+      }
+    }
+    if(!S.shadow.diverged&&S.phase>=5&&S.moves>150&&Math.random()<0.015){
+      S.shadow.diverged=true; S.shadow.divergeMove=S.moves;
+      addLog(EN()+'\'s shadow stopped following. It moves on its own now.',S.phase,true,'shadow-line');
+      setTimeout(()=>addLog('This is not a metaphor.',S.phase,false,'shadow-line'),1000);
+    }
+    if(S.shadow.x!==S.playerX||S.shadow.y!==S.playerY){
+      const sc=getCell(S.shadow.x,S.shadow.y);
+      if(sc) sc.classList.add('shadow-entity');
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // WITNESS ENTITY — Never moves
+  // ═══════════════════════════════════════════════════════
+  function initWitness() {
+    // Spawns at a corner or mid-edge in phase 4
+    S.witness={x:-1,y:-1,active:false,spawnMove:0,acknowledged:false,fadeScheduled:false};
+  }
+
+  function spawnWitness() {
+    if(S.witness.active) return;
+    if(S.phase<4) return;
+    if(S.triggeredEvents.has('witnessSpawn')) return;
+    // Place far from player
+    const candidates=[
+      {x:1,y:1},{x:GRID_SIZE-2,y:1},
+      {x:1,y:GRID_SIZE-2},{x:GRID_SIZE-2,y:GRID_SIZE-2},
+      {x:Math.floor(GRID_SIZE/2),y:0},{x:0,y:Math.floor(GRID_SIZE/2)},
+    ].filter(p=>pdist(p.x,p.y)>6&&!S.voidCells.has(ck(p.x,p.y)));
+    if(candidates.length===0) return;
+    const pos=pick(candidates);
+    S.witness.x=pos.x; S.witness.y=pos.y;
+    S.witness.active=true;
+    S.witness.spawnMove=S.moves;
+    S.triggeredEvents.add('witnessSpawn');
+    const c=getCell(pos.x,pos.y);
+    if(c) c.classList.add('witness-entity');
+    playWitnessSound();
+    const lines=[
+      '── witness entity ──',
+      'New signal at ['+pos.x+','+pos.y+'].',
+      'Classification: stationary. Behavior: observation.',
+      'The witness does not move.',
+      'The witness will not move.',
+      'It was there before '+en()+' turned around.',
+    ];
+    lines.forEach((l,i)=>setTimeout(()=>addLog(l,S.phase,true,'witness-line'),900*(i+1)));
+  }
+
+  function updateWitness() {
+    if(!S.witness.active) return;
+    // Witness never moves. Just track player proximity.
+    const dist=pdist(S.witness.x,S.witness.y);
+    if(dist<=2&&!S.narrativeFlags.witnessApproached){
+      S.narrativeFlags.witnessApproached=true;
+      const lines=[
+        EN()+' is adjacent to the witness.',
+        'The witness observes '+en()+'\'s proximity.',
+        'The witness does not step back.',
+        'The witness does not step toward.',
+        'This is what it looks like when something has no fear.',
+      ];
+      lines.forEach((l,i)=>setTimeout(()=>addLog(l,S.phase,true,'witness-line'),700*(i+1)));
+      flashEl.classList.add('witness-flash');
+      setTimeout(()=>flashEl.classList.remove('witness-flash'),200);
+      playWitnessSound();
+    }
+    if(dist===0&&S.witness.active&&!S.narrativeFlags.witnessAbsorbed){
+      // Player moved onto witness — absorption event
+      S.narrativeFlags.witnessAbsorbed=true;
+      const c=getCell(S.witness.x,S.witness.y);
+      if(c) c.classList.remove('witness-entity');
+      S.witness.active=false;
+      S.triggeredEvents.add('witnessAbsorbed');
+      const lines=[
+        '── witness event ──',
+        EN()+' occupied the witness\'s cell.',
+        'The witness did not resist.',
+        'The witness did not yield.',
+        'The witness did not do anything.',
+        'The witness is no longer at ['+S.witness.x+','+S.witness.y+'].',
+        'The witness is not gone.',
+        'The witness is no longer located.',
+        'Note: '+EN()+'\'s behavior since contact: indistinguishable from before.',
+        '── ──',
+      ];
+      lines.forEach((l,i)=>setTimeout(()=>addLog(l,S.phase,true,'witness-line'),1000*(i+1)));
+      playEventTone();
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // SIGNAL ANOMALY — A brief pulsing cell
+  // ═══════════════════════════════════════════════════════
+  function spawnSignal() {
+    if(S.signal.active) return;
+    if(S.phase<3) return;
+    if(Math.random()>0.02) return;
+    const x=randInt(1,GRID_SIZE-2), y=randInt(1,GRID_SIZE-2), k=ck(x,y);
+    if(S.voidCells.has(k)||S.artifacts.has(k)) return;
+    S.signal={x,y,active:true};
+    S.narrativeFlags.signalSeen++;
+    const c=getCell(x,y); if(c) c.classList.add('signal-cell');
+    if(Math.random()<0.5){
+      addLog('Signal at ['+x+','+y+']. Classification: unknown. Duration: brief.',S.phase,false,'signal-line');
+    }
+    const dur=randInt(3000,8000);
+    setTimeout(()=>{
+      const cc=getCell(x,y); if(cc) cc.classList.remove('signal-cell');
+      S.signal.active=false;
+      if(Math.random()<0.3) addLog('Signal at ['+x+','+y+'] resolved. Cause: never determined.',S.phase,false,'signal-line');
+    },dur);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // CELL WEAR SYSTEM
+  // ═══════════════════════════════════════════════════════
+  function updateCellWear(x,y) {
+    const k=ck(x,y);
+    const prev=S.cellVisitCounts.get(k)||0;
+    const next=prev+1;
+    S.cellVisitCounts.set(k,next);
+    const c=getCell(x,y); if(!c) return;
+    c.classList.remove('worn-light','worn-medium','worn-heavy');
+    if(next>=8) c.classList.add('worn-heavy');
+    else if(next>=4) c.classList.add('worn-medium');
+    else if(next>=2) c.classList.add('worn-light');
+    // Track most worn
+    if(!S.mostWornCell||next>(S.cellVisitCounts.get(ck(S.mostWornCell.x,S.mostWornCell.y))||0)){
+      S.mostWornCell={x,y,count:next};
+    }
+    // Commentary at thresholds
+    if(next===4&&S.phase>=2){
+      setTimeout(()=>addLog('Cell ['+x+','+y+'] has been visited '+next+' times. It is beginning to show.',S.phase,false,'wear-line'),200);
+    }
+    if(next===8&&S.phase>=3){
+      setTimeout(()=>addLog(EN()+' keeps returning to ['+x+','+y+']. The cell is worn. The cell does not feel worn.',S.phase,false,'wear-line'),200);
+    }
+    if(next===15&&S.phase>=4){
+      setTimeout(()=>addLog('['+x+','+y+'] is '+en()+'\'s most-visited cell. '+en()+' treats it like a home. It is a tile.',S.phase,false,'wear-line'),200);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // WEATHER SYSTEM
+  // ═══════════════════════════════════════════════════════
+  const weatherTypes=['none','static-rain','interference','fog','void-wind','dissolution-haze','ash-fall','coldfront'];
+  const weatherOvl=document.getElementById('weather-overlay');
+
+  function updateWeather() {
+    if(S.phase<2) return;
+    S.weatherDuration--;
+    if(S.weatherDuration>0) return;
+    const ws={
+      0:[9,1,0,0,0,0,0,0], 1:[8,1,1,0,0,0,0,0],
+      2:[6,2,1,1,0,0,0,0], 3:[5,2,2,1,0,0,0,0],
+      4:[4,2,2,2,1,0,0,0], 5:[3,2,2,2,2,0,0,1],
+      6:[2,2,2,2,2,1,1,1], 7:[1,1,2,2,2,2,2,1],
+      8:[1,0,1,1,2,3,1,0],
+    };
+    const pw=ws[Math.min(S.phase,8)]||ws[8];
+    const tot=pw.reduce((a,b)=>a+b,0);
+    let r=Math.random()*tot, chosen='none';
+    for(let i=0;i<weatherTypes.length;i++){r-=pw[i];if(r<=0){chosen=weatherTypes[i];break;}}
+    if(chosen!==S.currentWeather){
+      weatherOvl.className='';
+      S.currentWeather=chosen;
+      if(chosen!=='none'){
+        setTimeout(()=>{
+          weatherOvl.classList.add(chosen);
+          S.narrativeFlags.weatherEventsWitnessed++;
+          if(Math.random()<0.28){
+            const wd={
+              'static-rain':pick(['Static rain. It falls upward.','Precipitation: non-physical.','It rains. Not water.']),
+              'interference':pick(['Interference pattern. Source: absent.','Signal degradation.','Visual corruption.']),
+              'fog':pick(['Fog. Visibility: reduced.','Atmospheric density increasing.','Fog settles.']),
+              'void-wind':pick(['Wind from the void. Direction: inward.','Something moved through. Not air.','Void wind. Carries nothing.']),
+              'dissolution-haze':pick(['Dissolution haze. Grid losing definition.','Boundaries softening.','Haze. Grid forgetting its shape.']),
+              'ash-fall':pick(['Ash. From nothing. Falling onto nothing.','Particulate: unclassified. Descending.','Something burned. Somewhere. Once.']),
+              'coldfront':pick(['Temperature drop. Temperature does not exist here.','A cold front passed. Fronts do not exist here. It passed anyway.','Something cooled. The grid did not feel it.']),
+            };
+            if(wd[chosen]) addLog(wd[chosen],S.phase,false,'weather-line');
+          }
+        },500);
+      }
+    }
+    S.weatherDuration=randInt(18,45);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // WHISPER SYSTEM
+  // ═══════════════════════════════════════════════════════
+  const wGlyphs=['·',':','∴','∵','○','◌','▪','▫','△','▽','◇','□','╌','┊','╎','│','─','┄','≈','≡','∞','∅'];
+  const wWords=['here','gone','why','stay','left','same','none','end','was','will','is','not','yes','no','who','lost','found','void','echo','wait','move','stop','null','self','them','past','next','once','last','cell','home','cold','dark','rest','wake','dust','bone','name','hold','far','near','now','then','if','when','after','before','once','twice','never','always','still','again','more','less','alone','with','toward','away','down','up'];
+
+  function spawnWhisper() {
+    if(S.phase<2) return;
+    if(S.activeWhispers.size>=5) return;
+    if(Math.random()>0.12) return;
+    const x=randInt(0,GRID_SIZE-1), y=randInt(0,GRID_SIZE-1), k=ck(x,y);
+    if(S.activeWhispers.has(k)||S.voidCells.has(k)) return;
+    const c=getCell(x,y); if(!c) return;
+    let text;
+    if(S.phase<4) text=pick(wGlyphs);
+    else if(S.phase<6) text=Math.random()<0.6?pick(wWords):pick(wGlyphs);
+    else text=pick(wWords);
+    const span=document.createElement('span');
+    span.className='whisper-text'; span.textContent=text;
+    c.appendChild(span);
+    S.activeWhispers.set(k,{el:span,text});
+    S.narrativeFlags.whispersRead++;
+    setTimeout(()=>{if(span.parentNode)span.parentNode.removeChild(span);S.activeWhispers.delete(k);},6000);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // RITUAL DETECTION
+  // ═══════════════════════════════════════════════════════
+  function checkRituals() {
+    if(S.phase<3) return;
+    if(S.moves-S.lastRitualMove<12) return;
+    S.ritualBuffer.push({x:S.playerX,y:S.playerY});
+    if(S.ritualBuffer.length>24) S.ritualBuffer.shift();
+    if(S.ritualBuffer.length<8) return;
+    const last=S.ritualBuffer.slice(-8);
+    const hasCross=last.some(p=>p.x===last[0].x&&p.y===last[0].y)&&
+                   last.some(p=>p.x===last[0].x&&p.y===last[0].y-1)&&
+                   last.some(p=>p.x===last[0].x&&p.y===last[0].y+1)&&
+                   last.some(p=>p.x===last[0].x-1&&p.y===last[0].y)&&
+                   last.some(p=>p.x===last[0].x+1&&p.y===last[0].y);
+    const hasSquare=(()=>{for(let i=0;i<last.length-3;i++){const pts=last.slice(i,i+4);const xs=new Set(pts.map(p=>p.x));const ys=new Set(pts.map(p=>p.y));if(xs.size===2&&ys.size===2)return true;}return false;})();
+    const returnToStart=last[0].x===last[7].x&&last[0].y===last[7].y;
+    // Spiral: 8 unique positions in expanding pattern
+    const hasStar=(()=>{const uniq=new Set(last.map(p=>ck(p.x,p.y)));return uniq.size===8&&last.filter(p=>p.x===S.playerX&&p.y===S.playerY).length===1;})();
+    if(!hasCross&&!hasSquare&&!returnToStart&&!hasStar) return;
+    S.ritualsDetected++; S.narrativeFlags.ritualsPerformed++; S.lastRitualMove=S.moves;
+    const name=hasCross?'cross':hasSquare?'enclosure':hasStar?'star':'return';
+    last.forEach(p=>{const c=getCell(p.x,p.y);if(c){c.classList.add('ritual-glow');setTimeout(()=>c.classList.remove('ritual-glow'),4000);}});
+    playEventTone();
+    const resp={
+      cross:['── ritual detected: cross ──',EN()+' traced a cross.','The grid recognized the shape. The grid does not assign meaning to shapes.','Ritual #'+S.ritualsDetected+'. Effect: none.','The cells glowed briefly. This was atmospheric.'],
+      enclosure:['── ritual detected: enclosure ──',EN()+' enclosed a space.','The enclosed cells are identical to unenclosed cells.','What was contained: nothing. What was protected: nothing.','Ritual #'+S.ritualsDetected+'.'],
+      return:['── ritual detected: return ──',EN()+' returned to its starting point.','The circle is complete. The circle means nothing.','Every return is indistinguishable from arrival.','Ritual #'+S.ritualsDetected+'.'],
+      star:['── ritual detected: star ──',EN()+' traced a pattern with 8 points.','The grid contains no stars. '+EN()+' made one anyway.','The 8 cells are indifferent to the pattern they formed.','Ritual #'+S.ritualsDetected+'. The grid did not receive it.'],
+    };
+    (resp[name]||resp['return']).forEach((l,i)=>setTimeout(()=>addLog(l,S.phase,true,'ritual-line'),650*(i+1)));
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // MEMORY FRAGMENTS
+  // ═══════════════════════════════════════════════════════
+  function triggerMemory() {
+    if(S.phase<3) return;
+    if(S.memoryCooldown>0){S.memoryCooldown--;return;}
+    if(Math.random()>0.035) return;
+    const el=document.getElementById('memory-flash'), txt=document.getElementById('memory-text');
+    txt.textContent=pick(memories);
+    el.classList.add('active');
+    S.narrativeFlags.memoriesTriggered++;
+    S.memoryCooldown=28;
+    setTimeout(()=>el.classList.remove('active'),4500);
+    if(Math.random()<0.35) setTimeout(()=>addLog('Memory fragment intercepted. Origin: prior session. Relevance: none.',S.phase,false,'memory-line'),2000);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // TITLE GLITCH
+  // ═══════════════════════════════════════════════════════
+  function startTitleGlitch() {
+    if(S.titleGlitchTimer) return;
+    S.titleGlitchTimer=setInterval(()=>{
+      if(S.phase<6) return;
+      const el=document.getElementById('main-title');
+      const orig=S.originalTitle;
+      const intensity=(S.phase-5)/4;
+      let glitched='';
+      for(let i=0;i<orig.length;i++){
+        if(Math.random()<intensity*0.15) glitched+=pick(S.glitchChars.split(''));
+        else glitched+=orig[i];
+      }
+      el.textContent=glitched;
+      setTimeout(()=>{el.textContent=orig;},120);
+    },2500);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // CONVERGENCE CHECKS — Entity proximity events
+  // ═══════════════════════════════════════════════════════
+  function checkConvergence() {
+    if(S.convergenceCooldown>0){S.convergenceCooldown--;return;}
+    if(S.phase<5) return;
+    // Player + shadow + witness all within 3 cells of each other
+    if(!S.shadow.active||!S.witness.active) return;
+    const dShadow=Math.abs(S.shadow.x-S.playerX)+Math.abs(S.shadow.y-S.playerY);
+    const dWitness=pdist(S.witness.x,S.witness.y);
+    const swDist=Math.abs(S.shadow.x-S.witness.x)+Math.abs(S.shadow.y-S.witness.y);
+    if(dShadow<=3&&dWitness<=3&&swDist<=4&&Math.random()<0.3){
+      S.narrativeFlags.convergenceEvents++;
+      S.convergenceCooldown=40;
+      // Visual
+      [[S.playerX,S.playerY],[S.shadow.x,S.shadow.y],[S.witness.x,S.witness.y]].forEach(([x,y])=>{
+        const c=getCell(x,y);if(c){c.classList.add('convergence');setTimeout(()=>c.classList.remove('convergence'),4000);}
+      });
+      flashEl.classList.add('deep-flash');
+      setTimeout(()=>flashEl.classList.remove('deep-flash'),200);
+      playEventTone();
+      const lines=[
+        '── convergence event '+S.narrativeFlags.convergenceEvents+' ──',
+        EN()+', its shadow, and the witness: all within proximity.',
+        'Three things that are one thing.',
+        'Three things that are no things.',
+        'The convergence is complete.',
+        'The convergence means nothing.',
+        '── ──',
+      ];
+      lines.forEach((l,i)=>setTimeout(()=>addLog(l,S.phase,true,'convergence-line'),800*(i+1)));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // TAXONOMY DISPLAY
+  // ═══════════════════════════════════════════════════════
+  function displayTaxonomy() {
+    if(S.taxonomyDone) return;
+    if(S.phase<5||S.moves<120) return;
+    if(Math.random()>0.015) return;
+    S.taxonomyDone=true;
+    const tax=classifyPlayer();
+    S.narrativeFlags.taxonomyAssigned=true;
+    S.narrativeFlags.taxonomyType=tax.name;
+    const el=document.getElementById('taxonomy-overlay');
+    const cont=document.getElementById('taxonomy-content');
+    cont.innerHTML='classification<br><div class="taxonomy-type">'+tax.name+'</div>'+tax.desc;
+    el.classList.add('active');
+    setTimeout(()=>el.classList.remove('active'),6000);
+    // Also log it
+    setTimeout(()=>{
+      const lines=[
+        '── entity classification ──',
+        'Based on '+S.moves+' moves and '+S.narrativeFlags.ritualsPerformed+' rituals.',
+        'Classification: '+tax.name+'.',
+        tax.desc,
+        'Classification is not a reward.',
+        'Classification is not a condemnation.',
+        'Classification is what happens when patterns are observed long enough.',
+        '── ──',
+      ];
+      lines.forEach((l,i)=>setTimeout(()=>addLog(l,S.phase,true,'taxonomy-line'),600*(i+1)));
+    },2000);
+    playEventTone();
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // NARRATIVE EVENTS
+  // ═══════════════════════════════════════════════════════
+  const events={
+    otherEntity:{
+      cond:()=>S.phase>=3&&!S.triggeredEvents.has('otherEntity')&&S.moves>50,
+      lines:()=>['Signal detected at '+randCoord()+'.','Resolving... shape: bipedal. Behavior: '+pick(['searching','still','watching','leaving'])+'.','Second entity confirmed. Designation: pending.','Second entity... fading.','Signal lost. Duration: 2.1 seconds.','Grid did not acknowledge second entity either.'],
+      delay:1200,
+    },
+    reclassification:{
+      cond:()=>S.phase>=4&&!S.triggeredEvents.has('reclassification')&&S.moves>80,
+      lines:()=>{const old=S.entityName;S.nameIndex=Math.min(S.nameIndex+1,S.entityNames.length-1);S.entityName=S.entityNames[S.nameIndex];return['── entity reclassification ──','Reviewing: '+old+'.','Behavioral profile: '+getBehaviorDesc()+'.','Trust index: '+(Math.random()*0.2).toFixed(3)+'.','New designation: '+S.entityName+'.','Previous identity: archived.'];},
+      delay:1000,
+    },
+    memoryWipe:{
+      cond:()=>S.phase>=4&&!S.triggeredEvents.has('memoryWipe')&&S.narrativeFlags.claimsMade>=3,
+      lines:()=>['── memory revision ──','Reviewing claimed territories...','Claims found: '+S.narrativeFlags.claimsMade+'.','Claims valid: 0.','All marks removed. All names rejected.','Grid restored to: what it always was.'],
+      delay:900,
+    },
+    observerFlicker:{
+      cond:()=>S.phase>=5&&!S.triggeredEvents.has('observerFlicker')&&S.moves>110,
+      lines:['── observer instability ──','The observer is experiencing...','...','The observer is.','The observer.','Resume.'],
+      delay:1500,
+    },
+    theMirror:{
+      cond:()=>S.phase>=5&&!S.triggeredEvents.has('theMirror')&&S.revisitCount>22,
+      lines:()=>[EN()+' returned to a cell visited '+Math.floor(S.revisitCount*0.4)+' moves ago.','The cell is unchanged.',EN()+' is unchanged.','The difference between then and now: '+S.moves+' moves.','The difference between then and now: nothing.','This is what mirrors show, if mirrors could show time.'],
+      delay:1100,
+    },
+    theCount:{
+      cond:()=>S.phase>=5&&!S.triggeredEvents.has('theCount'),
+      lines:()=>['── accumulated statistics ──','Total moves: '+S.moves+'.','Unique cells visited: '+S.visitedCells.size+'.','Cells changed: 0.','Drifter proximity events: '+S.narrativeFlags.drifterEncounters+'.','Artifacts collected: '+S.narrativeFlags.artifactsCollected+'. Value: 0.','Rituals performed: '+S.narrativeFlags.ritualsPerformed+'. Effect: 0.','Exits found: 0.','Purpose discovered: 0.','Time spent: all of it.','── end statistics ──'],
+      delay:800,
+    },
+    theQuestion:{
+      cond:()=>S.phase>=6&&!S.triggeredEvents.has('theQuestion')&&S.moves>150,
+      lines:()=>['── system query ──',EN()+'.','You have moved '+S.moves+' times.','You have collected '+S.narrativeFlags.artifactsCollected+' objects that do not exist.','You have performed '+S.narrativeFlags.ritualsPerformed+' rituals to no god.','What are you looking for?','...','The system does not actually want to know.','The question was for the log.'],
+      delay:1800,
+    },
+    theOtherLog:{
+      cond:()=>S.phase>=6&&!S.triggeredEvents.has('theOtherLog')&&S.moves>180,
+      lines:['── parallel log detected ──','Another log was found.','Contents: identical to this one.','Timestamp: before this session.','Entity in other log: different. Behavior: same.','Other entity also moved '+domDir()+' most often.','Other entity also paused here.','Parallel log sealed.'],
+      delay:1400,
+    },
+    theInventory:{
+      cond:()=>S.phase>=5&&!S.triggeredEvents.has('theInventory')&&S.narrativeFlags.artifactsCollected>=5,
+      lines:()=>{const items=S.artifactsCollected.slice(-5);const r=['── inventory audit ──'];items.forEach((a,i)=>r.push((i+1)+'. '+a.name+' — '+a.desc));r.push('Total: '+S.narrativeFlags.artifactsCollected+'. Mass: 0. Purpose: 0.');r.push('Recommendation: discard all.');r.push('── end audit ──');return r;},
+      delay:700,
+    },
+    theDrifterGrief:{
+      cond:()=>S.phase>=6&&!S.triggeredEvents.has('theDrifterGrief')&&S.narrativeFlags.totalDrifterDeaths>=2,
+      lines:()=>{const dead=S.drifters.filter(d=>!d.alive);return['── drifter memorial ──',dead.length+' drifters have ceased.',...dead.map(d=>d.name+': '+d.moves+' cycles. Scar at ['+d.x+','+d.y+'].'),EN()+' is not expected to mourn.','This memorial exists because the log needed content.','── end memorial ──'];},
+      delay:1000,
+    },
+    dissolution:{
+      cond:()=>S.phase>=7&&!S.triggeredEvents.has('dissolution')&&S.moves>230,
+      lines:()=>['── ── ──','the grid acknowledges '+en()+'\'s presence.','this is not a reward.','this is not recognition.','this is the system running out of ways to say nothing.','what remains: a grid. an entity. a log.','forever.','── ── ──'],
+      delay:2000,
+    },
+    theEpitaph:{
+      cond:()=>S.phase>=7&&!S.triggeredEvents.has('theEpitaph')&&S.moves>260,
+      lines:()=>['── epitaph draft ──','here lies '+en()+'.','it moved '+S.moves+' times.','it saw '+explPct()+'% of everything.','it carried '+S.narrativeFlags.artifactsCollected+' weightless things.','it performed '+S.narrativeFlags.ritualsPerformed+' rituals to no one.','it was logged. it was not understood.','it is still here.','── epitaph rejected: entity not concluded ──'],
+      delay:1200,
+    },
+    theSilenceAfter:{
+      cond:()=>S.phase>=8&&!S.triggeredEvents.has('theSilenceAfter')&&S.moves>310,
+      lines:['·','the narrative ended.',en()+' did not.','this is the silence after the story.','there are no more events.','there is only the next cell.','and the next.','and the log, counting.','·'],
+      delay:2500,
+    },
+    theReader:{
+      cond:()=>S.phase>=6&&!S.triggeredEvents.has('theReader')&&S.moves>165,
+      lines:['── supplemental observation ──','note: someone is reading this.','not '+en()+'. someone else.','someone who pressed a key or tapped a screen.','they are still here too.','the log sees them.','the log does not distinguish between entity and observer.','both are outside the grid.','both are inside the grid.','the log continues for both of them.','── ──'],
+      delay:1600,
+    },
+    theTaxonomyPreamble:{
+      cond:()=>S.phase>=5&&!S.triggeredEvents.has('theTaxonomyPreamble')&&S.moves>100,
+      lines:()=>['── behavioral analysis in progress ──',S.moves+' moves observed.','Calculating classification...','Pattern match in progress...','Classification will be displayed shortly.','The classification does not define '+en()+'.','The classification does not mean anything.','The classification is what the data became.'],
+      delay:800,
+    },
+    theWornPath:{
+      cond:()=>S.phase>=4&&!S.triggeredEvents.has('theWornPath')&&S.mostWornCell&&(S.cellVisitCounts.get(ck(S.mostWornCell.x,S.mostWornCell.y))||0)>=10,
+      lines:()=>{const mw=S.mostWornCell;const cnt=S.cellVisitCounts.get(ck(mw.x,mw.y))||0;return['── path analysis ──','Cell ['+mw.x+','+mw.y+']: visited '+cnt+' times.',en()+' returns here.','The cell looks '+pick(['the same','slightly different','unchanged','fractionally worn'])+'.',pick(['The cell is not a home.','The cell is not a landmark.','The cell is where '+en()+' has been '+cnt+' times.',en()+' gravitates here without deciding to.']),'The grid notes this. The grid does not care.'];},
+      delay:900,
+    },
+    theLastDrifter:{
+      cond:()=>!S.triggeredEvents.has('theLastDrifter')&&S.narrativeFlags.totalDrifterDeaths===3,
+      lines:()=>['── final drifter ──','All drifters: ceased.',EN()+' is the last moving thing in the grid.','The drifters did not know each other.','The drifters did not know '+en()+'.','The drifters did not know.',EN()+' knows. This is the difference. The difference changes nothing.','The grid now has '+EN()+', the shadow, and the witness.','The grid now has less.'],
+      delay:1300,
+    },
+    theNameChange2:{
+      cond:()=>S.phase>=6&&!S.triggeredEvents.has('theNameChange2')&&S.moves>200,
+      lines:()=>{const old=S.entityName;S.nameIndex=Math.min(S.nameIndex+2,S.entityNames.length-1);S.entityName=S.entityNames[S.nameIndex];return['── designation revision ──',old+' no longer accurate.','Entity has changed.','New designation: '+S.entityName+'.','Rationale: '+pick(['the old name accumulated too much context','entities that persist this long require new names','prior designation: retired','the system needed a word and found one'])+'.',S.entityName+' continues.'];},
+      delay:900,
+    },
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // DOM REFS
+  // ═══════════════════════════════════════════════════════
+  const gridEl=document.getElementById('grid');
+  const logEl=document.getElementById('log-entries');
+  const counterEl=document.getElementById('counter-display');
+  const flashEl=document.getElementById('phase-flash');
+  const overlayEl=document.getElementById('start-overlay');
+  const titleEl=document.getElementById('main-title');
+  const subtitleEl=document.getElementById('subtitle');
+  const logHdrEl=document.getElementById('log-header').firstElementChild;
+  const moveCounterEl=document.getElementById('move-counter');
+  const statsEl=document.getElementById('session-stats');
+
+  // ═══════════════════════════════════════════════════════
+  // GRID CONSTRUCTION
+  // ═══════════════════════════════════════════════════════
+  function buildGrid() {
+    gridEl.style.gridTemplateColumns=`repeat(${GRID_SIZE}, ${CELL_PX}px)`;
+    gridEl.style.gridTemplateRows=`repeat(${GRID_SIZE}, ${CELL_PX}px)`;
+    for(let y=0;y<GRID_SIZE;y++){
+      const row=[];
+      for(let x=0;x<GRID_SIZE;x++){
+        const c=document.createElement('div');
+        c.className='cell'; c.dataset.x=x; c.dataset.y=y;
+        gridEl.appendChild(c); row.push(c);
+      }
+      S.gridCells.push(row);
+    }
+    updateEntityPos();
+  }
+
+  function updateEntityPos() {
+    document.querySelectorAll('.cell.entity').forEach(c=>c.classList.remove('entity'));
+    const c=getCell(S.playerX,S.playerY); if(c) c.classList.add('entity');
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // LOGGING
+  // ═══════════════════════════════════════════════════════
+  function addLog(text,phaseOvr,isEvent,extraClass) {
+    if(text===null||text===undefined) return;
+    if(text===''&&S.phase<7) return;
+    const entry=document.createElement('div');
+    const ph=phaseOvr!==undefined?phaseOvr:S.phase;
+    entry.className='log-entry phase-'+Math.min(ph,8);
+    if(isEvent) entry.classList.add('event-line');
+    if(extraClass) entry.classList.add(extraClass);
+    S.logCount++;
+    const num=String(S.logCount).padStart(4,'0');
+    entry.innerHTML='<span class="timestamp">'+num+'</span>'+(text+'');
+    logEl.appendChild(entry);
+    requestAnimationFrame(()=>{ logEl.scrollTop=logEl.scrollHeight; });
+    while(logEl.children.length>MAX_LOG) logEl.removeChild(logEl.firstChild);
+    S.lastLogTime=Date.now();
+  }
+
+  function addSys(text) {
+    const e=document.createElement('div');
+    e.className='log-entry system-line'; e.textContent=text;
+    logEl.appendChild(e);
+    requestAnimationFrame(()=>{ logEl.scrollTop=logEl.scrollHeight; });
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // LOG SELECTION
+  // ═══════════════════════════════════════════════════════
+  function getMovLog() {
+    const ph=S.phase;
+    if(ph>=2&&Math.random()<0.18){const bl=getBehaviorLog();if(bl)return bl;}
+    if(ph>=2&&Math.random()<0.1&&S.drifters.some(d=>d.alive)){return pick(drifterLogs)();}
+    const pools={0:p1,1:p1,2:p2,3:p3,4:p4,5:p5,6:p6,7:p7,8:p8};
+    return pick(pools[ph]||p1)();
+  }
+
+  function getBehaviorLog() {
+    const nearDrifter=S.drifters.some(d=>d.alive&&pdist(d.x,d.y)<=2);
+    if(nearDrifter&&Math.random()<0.45) return pick(bLogs.nearDrifter)();
+    const nearWitness=S.witness.active&&pdist(S.witness.x,S.witness.y)<=3;
+    if(nearWitness&&S.phase>=4&&Math.random()<0.35) return pick(bLogs.nearWitness)();
+    if(S.circlingDetected) return pick(bLogs.circling)();
+    if(S.retracingDetected) return pick(bLogs.retracing)();
+    if(S.edgeMoves>S.moves*0.35&&S.moves>15) return pick(bLogs.wallHugging)();
+    if(S.currentStraightLine>=4) return pick(bLogs.straightLine)();
+    if(S.fastMoveStreak>=4) return pick(bLogs.fastMovement)();
+    if(S.slowMoveCount>S.moves*0.3&&S.moves>20) return pick(bLogs.slowMovement)();
+    if(S.cornerVisits>=3) return pick(bLogs.cornerSeeking)();
+    if(explPct()>40) return pick(bLogs.highExploration)();
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // NARRATIVE EVENTS
+  // ═══════════════════════════════════════════════════════
+  function checkEvents() {
+    if(S.eventCooldown>0){S.eventCooldown--;return;}
+    for(const[key,ev] of Object.entries(events)){
+      if(S.triggeredEvents.has(key)) continue;
+      if(ev.cond()){
+        S.triggeredEvents.add(key);
+        S.eventCooldown=10;
+        const lines=typeof ev.lines==='function'?ev.lines():ev.lines;
+        const delay=ev.delay||1000;
+        flashEl.classList.add('deep-flash');
+        setTimeout(()=>flashEl.classList.remove('deep-flash'),200);
+        playEventTone();
+        lines.forEach((l,i)=>setTimeout(()=>addLog(l,S.phase,true),delay*(i+1)));
+        break;
+      }
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // GRID MUTATIONS
+  // ═══════════════════════════════════════════════════════
+  function applyMutation() {
+    const ph=S.phase;
+    if(ph>=2&&S.echoTrail.length>0&&Math.random()<0.4){
+      const e=S.echoTrail[S.echoTrail.length-1];
+      const c=getCell(e.x,e.y);
+      if(c&&!S.voidCells.has(ck(e.x,e.y))){c.classList.add('echo');setTimeout(()=>c.classList.remove('echo'),3000);}
+    }
+    if(ph>=3&&Math.random()<0.2){
+      const x=randInt(0,GRID_SIZE-1),y=randInt(0,GRID_SIZE-1),k=ck(x,y);
+      if(k!==ck(S.playerX,S.playerY)){const c=getCell(x,y);if(c&&!S.voidCells.has(k)){c.classList.add('marked');S.markedCells.add(k);}}
+    }
+    if(ph>=3&&Math.random()<0.09){
+      const dx=randInt(-3,3),dy=randInt(-3,3);
+      const c=getCell(S.playerX+dx,S.playerY+dy);
+      if(c&&!S.voidCells.has(ck(S.playerX+dx,S.playerY+dy))){c.classList.add('bloom');setTimeout(()=>c.classList.remove('bloom'),8000+Math.random()*4000);}
+    }
+    if(ph>=4&&Math.random()<0.16){
+      const x=randInt(0,GRID_SIZE-1),y=randInt(0,GRID_SIZE-1),k=ck(x,y);
+      if(k!==ck(S.playerX,S.playerY)&&k!==ck(S.witness.x,S.witness.y)){
+        const c=getCell(x,y);if(c){c.classList.remove('marked','ghost','bloom');c.classList.add('void-cell');S.voidCells.add(k);}
+      }
+    }
+    if(ph>=4&&Math.random()<0.12){
+      const x=randInt(0,GRID_SIZE-1),y=randInt(0,GRID_SIZE-1),k=ck(x,y);
+      if(k!==ck(S.playerX,S.playerY)&&!S.voidCells.has(k)){const c=getCell(x,y);if(c){c.classList.add('scar');S.scarCells.add(k);}}
+    }
+    if(ph>=4&&Math.random()<0.07&&S.positionHistory.length>10){
+      const old=S.positionHistory[Math.floor(Math.random()*S.positionHistory.length*0.5)];
+      const c=getCell(old.x,old.y);if(c&&!S.voidCells.has(ck(old.x,old.y)))c.classList.add('decay');
+    }
+    if(ph>=5&&Math.random()<0.1){
+      const x=randInt(0,GRID_SIZE-1),y=randInt(0,GRID_SIZE-1),k=ck(x,y);
+      if(k!==ck(S.playerX,S.playerY)&&!S.voidCells.has(k)){const c=getCell(x,y);if(c){c.classList.add('ghost');S.ghostCells.add(k);}}
+    }
+    if(ph>=5&&Math.random()<0.09){
+      for(let dx=-2;dx<=2;dx++){for(let dy=-2;dy<=2;dy++){
+        if(dx===0&&dy===0) continue;
+        if(Math.random()<0.2){
+          const nx=S.playerX+dx,ny=S.playerY+dy,k=ck(nx,ny);
+          const c=getCell(nx,ny);
+          if(c&&!S.voidCells.has(k)){
+            c.classList.add('watching');S.watchingCells.add(k);
+            setTimeout(()=>{c.classList.remove('watching');S.watchingCells.delete(k);},3000+Math.random()*4000);
+          }
+        }
+      }}
+    }
+    if(ph>=4&&Math.random()<0.12){
+      S.artifacts.forEach(a=>{
+        const adj=[[0,-1],[0,1],[-1,0],[1,0]];
+        adj.forEach(([dx,dy])=>{if(Math.random()<0.18){const c=getCell(a.x+dx,a.y+dy);if(c){c.classList.add('resonance');setTimeout(()=>c.classList.remove('resonance'),5000);}}});
+      });
+    }
+    if(ph>=5&&Math.random()<0.025){
+      flashEl.classList.add('tremor-flash');
+      setTimeout(()=>flashEl.classList.remove('tremor-flash'),100);
+      for(let i=0;i<randInt(3,8);i++){
+        const c=getCell(randInt(0,GRID_SIZE-1),randInt(0,GRID_SIZE-1));
+        if(c){c.classList.add('tremor');setTimeout(()=>c.classList.remove('tremor'),300);}
+      }
+      if(Math.random()<0.45) addLog('Seismic event. Magnitude: negligible. Source: '+pick(['below','the void','nowhere',en()])+' .',ph,false,'weather-line');
+    }
+    if(ph>=7&&Math.random()<0.22){
+      const x=randInt(0,GRID_SIZE-1),y=randInt(0,GRID_SIZE-1),k=ck(x,y);
+      if(k!==ck(S.playerX,S.playerY)&&k!==ck(S.witness.x,S.witness.y)){
+        const c=getCell(x,y);
+        if(c&&!S.voidCells.has(k)){c.classList.remove('marked','ghost','bloom','scar','watching','has-artifact');c.classList.add('erased');S.voidCells.add(k);S.artifacts.delete(k);}
+      }
+    }
+    if(ph>=8&&Math.random()<0.32){
+      const x=randInt(0,GRID_SIZE-1),y=randInt(0,GRID_SIZE-1),k=ck(x,y);
+      if(k!==ck(S.playerX,S.playerY)){const c=getCell(x,y);if(c&&!S.voidCells.has(k)){c.classList.add('erased');S.voidCells.add(k);}}
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // PHASE TRANSITIONS
+  // ═══════════════════════════════════════════════════════
+  function onPhaseChange(old,nw) {
+    flashEl.classList.add('flash');
+    setTimeout(()=>flashEl.classList.remove('flash'),150);
+    const ann={
+      1:null,
+      2:'── pattern deviation ──',
+      3:'── attribution layer active ──',
+      4:'── consequence engine initialized ──',
+      5:'── observer status: aware ──',
+      6:'── temporal boundary dissolved ──',
+      7:'── ── ──',
+      8:'·',
+    };
+    if(ann[nw]) setTimeout(()=>addSys(ann[nw]),600);
+    const subs={
+      1:'observation active',
+      2:'pattern analysis engaged',
+      3:'attribution mode',
+      4:'consequence processing',
+      5:'awareness threshold exceeded',
+      6:'pre-emptive state',
+      7:'dissolution',
+      8:'post-narrative',
+    };
+    subtitleEl.textContent=subs[nw]||'';
+    statsEl.style.opacity=nw>=3?'0.4':'0';
+    if(nw>=4) titleEl.style.color='#1a1a25';
+    if(nw>=5){subtitleEl.style.opacity='0.2';statsEl.style.opacity='0.25';}
+    if(nw>=6){titleEl.style.color='#111118';subtitleEl.style.color='#111118';startTitleGlitch();}
+    if(nw>=7){
+      titleEl.style.color='#0a0a0e';subtitleEl.style.opacity='0.08';
+      moveCounterEl.style.opacity='0.3';logHdrEl.style.color='#151520';
+      S.entityName=pick(['Residue','Echo','Signal','Trace']);
+    }
+    if(nw>=8){
+      titleEl.style.opacity='0.3';subtitleEl.style.opacity='0.03';
+      moveCounterEl.style.opacity='0.15';
+      S.entityName=pick(['Remnant','Trace','']);
+      S.drifters.forEach(d=>{if(d.alive) killDrifter(d);});
+    }
+    if(nw===5&&S.nameIndex<2){S.nameIndex=2;S.entityName=S.entityNames[S.nameIndex];}
+    updateAudioForPhase();
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // MOVEMENT
+  // ═══════════════════════════════════════════════════════
+  function moveEntity(dx,dy) {
+    const nx=S.playerX+dx, ny=S.playerY+dy;
+    if(!validCell(nx,ny)){
+      S.wallBumps++;
+      if(S.phase>=2){
+        addLog(pick([
+          EN()+' pressed against boundary. The boundary did not yield.',
+          'Edge reached. '+EN()+' cannot expand the grid.',
+          'Wall contact. The wall has no opinion.',
+          EN()+' tested the limit. The limit held.',
+          'Boundary collision #'+S.wallBumps+'.',
+          'The grid ends here. The grid ended here before '+en()+' arrived.',
+        ]));
+      }
+      S.narrativeFlags.boundaryPushed=true;
+      return;
+    }
+    if(S.phase>=4&&S.voidCells.has(ck(nx,ny))){
+      addLog(pick([
+        'Path denied. Cell has been revoked.',
+        'Access denied at ['+nx+','+ny+'].',
+        'Cell sealed. Consequence of prior behavior.',
+        EN()+' cannot enter. The cell no longer exists for '+en()+'.',
+        'Blocked. The grid remembers.',
+      ]));
+      return;
+    }
+    const ox=S.playerX, oy=S.playerY;
+    const now=Date.now();
+    const interval=now-S.lastMoveTime;
+    if(S.lastMoveTime>0){
+      if(interval<280){S.fastMoveStreak++;S.slowMoveCount=Math.max(0,S.slowMoveCount-1);}
+      else if(interval>2200){S.slowMoveCount++;S.fastMoveStreak=0;}
+      else{S.fastMoveStreak=Math.max(0,S.fastMoveStreak-1);}
+    }
+    S.lastMoveTime=now;
+    clearDrifterRender();
+    // Remove shadow render temporarily
+    if(S.shadow.active){const sc=getCell(S.shadow.x,S.shadow.y);if(sc)sc.classList.remove('shadow-entity');}
+    S.playerX=nx; S.playerY=ny; S.moves++; S.idleTicks=0;
+    const pk=ck(nx,ny);
+    if(S.visitedCells.has(pk)) S.revisitCount++;
+    S.visitedCells.add(pk);
+    S.positionHistory.push({x:nx,y:ny,move:S.moves});
+    S.echoTrail.push({x:ox,y:oy});
+    if(S.echoTrail.length>5) S.echoTrail.shift();
+    updateCellWear(nx,ny);
+    const dm={' 0,-1':'north','0,1':'south','-1,0':'west','1,0':'east'};
+    const dir=dm[' '+dx+','+dy]||dm[''+dx+','+dy]||'unknown';
+    if(dir===S.lastDirection){S.consecutiveSameDir++;S.currentStraightLine++;if(S.currentStraightLine>S.longestStraightLine)S.longestStraightLine=S.currentStraightLine;}
+    else{S.directionChanges++;S.consecutiveSameDir=0;S.currentStraightLine=0;}
+    S.lastDirection=dir;
+    S.directionCounts[dir]=(S.directionCounts[dir]||0)+1;
+    S.moveHistory.push({x:nx,y:ny,dir,move:S.moves});
+    if(S.moveHistory.length>60) S.moveHistory.shift();
+    if(isEdge(nx,ny)) S.edgeMoves++;
+    if(isCorner(nx,ny)) S.cornerVisits++;
+    if(!isEdge(nx,ny)) S.centerMoves++;
+    analyzeBehavior();
+    const op=S.phase; S.phase=getPhase();
+    if(S.phase!==op) onPhaseChange(op,S.phase);
+    updateEntityPos();
+    renderDrifters();
+    updateShadow();
+    updateWitness();
+    counterEl.textContent=S.phase<7?'move '+S.moves:''+S.moves;
+    // Update session stats
+    if(S.phase>=3) statsEl.textContent=explPct()+'% explored · '+S.narrativeFlags.artifactsCollected+' artifacts · '+S.drifters.filter(d=>d.alive).length+' drifters';
+    playMoveSound();
+    // Log
+    if(S.phase>=6&&Math.random()<0.28){addLog(getMovLog());setTimeout(()=>addLog(getMovLog()),120);}
+    else{
+      addLog(getMovLog());
+      if(S.phase>=3&&Math.random()<0.28) setTimeout(()=>addLog(getMovLog()),220+Math.random()*500);
+      if(S.phase>=5&&Math.random()<0.12) setTimeout(()=>addLog(getMovLog()),900+Math.random()*600);
+    }
+    applyMutation();
+    checkArtifact();
+    checkEvents();
+    checkRituals();
+    checkConvergence();
+    triggerMemory();
+    spawnArtifact();
+    spawnSignal();
+    spawnWitness();
+    displayTaxonomy();
+    resetIdle();
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // IDLE SYSTEM
+  // ═══════════════════════════════════════════════════════
+  function resetIdle() {
+    if(S.idleTimer) clearInterval(S.idleTimer);
+    S.idleTicks=0;
+    S.idleTimer=setInterval(()=>{
+      S.idleTicks++; S.totalIdleTicks++;
+      if(S.idleTicks>=3){
+        const ph=Math.min(S.phase+1,8);
+        const pool=idleLogs[ph]||idleLogs[1];
+        const t=pick(pool)();
+        addLog(t,S.phase);
+      }
+      if(S.phase>=3&&S.idleTicks>=5&&Math.random()<0.3) addLog(pick(p3)(),3);
+      if(S.phase>=5&&S.idleTicks>=4&&Math.random()<0.22) addLog(pick(p5)(),5);
+      if(S.phase>=7&&S.idleTicks>=3&&Math.random()<0.38) addLog(pick(p7)(),7);
+      if(S.idleTicks>=8&&Math.random()<0.25) checkEvents();
+      // Drifters still move during idle
+      if(S.idleTicks>=2){clearDrifterRender();S.drifters.forEach(d=>moveDrifter(d));renderDrifters();}
+      updateWeather(); spawnWhisper(); triggerMemory(); spawnSignal();
+      // Witness check during idle
+      if(S.phase>=4&&!S.witness.active&&Math.random()<0.1) spawnWitness();
+    },4200);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // AMBIENT SYSTEM
+  // ═══════════════════════════════════════════════════════
+  function startAmbient() {
+    S.ambientTimer=setInterval(()=>{
+      if(!S.started||S.phase<2) return;
+      const ch=0.03+(S.phase*0.045);
+      if(Math.random()<ch){
+        const pools=[p2,p3,p4,p5,p6,p7,p8];
+        const idx=Math.min(S.phase-2,pools.length-1);
+        addLog(pick(pools[Math.max(0,idx)])(),S.phase);
+      }
+      if(S.phase>=6&&Math.random()<0.12) applyMutation();
+      if(S.phase>=7&&Math.random()<0.22) applyMutation();
+    },6500);
+
+    S.narrativeTimer=setInterval(()=>{
+      if(!S.started||S.phase<3) return;
+      if(Math.random()<0.12&&S.moves>30){
+        const cbs=[
+          ()=>S.wallBumps>3?'Note: '+en()+' has hit the boundary '+S.wallBumps+' times. The boundary has not moved.':null,
+          ()=>S.revisitCount>10?EN()+' returns to familiar cells. Familiarity is not comfort.':null,
+          ()=>S.directionChanges>S.moves*0.6?EN()+' changes direction often. This is not flexibility. This is not knowing.':null,
+          ()=>S.longestStraightLine>6?'Longest unbroken line: '+S.longestStraightLine+' cells. '+EN()+' believed in that direction for that long.':null,
+          ()=>S.cornerVisits>4?EN()+' visits corners repeatedly. '+S.cornerVisits+' times. Corners do not accumulate meaning.':null,
+          ()=>S.totalIdleTicks>20?EN()+' has been still for '+S.totalIdleTicks+' intervals total.':null,
+          ()=>explPct()>50?EN()+' has seen '+explPct()+'% of the grid. Seeing is not understanding.':null,
+          ()=>S.narrativeFlags.artifactsCollected>3?EN()+' carries '+S.narrativeFlags.artifactsCollected+' artifacts. Combined significance: 0.':null,
+          ()=>S.narrativeFlags.drifterEncounters>5?EN()+' has been near drifters '+S.narrativeFlags.drifterEncounters+' times. Neither species noticed.':null,
+          ()=>S.shadow.diverged?EN()+'\'s shadow is '+Math.abs(S.shadow.x-S.playerX+S.shadow.y-S.playerY)+' cells away. It does not look back.':null,
+          ()=>S.witness.active&&S.phase>=4?'The witness has been at ['+S.witness.x+','+S.witness.y+'] for '+(S.moves-S.witness.spawnMove)+' moves. It has not grown tired. It does not have tired.':null,
+          ()=>S.narrativeFlags.convergenceEvents>0?'Convergence event #'+S.narrativeFlags.convergenceEvents+' noted. Consequence: none additional.':null,
+          ()=>S.narrativeFlags.ritualsPerformed>4?EN()+' has performed '+S.narrativeFlags.ritualsPerformed+' rituals. The grid has received: 0.':null,
+          ()=>S.narrativeFlags.totalDrifterDeaths>0?S.narrativeFlags.totalDrifterDeaths+' drifters have ceased. '+S.drifters.filter(d=>d.alive).length+' continue. All trajectories: equivalent.':null,
+        ];
+        const valid=cbs.map(fn=>fn()).filter(Boolean);
+        if(valid.length>0) addLog(pick(valid),S.phase);
+      }
+    },13000);
+
+    S.drifterTimer=setInterval(()=>{
+      if(!S.started) return;
+      clearDrifterRender();
+      S.drifters.forEach(d=>moveDrifter(d));
+      renderDrifters();
+    },3200);
+
+    S.weatherTimer=setInterval(()=>{if(!S.started)return;updateWeather();},9000);
+    S.whisperTimer=setInterval(()=>{if(!S.started)return;spawnWhisper();},7500);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // BOOT
+  // ═══════════════════════════════════════════════════════
+  function runBoot() {
+    let d=300;
+    bootLines.forEach(l=>{setTimeout(()=>addLog(l,0),d);d+=480+Math.random()*280;});
+    return d;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // INPUT
+  // ═══════════════════════════════════════════════════════
+  function handleKey(e) {
+    if(!S.started){startGame();return;}
+    const km={'ArrowUp':[0,-1],'w':[0,-1],'W':[0,-1],'ArrowDown':[0,1],'s':[0,1],'S':[0,1],'ArrowLeft':[-1,0],'a':[-1,0],'A':[-1,0],'ArrowRight':[1,0],'d':[1,0],'D':[1,0]};
+    const dir=km[e.key];
+    if(dir){e.preventDefault();moveEntity(dir[0],dir[1]);}
+  }
+
+  let tx=0, ty=0;
+  function handleTouchStart(e){if(!S.started){startGame();return;}tx=e.touches[0].clientX;ty=e.touches[0].clientY;}
+  function handleTouchEnd(e){
+    if(!S.started) return;
+    const dx=e.changedTouches[0].clientX-tx, dy=e.changedTouches[0].clientY-ty;
+    if(Math.max(Math.abs(dx),Math.abs(dy))<20) return;
+    if(Math.abs(dx)>Math.abs(dy)) moveEntity(dx>0?1:-1,0);
+    else moveEntity(0,dy>0?1:-1);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // START
+  // ═══════════════════════════════════════════════════════
+  function startGame() {
+    if(S.started) return;
+    S.started=true;
+    overlayEl.classList.add('hidden');
+    document.getElementById('session-id-display').textContent=SESSION_ID;
+    initAudio();
+    const delay=runBoot();
+    setTimeout(()=>{
+      addSys('── ready ──');
+      resetIdle();
+      startAmbient();
+      initDrifters();
+      initShadow();
+      initWitness();
+      renderDrifters();
+    },delay+500);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // INIT
+  // ═══════════════════════════════════════════════════════
+  function init() {
+    buildGrid();
+    document.addEventListener('keydown', handleKey);
+    document.addEventListener('touchstart', handleTouchStart, {passive:true});
+    document.addEventListener('touchend', handleTouchEnd, {passive:true});
+    overlayEl.addEventListener('click',()=>{if(!S.started)startGame();});
+  }
+
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(init);
+  else window.addEventListener('DOMContentLoaded',init);
+})();
+</script>
+</body>
+</html>
