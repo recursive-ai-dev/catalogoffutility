@@ -237,7 +237,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tags: ["Tool", "Interactive"],
     tech: ["HTML", "React", "Tone.js", "Web Audio"],
     image: "/images/abm-generator.svg",
-    url: "/abm-generator-fixed.html",
+    url: "/abm-generator.html",
   },
   {
     id: "nexus-war",
