@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/ibt2/assets/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
     <!-- Performance optimizations -->
@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 
     <!-- PWA manifest -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/ibt2/manifest.json">
 
     <!-- Theme color -->
     <meta name="theme-color" content="#e94560">
@@ -26,14 +26,15 @@
     <meta name="apple-mobile-web-app-title" content="IBT2">
 
     <!-- Performance hints -->
-    <link rel="prefetch" href="/src/components/LazyComponents.tsx">
+    <link rel="prefetch" href="/ibt2/assets/LazyComponents-DxkWdqe-.tsx">
 
     <title>Imagine Being Trapped 2</title>
-
+    
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-
+      
       /* Critical CSS inlined for fastest loading */
+      
       body {
         margin: 0;
         padding: 0;
@@ -43,8 +44,9 @@
         height: 100vh;
         width: 100vw;
       }
-
+      
       /* Loading screen optimization */
+      
       .loading-screen {
         position: fixed;
         top: 0;
@@ -58,13 +60,14 @@
         z-index: 9999;
         transition: opacity 0.3s ease;
       }
-
+      
       .loading-screen.hidden {
         opacity: 0;
         pointer-events: none;
       }
-
+      
       /* Enhanced landscape orientation prompt */
+      
       @media screen and (max-width: 768px) and (orientation: portrait) {
         body::before {
           content: "⚠️ TERROR PROTOCOLS REQUIRE LANDSCAPE MODE ⚠️\A\A Rotate your device for optimal psychological immersion";
@@ -88,31 +91,35 @@
           animation: loading-atmosphere 3s ease-in-out infinite;
           text-shadow: 0 0 10px #e94560;
         }
-
+        
         #root {
           display: none;
         }
       }
-
+      
       /* Ensure game always fits in viewport */
+      
       #root {
         height: 100vh;
         width: 100vw;
         overflow: hidden;
       }
-
+      
       /* Performance optimizations */
+      
       * {
         box-sizing: border-box;
       }
-
+      
       /* Reduce layout shifts */
+      
       img, video {
         max-width: 100%;
         height: auto;
       }
-
+      
       /* Optimize animations for performance */
+      
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
           animation-duration: 0.01ms !important;
@@ -121,6 +128,13 @@
         }
       }
     </style>
+    <script type="module" crossorigin src="/ibt2/assets/index-BCB2qpR9.js"></script>
+    <link rel="modulepreload" crossorigin href="/ibt2/js/chunk-B80yfFe4.js">
+    <link rel="modulepreload" crossorigin href="/ibt2/js/chunk-D4mWdghD.js">
+    <link rel="modulepreload" crossorigin href="/ibt2/js/chunk-BPdDqaKh.js">
+    <link rel="modulepreload" crossorigin href="/ibt2/js/chunk-Du6NZrFa.js">
+    <link rel="modulepreload" crossorigin href="/ibt2/js/chunk-sH_m6e7q.js">
+    <link rel="stylesheet" crossorigin href="/ibt2/css/index-Bhnthg_A.css">
   </head>
   <body>
     <!-- Enhanced Loading screen with terror atmosphere -->
@@ -129,28 +143,27 @@
         <div style="font-size: 3rem; margin-bottom: 1.5rem; filter: drop-shadow(0 0 10px #e94560);" class="loading-text-flicker">⚡</div>
         <div style="font-size: 1.5rem; margin-bottom: 0.8rem; font-weight: bold;" class="loading-text-flicker">INITIALIZING TERROR PROTOCOLS...</div>
         <div style="font-size: 1rem; opacity: 0.7; margin-bottom: 1rem;">Calibrating psychological systems...</div>
-
+        
         <!-- Progress indicator -->
         <div style="width: 200px; height: 4px; background: rgba(233, 69, 96, 0.3); margin: 1rem auto; position: relative; overflow: hidden; border: 1px solid #e94560;">
           <div id="loading-progress" style="height: 100%; background: linear-gradient(90deg, #e94560, #ff6b7a); width: 0%; transition: width 0.3s ease;"></div>
         </div>
-
+        
         <div style="font-size: 0.9rem; opacity: 0.6; font-style: italic; margin-top: 1rem;">"The darkness sees you..."</div>
         <div id="loading-tips" style="font-size: 0.8rem; opacity: 0.5; margin-top: 1.5rem; max-width: 300px; margin-left: auto; margin-right: auto;">Loading atmospheric terror engine...</div>
       </div>
     </div>
 
     <div id="root"></div>
-
-    <script type="module" src="/ibt2/assets/index-BCB2qpR9.js"></script>
-
+    
+    
     <!-- Performance monitoring -->
     <script>
       // Enhanced loading experience with progress and terror tips
       window.addEventListener('load', () => {
         const progressBar = document.getElementById('loading-progress');
         const tipsElement = document.getElementById('loading-tips');
-
+        
         const terrorTips = [
           'Listen carefully... not all sounds are in the game.',
           'Your sanity affects more than you realize.',
@@ -162,35 +175,35 @@
           'Each location has a memory of its own.',
           'Some questions have no correct answers.'
         ];
-
+        
         let progress = 0;
         let tipIndex = 0;
-
+        
         const loadingInterval = setInterval(() => {
           progress += Math.random() * 15 + 5;
           if (progress > 100) progress = 100;
-
+          
           if (progressBar) {
             progressBar.style.width = progress + '%';
           }
-
+          
           // Change tips periodically
           if (Math.random() < 0.3 && tipsElement) {
             tipIndex = Math.floor(Math.random() * terrorTips.length);
             tipsElement.textContent = terrorTips[tipIndex];
             tipsElement.style.opacity = '0.5';
           }
-
+          
           if (progress >= 100) {
             clearInterval(loadingInterval);
-
+            
             // Final terror message
             if (tipsElement) {
               tipsElement.textContent = 'INITIALIZATION COMPLETE. PREPARE YOURSELF.';
               tipsElement.style.opacity = '0.8';
               tipsElement.style.color = '#ff6b7a';
             }
-
+            
             setTimeout(() => {
               const loadingScreen = document.getElementById('loading-screen');
               if (loadingScreen) {
@@ -225,7 +238,7 @@
             return;
           }
 
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('/ibt2/sw.js')
             .then(() => console.log('SW registered'))
             .catch(() => console.log('SW registration failed'));
         });
