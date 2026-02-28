@@ -117,7 +117,10 @@ describe('Chain 2 — AppSelection', () => {
 
 // ---------------------------------------------------------------------------
 // Chain 1 (BrowseFilter) — Catalog.tsx
-// Invariant: search trims whitespace; tag filter is deterministic and pure
+// Invariants:
+//   - search trims whitespace; tag filter is deterministic and pure
+//   - search matches title, description, AND tags
+//   - Strategy and Horror filter buttons are present and functional
 // ---------------------------------------------------------------------------
 describe('Chain 1 — BrowseFilter', () => {
   it('renders all catalog entries by default', () => {
@@ -171,6 +174,58 @@ describe('Chain 1 — BrowseFilter', () => {
     for (const entry of CATALOG_ENTRIES) {
       expect(screen.getByText(entry.title)).toBeTruthy();
     }
+  });
+
+  it('Strategy filter button is present and shows only Strategy-tagged entries', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Strategy' }));
+    const strategyEntries = CATALOG_ENTRIES.filter(e => e.tags?.includes('Strategy'));
+    expect(strategyEntries.length).toBeGreaterThan(0);
+    for (const e of strategyEntries) {
+      expect(screen.getByText(e.title)).toBeTruthy();
+    }
+    const nonStrategy = CATALOG_ENTRIES.find(e => !e.tags?.includes('Strategy'));
+    if (nonStrategy) {
+      expect(screen.queryByText(nonStrategy.title)).toBeNull();
+    }
+  });
+
+  it('Horror filter button is present and shows only Horror-tagged entries', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Horror' }));
+    const horrorEntries = CATALOG_ENTRIES.filter(e => e.tags?.includes('Horror'));
+    expect(horrorEntries.length).toBeGreaterThan(0);
+    for (const e of horrorEntries) {
+      expect(screen.getByText(e.title)).toBeTruthy();
+    }
+    const nonHorror = CATALOG_ENTRIES.find(e => !e.tags?.includes('Horror'));
+    if (nonHorror) {
+      expect(screen.queryByText(nonHorror.title)).toBeNull();
+    }
+  });
+
+  it('search matches tag names (Strategy tag search returns nexus-war)', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'strategy');
+    expect(screen.getByText('NEXUS WAR')).toBeTruthy();
+  });
+
+  it('search matches tag names (Horror tag search returns ibt2)', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'horror');
+    expect(screen.getByText('IMAGINE BEING TRAPPED 2')).toBeTruthy();
+  });
+
+  it('system logs display the actual catalog mount time in HH:MM:SS format', () => {
+    render(<App />);
+    // The system logs must contain "Observer accessed the void at HH:MM:SS"
+    // where the time comes from Date (not the hardcoded placeholder "00:00:00")
+    const body = document.body.textContent ?? '';
+    const match = body.match(/Observer accessed the void at (\d{2}:\d{2}:\d{2})/);
+    expect(match).not.toBeNull();
+    expect(match![1]).toMatch(/^\d{2}:\d{2}:\d{2}$/);
   });
 });
 

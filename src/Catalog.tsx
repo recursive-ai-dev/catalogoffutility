@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 
 interface CatalogProps {
@@ -14,6 +14,8 @@ const FILTER_TAGS = [
   "Interactive",
   "Tool",
   "Simulation",
+  "Strategy",
+  "Horror",
 ];
 
 function Card({
@@ -143,6 +145,11 @@ function Card({
 export function Catalog({ onSelectApp }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("All_Entries");
+  // Capture the exact time the catalog first mounted — displayed in system logs
+  const mountTime = useMemo(
+    () => new Date().toLocaleTimeString("en-US", { hour12: false }),
+    [],
+  );
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -160,7 +167,9 @@ export function Catalog({ onSelectApp }: CatalogProps) {
     const matchesSearch =
       normalizedQuery === "" ||
       entry.title.toLowerCase().includes(normalizedQuery) ||
-      entry.description.toLowerCase().includes(normalizedQuery);
+      entry.description.toLowerCase().includes(normalizedQuery) ||
+      (entry.tags &&
+        entry.tags.some((t) => t.toLowerCase().includes(normalizedQuery)));
     const matchesTag =
       selectedTag === "All_Entries" ||
       (entry.tags && entry.tags.includes(selectedTag));
@@ -344,7 +353,7 @@ export function Catalog({ onSelectApp }: CatalogProps) {
             <div className="font-mono text-[10px] text-white/40 flex flex-col gap-2 opacity-70">
               <p>
                 &gt; Observer accessed the void at{" "}
-                <span className="text-white">00:00:00</span>
+                <span className="text-white">{mountTime}</span>
               </p>
               <p>
                 &gt; Reality anchor stabilized:{" "}
