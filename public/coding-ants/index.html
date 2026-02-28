@@ -1,16 +1,1572 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Coding Ants - Neural Network Simulation</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="/src/main.css" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CODING ANTS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-0: #040807;
+      --bg-1: #0a1210;
+      --bg-2: #101d19;
+      --panel: rgba(12, 23, 19, 0.88);
+      --panel-alt: rgba(15, 28, 23, 0.9);
+      --line: #213931;
+      --text: #dcefe5;
+      --muted: #7ba294;
+      --accent: #6de5b7;
+      --accent-strong: #1fbe88;
+      --signal: #63b8ff;
+      --warning: #f3c67a;
+      --danger: #f17777;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      min-height: 100%;
+      background:
+        radial-gradient(1200px 700px at -20% -10%, rgba(60, 102, 85, 0.22), transparent 65%),
+        radial-gradient(900px 600px at 120% 0%, rgba(31, 116, 159, 0.14), transparent 66%),
+        linear-gradient(180deg, var(--bg-0), var(--bg-1) 46%, var(--bg-2));
+      color: var(--text);
+      font-family: "Sora", sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      width: min(1600px, 100%);
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .topbar {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(15, 29, 24, 0.92), rgba(9, 17, 14, 0.9));
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: clamp(1.1rem, 2vw, 1.58rem);
+      letter-spacing: 0.12em;
+      color: var(--accent);
+    }
+
+    .title-wrap p {
+      margin: 6px 0 0;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .top-metrics {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      background: rgba(10, 20, 17, 0.76);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .pill strong {
+      color: var(--text);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 290px) minmax(0, 1fr) minmax(280px, 340px);
+      gap: 14px;
+      min-height: min(960px, calc(100vh - 132px));
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      overflow: hidden;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.27);
+    }
+
+    .panel-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(13, 25, 21, 0.95), rgba(11, 20, 17, 0.72));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-header h2,
+    .panel-header h3 {
+      margin: 0;
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+      color: var(--text);
+    }
+
+    .panel-header span {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .control-content {
+      padding: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    button,
+    select,
+    input[type="range"] {
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #113426, #0d261d);
+      color: var(--text);
+      letter-spacing: 0.08em;
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease, filter 0.12s ease;
+      font-size: 0.73rem;
+      font-weight: 600;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent-strong);
+      filter: brightness(1.08);
+    }
+
+    button.secondary {
+      background: linear-gradient(180deg, #2a2018, #211811);
+      border-color: #46372a;
+    }
+
+    button.warn {
+      background: linear-gradient(180deg, #311717, #261111);
+      border-color: #5f2d2d;
+      color: #ffd8d8;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(15, 29, 24, 0.52);
+    }
+
+    .field label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .field output {
+      color: var(--text);
+      font-size: 0.73rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent-strong);
+    }
+
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #0f1f19;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 9px;
+      letter-spacing: 0.06em;
+      font-size: 0.74rem;
+    }
+
+    .stage {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 520px;
+      background: var(--panel-alt);
+    }
+
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .stage-header b {
+      color: var(--text);
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-height: 320px;
+      height: 100%;
+    }
+
+    #colony-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #08100d, #060b09 66%, #050807);
+    }
+
+    .hud-strip {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      border: 1px solid rgba(112, 172, 149, 0.34);
+      border-radius: 9px;
+      background: rgba(9, 17, 14, 0.76);
+      padding: 8px 10px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .hud-item {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.66rem;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+    }
+
+    .hud-item strong {
+      color: var(--text);
+      margin-left: 6px;
+    }
+
+    .telemetry {
+      display: grid;
+      grid-template-rows: auto auto minmax(150px, 1fr) auto;
+      min-height: 520px;
+    }
+
+    .stats-grid {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(10, 20, 17, 0.7);
+      padding: 9px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 64px;
+    }
+
+    .stat small {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.63rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .stat b {
+      font-size: 0.96rem;
+      color: var(--text);
+      letter-spacing: 0.04em;
+    }
+
+    .network-wrap {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    #network-canvas {
+      width: 100%;
+      height: 200px;
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: linear-gradient(180deg, #08110e, #060b09);
+    }
+
+    .queue {
+      padding: 10px 12px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .queue ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: var(--muted);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+    }
+
+    .queue li.ready {
+      color: var(--accent);
+    }
+
+    .events {
+      padding: 11px 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 180px;
+    }
+
+    .events ul {
+      margin: 0;
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow: auto;
+      max-height: 210px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.67rem;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+
+    .events li {
+      border-left: 2px solid var(--line);
+      padding-left: 8px;
+      line-height: 1.34;
+    }
+
+    .events li.good {
+      border-left-color: var(--accent-strong);
+      color: #bcefd9;
+    }
+
+    .events li.warn {
+      border-left-color: var(--warning);
+      color: #f6d9ad;
+    }
+
+    .events li.risk {
+      border-left-color: var(--danger);
+      color: #ffc4c4;
+    }
+
+    .achievements {
+      padding: 11px 12px 14px;
+      border-top: 1px solid var(--line);
+      background: rgba(9, 17, 14, 0.66);
+    }
+
+    .achievements ul {
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.67rem;
+      letter-spacing: 0.05em;
+      color: #6f8f82;
+    }
+
+    .achievements li {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px 8px;
+      background: rgba(10, 20, 17, 0.6);
+      transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+    }
+
+    .achievements li.unlocked {
+      color: #c7f6e0;
+      border-color: #2f7055;
+      background: rgba(24, 54, 41, 0.72);
+    }
+
+    @media (max-width: 1220px) {
+      .layout {
+        grid-template-columns: minmax(250px, 280px) minmax(0, 1fr);
+      }
+      .telemetry {
+        grid-column: 1 / span 2;
+      }
+      #network-canvas {
+        height: 180px;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .app {
+        padding: 10px;
+      }
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: auto;
+      }
+      .telemetry {
+        grid-column: 1;
+      }
+      .stage {
+        min-height: 420px;
+      }
+      .hud-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+  <div class="app">
+    <header class="topbar">
+      <div class="title-wrap">
+        <h1>CODING ANTS // SWARM LEARNING LAB</h1>
+        <p>Foragers collect data shards. Builders assemble topology. Trainers push the model toward stability.</p>
+      </div>
+      <div class="top-metrics">
+        <div class="pill">SIM <strong id="sim-time">00:00</strong></div>
+        <div class="pill">GEN <strong id="model-generation">0</strong></div>
+        <div class="pill">ACC <strong id="accuracy-pill">0.00%</strong></div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel controls">
+        <div class="panel-header">
+          <h2>COLONY CONTROL</h2>
+          <span id="sim-state">RUNNING</span>
+        </div>
+        <div class="control-content">
+          <div class="button-row">
+            <button id="toggle-run">PAUSE</button>
+            <button id="step-once" class="secondary">STEP</button>
+          </div>
+          <div class="button-row">
+            <button id="burst-data" class="secondary">INJECT DATA</button>
+            <button id="reset-sim" class="warn">RESET</button>
+          </div>
+
+          <div class="field">
+            <label for="speed-range">Simulation Speed <output id="speed-value">1.00x</output></label>
+            <input id="speed-range" type="range" min="0.25" max="4" step="0.25" value="1">
+          </div>
+
+          <div class="field">
+            <label for="ant-range">Ant Population <output id="ant-value">32</output></label>
+            <input id="ant-range" type="range" min="10" max="96" step="2" value="32">
+          </div>
+
+          <div class="field">
+            <label for="focus-select">Build Focus</label>
+            <select id="focus-select">
+              <option value="balanced">Balanced Growth</option>
+              <option value="throughput">Throughput Bias</option>
+              <option value="depth">Depth Bias</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="hazards-toggle">Signal Hazards</label>
+            <select id="hazards-toggle">
+              <option value="off">Off</option>
+              <option value="on">On</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel stage">
+        <div class="stage-header">
+          <span>COLONY MAP <b id="resource-density">0 shards</b></span>
+          <span>TRAINING THROUGHPUT <b id="throughput-readout">0.0/s</b></span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="colony-canvas"></canvas>
+          <div class="hud-strip">
+            <div class="hud-item">DATA <strong id="stock-data">0</strong></div>
+            <div class="hud-item">COMPUTE <strong id="stock-compute">0</strong></div>
+            <div class="hud-item">EPOCH <strong id="epoch-readout">0.0%</strong></div>
+            <div class="hud-item">LOSS <strong id="loss-readout">2.400</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel telemetry">
+        <div class="panel-header">
+          <h3>MODEL TELEMETRY</h3>
+          <span id="focus-readout">BALANCED</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat">
+            <small>Data Collected</small>
+            <b id="data-total">0</b>
+          </div>
+          <div class="stat">
+            <small>Ant Roles</small>
+            <b id="role-ratio">F 0 / B 0 / T 0</b>
+          </div>
+          <div class="stat">
+            <small>Neurons</small>
+            <b id="neurons-readout">0</b>
+          </div>
+          <div class="stat">
+            <small>Synapses</small>
+            <b id="synapses-readout">0</b>
+          </div>
+          <div class="stat">
+            <small>Layers</small>
+            <b id="layers-readout">0</b>
+          </div>
+          <div class="stat">
+            <small>Stability Window</small>
+            <b id="stability-readout">0s</b>
+          </div>
+        </div>
+
+        <div class="network-wrap">
+          <canvas id="network-canvas"></canvas>
+        </div>
+
+        <div class="queue">
+          <div class="panel-header">
+            <h3>BUILD QUEUE FORECAST</h3>
+            <span id="queue-note">AUTO</span>
+          </div>
+          <ul id="queue-list">
+            <li>Preparing queue...</li>
+          </ul>
+        </div>
+
+        <div class="events">
+          <div class="panel-header">
+            <h3>SYSTEM LOG</h3>
+            <span id="log-count">0 entries</span>
+          </div>
+          <ul id="event-log"></ul>
+        </div>
+
+        <div class="achievements">
+          <div class="panel-header">
+            <h3>ACHIEVEMENTS</h3>
+            <span>6 TOTAL</span>
+          </div>
+          <ul>
+            <li data-achievement="bootstrap">Bootstrap: finish the first training generation.</li>
+            <li data-achievement="swarm">Swarm Ops: run with at least 48 ants.</li>
+            <li data-achievement="stack">Deep Stack: reach 6 layers.</li>
+            <li data-achievement="clean">Clean Room: keep loss below 0.20 for 45 seconds.</li>
+            <li data-achievement="autonomy">Autonomous: complete 10 generations.</li>
+            <li data-achievement="hazards">Storm Runner: complete 3 generations with hazards enabled.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const colonyCanvas = document.getElementById("colony-canvas");
+      const colonyCtx = colonyCanvas.getContext("2d");
+      const networkCanvas = document.getElementById("network-canvas");
+      const networkCtx = networkCanvas.getContext("2d");
+
+      const ui = {
+        simTime: document.getElementById("sim-time"),
+        simState: document.getElementById("sim-state"),
+        modelGeneration: document.getElementById("model-generation"),
+        accuracyPill: document.getElementById("accuracy-pill"),
+        toggleRun: document.getElementById("toggle-run"),
+        stepOnce: document.getElementById("step-once"),
+        burstData: document.getElementById("burst-data"),
+        resetSim: document.getElementById("reset-sim"),
+        speedRange: document.getElementById("speed-range"),
+        speedValue: document.getElementById("speed-value"),
+        antRange: document.getElementById("ant-range"),
+        antValue: document.getElementById("ant-value"),
+        focusSelect: document.getElementById("focus-select"),
+        hazardsToggle: document.getElementById("hazards-toggle"),
+        focusReadout: document.getElementById("focus-readout"),
+        queueNote: document.getElementById("queue-note"),
+        queueList: document.getElementById("queue-list"),
+        eventLog: document.getElementById("event-log"),
+        logCount: document.getElementById("log-count"),
+        resourceDensity: document.getElementById("resource-density"),
+        throughputReadout: document.getElementById("throughput-readout"),
+        stockData: document.getElementById("stock-data"),
+        stockCompute: document.getElementById("stock-compute"),
+        epochReadout: document.getElementById("epoch-readout"),
+        lossReadout: document.getElementById("loss-readout"),
+        dataTotal: document.getElementById("data-total"),
+        roleRatio: document.getElementById("role-ratio"),
+        neuronsReadout: document.getElementById("neurons-readout"),
+        synapsesReadout: document.getElementById("synapses-readout"),
+        layersReadout: document.getElementById("layers-readout"),
+        stabilityReadout: document.getElementById("stability-readout"),
+        achievementEls: Array.from(document.querySelectorAll("[data-achievement]")),
+      };
+
+      const state = {
+        running: true,
+        speed: 1,
+        focus: "balanced",
+        hazards: false,
+        desiredAnts: 32,
+        time: 0,
+        frame: 0,
+        ants: [],
+        resources: [],
+        hazardsMap: [],
+        dataStock: 0,
+        computeStock: 0,
+        totalCollected: 0,
+        buildCooldown: 0,
+        resourceSpawnTimer: 0,
+        hazardSpawnTimer: 0,
+        stormGenerations: 0,
+        architecture: {
+          neurons: 8,
+          synapses: 14,
+          layers: 2,
+        },
+        training: {
+          throughput: 0,
+          epoch: 0,
+          generation: 0,
+          accuracy: 0.11,
+          loss: 2.4,
+          cleanWindow: 0,
+        },
+        achievements: {
+          bootstrap: false,
+          swarm: false,
+          stack: false,
+          clean: false,
+          autonomy: false,
+          hazards: false,
+        },
+        logs: [],
+        lastCorruptionLog: -999,
+      };
+
+      const BASE = { x: 0, y: 0, radius: 24 };
+      let colonyRect = { width: 800, height: 500 };
+      let networkRect = { width: 320, height: 200 };
+      let antIdSeq = 1;
+      let resourceIdSeq = 1;
+      let hazardIdSeq = 1;
+      let lastUiUpdate = 0;
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function rand(min, max) {
+        return min + Math.random() * (max - min);
+      }
+
+      function pick(list) {
+        return list[Math.floor(Math.random() * list.length)];
+      }
+
+      function distanceSquared(ax, ay, bx, by) {
+        const dx = ax - bx;
+        const dy = ay - by;
+        return dx * dx + dy * dy;
+      }
+
+      function formatClock(seconds) {
+        const total = Math.floor(seconds);
+        const m = String(Math.floor(total / 60)).padStart(2, "0");
+        const s = String(total % 60).padStart(2, "0");
+        return m + ":" + s;
+      }
+
+      function roleForIndex(index) {
+        const r = index % 10;
+        if (r <= 5) return "forager";
+        if (r <= 8) return "builder";
+        return "trainer";
+      }
+
+      function makeAnt(index) {
+        const angle = rand(0, Math.PI * 2);
+        const offset = rand(4, 14);
+        const role = roleForIndex(index);
+        return {
+          id: antIdSeq++,
+          role: role,
+          x: BASE.x + Math.cos(angle) * offset,
+          y: BASE.y + Math.sin(angle) * offset,
+          vx: rand(-16, 16),
+          vy: rand(-16, 16),
+          speed: role === "forager" ? rand(44, 58) : role === "builder" ? rand(40, 52) : rand(36, 48),
+          carry: null,
+          vision: role === "forager" ? rand(82, 130) : rand(64, 108),
+          panic: 0,
+        };
+      }
+
+      function randomEdgePosition() {
+        const margin = 18;
+        const side = Math.floor(rand(0, 4));
+        if (side === 0) return { x: rand(margin, colonyRect.width - margin), y: margin };
+        if (side === 1) return { x: colonyRect.width - margin, y: rand(margin, colonyRect.height - margin) };
+        if (side === 2) return { x: rand(margin, colonyRect.width - margin), y: colonyRect.height - margin };
+        return { x: margin, y: rand(margin, colonyRect.height - margin) };
+      }
+
+      function spawnResource(forceType) {
+        const pos = randomEdgePosition();
+        const type = forceType || (Math.random() < 0.68 ? "data" : "compute");
+        state.resources.push({
+          id: resourceIdSeq++,
+          x: pos.x,
+          y: pos.y,
+          type: type,
+          value: type === "data" ? rand(1, 2.3) : rand(0.8, 1.8),
+          life: rand(36, 64),
+        });
+      }
+
+      function spawnHazard() {
+        if (!state.hazards) return;
+        state.hazardsMap.push({
+          id: hazardIdSeq++,
+          x: rand(90, Math.max(100, colonyRect.width - 90)),
+          y: rand(70, Math.max(80, colonyRect.height - 70)),
+          radius: rand(48, 98),
+          life: rand(8, 16),
+          driftX: rand(-8, 8),
+          driftY: rand(-8, 8),
+          intensity: rand(0.3, 0.8),
+        });
+      }
+
+      function initResources() {
+        state.resources.length = 0;
+        for (let i = 0; i < 70; i += 1) {
+          spawnResource();
+        }
+      }
+
+      function setPopulation(target) {
+        const next = clamp(target, 10, 96);
+        state.desiredAnts = next;
+        while (state.ants.length < next) {
+          state.ants.push(makeAnt(state.ants.length));
+        }
+        while (state.ants.length > next) {
+          state.ants.pop();
+        }
+      }
+
+      function resetSimulation() {
+        state.running = true;
+        state.time = 0;
+        state.frame = 0;
+        state.dataStock = 0;
+        state.computeStock = 0;
+        state.totalCollected = 0;
+        state.buildCooldown = 0;
+        state.resourceSpawnTimer = 0;
+        state.hazardSpawnTimer = 0;
+        state.hazardsMap.length = 0;
+        state.logs.length = 0;
+        state.stormGenerations = 0;
+        state.architecture.neurons = 8;
+        state.architecture.synapses = 14;
+        state.architecture.layers = 2;
+        state.training.throughput = 0;
+        state.training.epoch = 0;
+        state.training.generation = 0;
+        state.training.accuracy = 0.11;
+        state.training.loss = 2.4;
+        state.training.cleanWindow = 0;
+        state.lastCorruptionLog = -999;
+        Object.keys(state.achievements).forEach((key) => {
+          state.achievements[key] = false;
+        });
+        ui.achievementEls.forEach((el) => {
+          el.classList.remove("unlocked");
+        });
+        setPopulation(Number(ui.antRange.value));
+        initResources();
+        log("Colony initialized. Foragers deployed.", "good");
+        syncButtons();
+      }
+
+      function log(message, kind) {
+        state.logs.unshift({
+          message: message,
+          kind: kind || "good",
+          time: formatClock(state.time),
+        });
+        if (state.logs.length > 16) {
+          state.logs.length = 16;
+        }
+      }
+
+      function unlockAchievement(id) {
+        if (state.achievements[id]) return;
+        state.achievements[id] = true;
+        const el = ui.achievementEls.find((entry) => entry.dataset.achievement === id);
+        if (el) el.classList.add("unlocked");
+        log("Achievement unlocked: " + id.toUpperCase(), "good");
+      }
+
+      function nearestResource(ant, type) {
+        let best = null;
+        let bestDist = Infinity;
+        for (let i = 0; i < state.resources.length; i += 1) {
+          const resource = state.resources[i];
+          if (type && resource.type !== type) continue;
+          const d = distanceSquared(ant.x, ant.y, resource.x, resource.y);
+          if (d < bestDist && d < ant.vision * ant.vision) {
+            bestDist = d;
+            best = resource;
+          }
+        }
+        return best;
+      }
+
+      function hazardAtPoint(x, y) {
+        for (let i = 0; i < state.hazardsMap.length; i += 1) {
+          const hz = state.hazardsMap[i];
+          if (distanceSquared(x, y, hz.x, hz.y) <= hz.radius * hz.radius) return hz;
+        }
+        return null;
+      }
+
+      function moveAnt(ant, dt) {
+        let targetX = null;
+        let targetY = null;
+
+        if (ant.carry) {
+          targetX = BASE.x;
+          targetY = BASE.y;
+        } else {
+          const priority = ant.role === "builder" ? "compute" : ant.role === "trainer" ? "data" : null;
+          let target = nearestResource(ant, priority);
+          if (!target) target = nearestResource(ant, null);
+          if (target) {
+            targetX = target.x;
+            targetY = target.y;
+          }
+        }
+
+        const wander = Math.max(8, ant.speed * 0.26);
+        if (targetX === null || targetY === null) {
+          targetX = ant.x + rand(-1, 1) * wander;
+          targetY = ant.y + rand(-1, 1) * wander;
+        }
+
+        const dx = targetX - ant.x;
+        const dy = targetY - ant.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const dirX = dx / dist;
+        const dirY = dy / dist;
+
+        ant.vx += dirX * 13 * dt;
+        ant.vy += dirY * 13 * dt;
+
+        ant.vx += rand(-10, 10) * dt;
+        ant.vy += rand(-10, 10) * dt;
+
+        const hazard = hazardAtPoint(ant.x, ant.y);
+        if (hazard) {
+          const damp = 1 - hazard.intensity * 0.55;
+          ant.vx *= damp;
+          ant.vy *= damp;
+          ant.panic = clamp(ant.panic + dt * 3, 0, 1);
+          if (ant.carry && Math.random() < hazard.intensity * 0.35 * dt) {
+            ant.carry = null;
+            if (state.time - state.lastCorruptionLog > 2.5) {
+              state.lastCorruptionLog = state.time;
+              log("Signal storm corrupted payload.", "risk");
+            }
+          }
+        } else {
+          ant.panic = clamp(ant.panic - dt * 1.4, 0, 1);
+        }
+
+        const velocity = Math.hypot(ant.vx, ant.vy) || 1;
+        const maxSpeed = ant.speed * (1 + (ant.carry ? -0.2 : 0)) * (1 - ant.panic * 0.32);
+        if (velocity > maxSpeed) {
+          const scale = maxSpeed / velocity;
+          ant.vx *= scale;
+          ant.vy *= scale;
+        }
+
+        ant.x += ant.vx * dt;
+        ant.y += ant.vy * dt;
+
+        const border = 8;
+        if (ant.x < border) {
+          ant.x = border;
+          ant.vx = Math.abs(ant.vx);
+        } else if (ant.x > colonyRect.width - border) {
+          ant.x = colonyRect.width - border;
+          ant.vx = -Math.abs(ant.vx);
+        }
+        if (ant.y < border) {
+          ant.y = border;
+          ant.vy = Math.abs(ant.vy);
+        } else if (ant.y > colonyRect.height - border) {
+          ant.y = colonyRect.height - border;
+          ant.vy = -Math.abs(ant.vy);
+        }
+      }
+
+      function resolveAntInteractions(ant) {
+        if (!ant.carry) {
+          for (let i = state.resources.length - 1; i >= 0; i -= 1) {
+            const resource = state.resources[i];
+            if (distanceSquared(ant.x, ant.y, resource.x, resource.y) < 12 * 12) {
+              ant.carry = resource.type;
+              state.resources.splice(i, 1);
+              break;
+            }
+          }
+          return;
+        }
+
+        if (distanceSquared(ant.x, ant.y, BASE.x, BASE.y) <= (BASE.radius + 7) * (BASE.radius + 7)) {
+          if (ant.carry === "data") {
+            state.dataStock += 1;
+          } else {
+            state.computeStock += 1;
+          }
+          state.totalCollected += 1;
+          ant.carry = null;
+        }
+      }
+
+      function updateResources(dt) {
+        for (let i = state.resources.length - 1; i >= 0; i -= 1) {
+          const resource = state.resources[i];
+          resource.life -= dt;
+          if (resource.life <= 0) {
+            state.resources.splice(i, 1);
+          }
+        }
+
+        const targetResourceCount = state.hazards ? 56 : 74;
+        const spawnRate = state.hazards ? 1.8 : 2.4;
+        state.resourceSpawnTimer -= dt;
+        if (state.resourceSpawnTimer <= 0 || state.resources.length < targetResourceCount) {
+          spawnResource();
+          if (Math.random() < 0.35) spawnResource("data");
+          state.resourceSpawnTimer = 1 / spawnRate;
+        }
+      }
+
+      function updateHazards(dt) {
+        if (!state.hazards) {
+          if (state.hazardsMap.length > 0) {
+            state.hazardsMap.length = 0;
+          }
+          return;
+        }
+
+        state.hazardSpawnTimer -= dt;
+        if (state.hazardSpawnTimer <= 0 && state.hazardsMap.length < 4) {
+          spawnHazard();
+          state.hazardSpawnTimer = rand(5, 11);
+          log("Signal storm appeared in the colony lane.", "warn");
+        }
+
+        for (let i = state.hazardsMap.length - 1; i >= 0; i -= 1) {
+          const hz = state.hazardsMap[i];
+          hz.life -= dt;
+          hz.x += hz.driftX * dt;
+          hz.y += hz.driftY * dt;
+
+          if (hz.x < hz.radius || hz.x > colonyRect.width - hz.radius) hz.driftX *= -1;
+          if (hz.y < hz.radius || hz.y > colonyRect.height - hz.radius) hz.driftY *= -1;
+
+          if (hz.life <= 0) {
+            state.hazardsMap.splice(i, 1);
+          }
+        }
+      }
+
+      function buildCandidateList(virtual) {
+        const neuronCost = {
+          data: 2 + Math.floor(virtual.neurons / 14),
+          compute: 1,
+          title: "Neuron Cluster",
+          type: "neuron",
+        };
+        const synapseCost = {
+          data: 1,
+          compute: 1 + Math.floor(virtual.synapses / 34),
+          title: "Synapse Batch",
+          type: "synapse",
+        };
+        const layerCost = {
+          data: 9 + virtual.layers * 3,
+          compute: 6 + virtual.layers * 2,
+          title: "Layer Expansion",
+          type: "layer",
+        };
+
+        const layerAllowed = virtual.neurons >= (virtual.layers + 1) * 8 && virtual.synapses >= (virtual.layers + 1) * 16;
+        const options = [];
+        options.push(neuronCost);
+        options.push(synapseCost);
+        if (layerAllowed) options.push(layerCost);
+
+        if (state.focus === "throughput") {
+          options.sort((a, b) => {
+            const rank = { synapse: 0, neuron: 1, layer: 2 };
+            return rank[a.type] - rank[b.type];
+          });
+        } else if (state.focus === "depth") {
+          options.sort((a, b) => {
+            const rank = { layer: 0, neuron: 1, synapse: 2 };
+            return rank[a.type] - rank[b.type];
+          });
+        } else {
+          options.sort((a, b) => {
+            const rank = { neuron: 0, synapse: 1, layer: 2 };
+            return rank[a.type] - rank[b.type];
+          });
+        }
+        return options;
+      }
+
+      function attemptBuild(dt) {
+        state.buildCooldown = Math.max(0, state.buildCooldown - dt);
+        if (state.buildCooldown > 0) return;
+
+        const virtual = {
+          neurons: state.architecture.neurons,
+          synapses: state.architecture.synapses,
+          layers: state.architecture.layers,
+        };
+        const options = buildCandidateList(virtual);
+        if (options.length === 0) return;
+
+        const candidate = options[0];
+        if (state.dataStock < candidate.data || state.computeStock < candidate.compute) return;
+
+        state.dataStock -= candidate.data;
+        state.computeStock -= candidate.compute;
+        state.buildCooldown = 0.85;
+
+        if (candidate.type === "neuron") {
+          state.architecture.neurons += 1;
+          if (Math.random() < 0.65) state.architecture.synapses += 1;
+        } else if (candidate.type === "synapse") {
+          state.architecture.synapses += 2;
+        } else if (candidate.type === "layer") {
+          state.architecture.layers += 1;
+          state.architecture.neurons += 2;
+          state.architecture.synapses += 4;
+          log("Layer " + state.architecture.layers + " brought online.", "good");
+        }
+      }
+
+      function updateTraining(dt) {
+        const antsFactor = state.ants.length * 0.58;
+        const archFactor =
+          state.architecture.neurons * 0.92 +
+          state.architecture.synapses * 0.24 +
+          state.architecture.layers * 4.8;
+        const hazardPenalty = state.hazards ? state.hazardsMap.length * 7.5 : 0;
+        const focusBoost =
+          state.focus === "throughput" ? 1.18 :
+          state.focus === "depth" ? 0.94 :
+          1.0;
+        const throughput = clamp((antsFactor + archFactor - hazardPenalty) * 0.54 * focusBoost, 4, 420);
+        state.training.throughput = throughput;
+
+        const trainFuel = Math.min(state.dataStock, state.computeStock, throughput * dt * 0.035);
+        state.dataStock = Math.max(0, state.dataStock - trainFuel);
+        state.computeStock = Math.max(0, state.computeStock - trainFuel);
+
+        state.training.epoch += throughput * dt * 0.17;
+
+        const complexity =
+          state.architecture.layers * 0.21 +
+          state.architecture.neurons * 0.011 +
+          state.architecture.synapses * 0.005;
+        const hazardNoise = state.hazards ? state.hazardsMap.length * 0.008 : 0;
+        const generationBoost = state.training.generation * 0.0046;
+        const stabilityFactor = Math.tanh((complexity + generationBoost) * 0.9);
+        state.training.accuracy = clamp(0.11 + stabilityFactor * 0.85 - hazardNoise, 0.05, 0.996);
+        state.training.loss = clamp(2.5 - state.training.accuracy * 2.22 + hazardNoise * 5, 0.02, 3.1);
+
+        if (state.training.loss < 0.2) {
+          state.training.cleanWindow += dt;
+        } else {
+          state.training.cleanWindow = Math.max(0, state.training.cleanWindow - dt * 0.7);
+        }
+
+        if (state.training.epoch >= 100) {
+          state.training.epoch -= 100;
+          state.training.generation += 1;
+          if (state.hazards) state.stormGenerations += 1;
+          log(
+            "Generation " + state.training.generation + " complete | accuracy " +
+              (state.training.accuracy * 100).toFixed(2) + "%",
+            "good"
+          );
+
+          if (Math.random() < 0.35 && state.ants.length < state.desiredAnts) {
+            state.ants.push(makeAnt(state.ants.length));
+          }
+        }
+      }
+
+      function checkAchievements() {
+        if (state.training.generation >= 1) unlockAchievement("bootstrap");
+        if (state.ants.length >= 48) unlockAchievement("swarm");
+        if (state.architecture.layers >= 6) unlockAchievement("stack");
+        if (state.training.cleanWindow >= 45) unlockAchievement("clean");
+        if (state.training.generation >= 10) unlockAchievement("autonomy");
+        if (state.stormGenerations >= 3) unlockAchievement("hazards");
+      }
+
+      function stepSimulation(dt) {
+        state.time += dt;
+        state.frame += 1;
+
+        updateResources(dt);
+        updateHazards(dt);
+
+        for (let i = 0; i < state.ants.length; i += 1) {
+          const ant = state.ants[i];
+          moveAnt(ant, dt);
+          resolveAntInteractions(ant);
+        }
+
+        attemptBuild(dt);
+        updateTraining(dt);
+        checkAchievements();
+      }
+
+      function drawColony(now) {
+        const w = colonyRect.width;
+        const h = colonyRect.height;
+        colonyCtx.clearRect(0, 0, w, h);
+
+        const gradient = colonyCtx.createLinearGradient(0, 0, 0, h);
+        gradient.addColorStop(0, "#0a1410");
+        gradient.addColorStop(1, "#060a08");
+        colonyCtx.fillStyle = gradient;
+        colonyCtx.fillRect(0, 0, w, h);
+
+        colonyCtx.strokeStyle = "rgba(132, 189, 167, 0.08)";
+        colonyCtx.lineWidth = 1;
+        for (let x = 0; x <= w; x += 40) {
+          colonyCtx.beginPath();
+          colonyCtx.moveTo(x + 0.5, 0);
+          colonyCtx.lineTo(x + 0.5, h);
+          colonyCtx.stroke();
+        }
+        for (let y = 0; y <= h; y += 40) {
+          colonyCtx.beginPath();
+          colonyCtx.moveTo(0, y + 0.5);
+          colonyCtx.lineTo(w, y + 0.5);
+          colonyCtx.stroke();
+        }
+
+        for (let i = 0; i < state.hazardsMap.length; i += 1) {
+          const hz = state.hazardsMap[i];
+          const pulse = 0.6 + Math.sin(now * 2 + hz.id) * 0.2;
+          colonyCtx.beginPath();
+          colonyCtx.arc(hz.x, hz.y, hz.radius, 0, Math.PI * 2);
+          colonyCtx.fillStyle = "rgba(242, 126, 126," + (0.08 + pulse * 0.1) + ")";
+          colonyCtx.fill();
+          colonyCtx.strokeStyle = "rgba(244, 138, 138, 0.42)";
+          colonyCtx.lineWidth = 1.4;
+          colonyCtx.stroke();
+        }
+
+        for (let i = 0; i < state.resources.length; i += 1) {
+          const resource = state.resources[i];
+          colonyCtx.beginPath();
+          colonyCtx.arc(resource.x, resource.y, resource.type === "data" ? 4.2 : 5.2, 0, Math.PI * 2);
+          colonyCtx.fillStyle = resource.type === "data" ? "rgba(100, 226, 180, 0.9)" : "rgba(103, 177, 255, 0.9)";
+          colonyCtx.fill();
+        }
+
+        colonyCtx.beginPath();
+        colonyCtx.arc(BASE.x, BASE.y, BASE.radius + 9, 0, Math.PI * 2);
+        colonyCtx.fillStyle = "rgba(32, 96, 75, 0.24)";
+        colonyCtx.fill();
+
+        const pulse = 0.35 + Math.sin(now * 2.6) * 0.14;
+        colonyCtx.beginPath();
+        colonyCtx.arc(BASE.x, BASE.y, BASE.radius, 0, Math.PI * 2);
+        colonyCtx.fillStyle = "rgba(106, 234, 184, " + (0.26 + pulse) + ")";
+        colonyCtx.fill();
+        colonyCtx.lineWidth = 2;
+        colonyCtx.strokeStyle = "rgba(167, 255, 221, 0.8)";
+        colonyCtx.stroke();
+
+        for (let i = 0; i < state.ants.length; i += 1) {
+          const ant = state.ants[i];
+          const angle = Math.atan2(ant.vy, ant.vx);
+          const size = ant.role === "forager" ? 4.6 : ant.role === "builder" ? 5.1 : 5.6;
+
+          colonyCtx.save();
+          colonyCtx.translate(ant.x, ant.y);
+          colonyCtx.rotate(angle);
+          colonyCtx.beginPath();
+          colonyCtx.moveTo(size, 0);
+          colonyCtx.lineTo(-size * 0.8, size * 0.56);
+          colonyCtx.lineTo(-size * 0.8, -size * 0.56);
+          colonyCtx.closePath();
+
+          if (ant.carry === "data") {
+            colonyCtx.fillStyle = "#73e9b9";
+          } else if (ant.carry === "compute") {
+            colonyCtx.fillStyle = "#7ab9ff";
+          } else if (ant.role === "trainer") {
+            colonyCtx.fillStyle = "#f3cf8a";
+          } else if (ant.role === "builder") {
+            colonyCtx.fillStyle = "#aadccd";
+          } else {
+            colonyCtx.fillStyle = "#d9f6e9";
+          }
+          colonyCtx.fill();
+          colonyCtx.restore();
+        }
+      }
+
+      function drawNetwork(now) {
+        const w = networkRect.width;
+        const h = networkRect.height;
+        networkCtx.clearRect(0, 0, w, h);
+
+        const gradient = networkCtx.createLinearGradient(0, 0, 0, h);
+        gradient.addColorStop(0, "#09130f");
+        gradient.addColorStop(1, "#060b09");
+        networkCtx.fillStyle = gradient;
+        networkCtx.fillRect(0, 0, w, h);
+
+        const layers = state.architecture.layers;
+        const neurons = state.architecture.neurons;
+        const synapses = state.architecture.synapses;
+        const layersToDraw = Math.min(8, layers + 1);
+        const xGap = w / (layersToDraw + 1);
+        const density = clamp(Math.floor(neurons / Math.max(1, layersToDraw)), 3, 11);
+        const points = [];
+
+        for (let lx = 0; lx < layersToDraw; lx += 1) {
+          const x = xGap * (lx + 1);
+          const count = clamp(density + (lx === layersToDraw - 1 ? -1 : 0), 2, 12);
+          const yGap = h / (count + 1);
+          const column = [];
+          for (let i = 0; i < count; i += 1) {
+            const y = yGap * (i + 1);
+            column.push({ x, y });
+          }
+          points.push(column);
+        }
+
+        const edgeBudget = clamp(Math.floor(synapses * 0.7), 8, 240);
+        let drawn = 0;
+        networkCtx.strokeStyle = "rgba(98, 188, 255, 0.22)";
+        networkCtx.lineWidth = 1;
+        for (let c = 0; c < points.length - 1 && drawn < edgeBudget; c += 1) {
+          const colA = points[c];
+          const colB = points[c + 1];
+          for (let i = 0; i < colA.length && drawn < edgeBudget; i += 1) {
+            const from = colA[i];
+            const picks = Math.max(1, Math.floor(rand(1, 4)));
+            for (let k = 0; k < picks && drawn < edgeBudget; k += 1) {
+              const to = colB[Math.floor(rand(0, colB.length))];
+              networkCtx.beginPath();
+              networkCtx.moveTo(from.x, from.y);
+              networkCtx.lineTo(to.x, to.y);
+              networkCtx.stroke();
+              drawn += 1;
+            }
+          }
+        }
+
+        for (let c = 0; c < points.length; c += 1) {
+          const col = points[c];
+          for (let i = 0; i < col.length; i += 1) {
+            const p = col[i];
+            const phase = 0.55 + Math.sin(now * 3 + p.x * 0.03 + p.y * 0.01) * 0.25;
+            networkCtx.beginPath();
+            networkCtx.arc(p.x, p.y, 3.4, 0, Math.PI * 2);
+            networkCtx.fillStyle = "rgba(115, 232, 191, " + phase + ")";
+            networkCtx.fill();
+          }
+        }
+      }
+
+      function renderLogs() {
+        ui.eventLog.innerHTML = "";
+        for (let i = 0; i < state.logs.length; i += 1) {
+          const item = state.logs[i];
+          const li = document.createElement("li");
+          li.className = item.kind || "good";
+          li.textContent = "[" + item.time + "] " + item.message;
+          ui.eventLog.appendChild(li);
+        }
+        ui.logCount.textContent = state.logs.length + " entries";
+      }
+
+      function renderQueue() {
+        const virtual = {
+          neurons: state.architecture.neurons,
+          synapses: state.architecture.synapses,
+          layers: state.architecture.layers,
+        };
+        const options = buildCandidateList(virtual).slice(0, 3);
+        ui.queueList.innerHTML = "";
+
+        for (let i = 0; i < options.length; i += 1) {
+          const item = options[i];
+          const li = document.createElement("li");
+          const ready = state.dataStock >= item.data && state.computeStock >= item.compute;
+          li.className = ready ? "ready" : "";
+          li.textContent =
+            item.title +
+            " | cost D:" + item.data +
+            " C:" + item.compute +
+            (ready ? " | ready" : " | waiting");
+          ui.queueList.appendChild(li);
+        }
+
+        if (options.length === 0) {
+          const li = document.createElement("li");
+          li.textContent = "Queue paused: layer requirements not met.";
+          ui.queueList.appendChild(li);
+        }
+      }
+
+      function updateUi(force) {
+        const now = performance.now();
+        if (!force && now - lastUiUpdate < 120) return;
+        lastUiUpdate = now;
+
+        const foragers = state.ants.filter((ant) => ant.role === "forager").length;
+        const builders = state.ants.filter((ant) => ant.role === "builder").length;
+        const trainers = state.ants.length - foragers - builders;
+
+        ui.simTime.textContent = formatClock(state.time);
+        ui.simState.textContent = state.running ? "RUNNING" : "PAUSED";
+        ui.modelGeneration.textContent = String(state.training.generation);
+        ui.accuracyPill.textContent = (state.training.accuracy * 100).toFixed(2) + "%";
+        ui.resourceDensity.textContent = state.resources.length + " shards";
+        ui.throughputReadout.textContent = state.training.throughput.toFixed(1) + "/s";
+        ui.stockData.textContent = state.dataStock.toFixed(1);
+        ui.stockCompute.textContent = state.computeStock.toFixed(1);
+        ui.epochReadout.textContent = state.training.epoch.toFixed(1) + "%";
+        ui.lossReadout.textContent = state.training.loss.toFixed(3);
+        ui.dataTotal.textContent = String(Math.floor(state.totalCollected));
+        ui.roleRatio.textContent = "F " + foragers + " / B " + builders + " / T " + trainers;
+        ui.neuronsReadout.textContent = String(state.architecture.neurons);
+        ui.synapsesReadout.textContent = String(state.architecture.synapses);
+        ui.layersReadout.textContent = String(state.architecture.layers);
+        ui.stabilityReadout.textContent = Math.floor(state.training.cleanWindow) + "s";
+        ui.focusReadout.textContent = state.focus.toUpperCase();
+        ui.queueNote.textContent = state.hazards ? "HAZARD TOLERANT" : "AUTO";
+
+        renderQueue();
+        renderLogs();
+      }
+
+      function syncButtons() {
+        ui.toggleRun.textContent = state.running ? "PAUSE" : "RESUME";
+        ui.simState.textContent = state.running ? "RUNNING" : "PAUSED";
+      }
+
+      function resizeCanvas(canvas, context, width, height) {
+        const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+        context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function handleResize() {
+        const colonyBox = colonyCanvas.getBoundingClientRect();
+        colonyRect.width = Math.max(220, Math.floor(colonyBox.width));
+        colonyRect.height = Math.max(220, Math.floor(colonyBox.height));
+        BASE.x = colonyRect.width * 0.5;
+        BASE.y = colonyRect.height * 0.5;
+        resizeCanvas(colonyCanvas, colonyCtx, colonyRect.width, colonyRect.height);
+
+        const networkBox = networkCanvas.getBoundingClientRect();
+        networkRect.width = Math.max(160, Math.floor(networkBox.width));
+        networkRect.height = Math.max(120, Math.floor(networkBox.height));
+        resizeCanvas(networkCanvas, networkCtx, networkRect.width, networkRect.height);
+      }
+
+      function bindEvents() {
+        ui.toggleRun.addEventListener("click", function () {
+          state.running = !state.running;
+          syncButtons();
+          log(state.running ? "Simulation resumed." : "Simulation paused.", "warn");
+        });
+
+        ui.stepOnce.addEventListener("click", function () {
+          stepSimulation(0.22);
+          drawColony(performance.now() * 0.001);
+          drawNetwork(performance.now() * 0.001);
+          updateUi(true);
+          log("Single-step executed.", "warn");
+        });
+
+        ui.burstData.addEventListener("click", function () {
+          for (let i = 0; i < 18; i += 1) {
+            spawnResource(i % 3 === 0 ? "compute" : "data");
+          }
+          log("Manual resource burst injected.", "good");
+        });
+
+        ui.resetSim.addEventListener("click", function () {
+          resetSimulation();
+          updateUi(true);
+        });
+
+        ui.speedRange.addEventListener("input", function () {
+          state.speed = Number(ui.speedRange.value);
+          ui.speedValue.textContent = state.speed.toFixed(2) + "x";
+        });
+
+        ui.antRange.addEventListener("input", function () {
+          const count = Number(ui.antRange.value);
+          ui.antValue.textContent = String(count);
+          setPopulation(count);
+          updateUi(true);
+        });
+
+        ui.focusSelect.addEventListener("change", function () {
+          state.focus = ui.focusSelect.value;
+          log("Build focus switched to " + state.focus + ".", "warn");
+        });
+
+        ui.hazardsToggle.addEventListener("change", function () {
+          state.hazards = ui.hazardsToggle.value === "on";
+          if (!state.hazards) {
+            state.hazardsMap.length = 0;
+          }
+          log(state.hazards ? "Signal hazards enabled." : "Signal hazards disabled.", "warn");
+        });
+
+        window.addEventListener("resize", handleResize);
+      }
+
+      function frame(nowMs) {
+        const now = nowMs * 0.001;
+        frame.last = frame.last || now;
+        const dtReal = clamp(now - frame.last, 0, 0.05);
+        frame.last = now;
+
+        if (state.running) {
+          const dt = dtReal * state.speed;
+          stepSimulation(dt);
+        }
+
+        drawColony(now);
+        drawNetwork(now);
+        updateUi(false);
+        requestAnimationFrame(frame);
+      }
+
+      bindEvents();
+      handleResize();
+      resetSimulation();
+      updateUi(true);
+      requestAnimationFrame(frame);
+    })();
+  </script>
 </body>
 </html>
