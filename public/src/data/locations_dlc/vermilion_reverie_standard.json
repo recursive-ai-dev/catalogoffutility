@@ -1,0 +1,483 @@
+{
+  "id": "vermilion_reverie_standard",
+  "name": "Vermilion Reverie",
+  "description": "Descend into dreamscapes painted in shades of red where reality bends and fever dreams take physical form. Three surreal locations where the boundaries between sleep and waking dissolve into crimson-tinted nightmares and impossible beauty.",
+  "version": "1.0.0",
+  "rarity": "rare",
+  "priceCAD": 4.99,
+  "unlockRequirements": {
+    "daysSurvived": 5,
+    "loginStreak": 2
+  },
+  "locations": [
+    {
+      "id": "crimson_ballroom",
+      "name": "Crimson Ballroom",
+      "description": "An opulent ballroom where couples dance to music that exists only in memory, their gowns and suits shifting between elegant fabrics and flowing blood. The chandelier drips red wax that pools on the floor but never hardens, and mirrors reflect dancers from different eras, all moving to the same unheard waltz that echoes in your bones.",
+      "imagePath": "/assets/boosters/vermilion_reverie/crimson_ballroom.jpg",
+      "videoPath": "/assets/boosters/vermilion_reverie/crimson_ballroom.mp4",
+      "musicPath": "/assets/boosters/vermilion_reverie/phantom_waltz.mp3",
+      "index": 0,
+      "dangerLevel": 7,
+      "atmosphere": "mysterious",
+      "weather": {
+        "type": "clear",
+        "intensity": "light",
+        "visibility": 90
+      },
+      "timeOfDay": "night",
+      "specialFeatures": ["phantom_dancers", "temporal_mirrors", "blood_wax_chandelier", "unheard_music"],
+      "characters": [
+        {
+          "id": "dance_master",
+          "name": "The Dance Master",
+          "imagePath": "/assets/boosters/vermilion_reverie/dance_master.jpg",
+          "videoPath": "/assets/boosters/vermilion_reverie/dance_master.mp4",
+          "questionId": "leading_invisible_partners",
+          "personality": {
+            "archetype": "chaotic",
+            "traits": ["elegant", "obsessive", "nostalgic", "precise"],
+            "emotionalState": "agitated",
+            "trustLevel": 65,
+            "communicationStyle": "poetic"
+          },
+          "difficulty": 8,
+          "relationship": 0,
+          "backstory": "Once the premier dance instructor of high society, they now choreograph eternally for partners who exist only in fevered memory. They remember every step of every dance they ever taught, and continue to lead invisible partners through waltzes, tangos, and foxtrots while the red wax builds up around their feet like frozen time.",
+          "motivations": ["perfecting_the_dance", "teaching_invisible_students", "preserving_elegance"],
+          "fears": ["missing_a_step", "silence", "partners_disappearing"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you dance with ghosts to remember grace, or to forget the world outside?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "To remember grace and each step with these spectral partners recalls a time when elegance ruled. The world outside faded; this waltz is my reality, my eternal ballroom."
+                },
+                {
+                  "option": "B",
+                  "text": "To forget, mostly. The outside’s a blur I don’t want. Dancing keeps it distant, lets me spin away from what’s beyond the crimson. Ghosts are better company."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does the red wax bind you to this dance, or is it just the floor’s memory of steps?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "It binds me and each drip from above seals my feet to this rhythm, a contract in scarlet. It’s not just memory; it’s my tether to the dance, to perfection."
+                },
+                {
+                  "option": "B",
+                  "text": "Just memory, pooling where we’ve stepped. It’s the floor recalling every turn, not binding. I could leave, but why? The wax marks where grace lives."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I join your waltz, will I learn elegance, or lose myself to the red?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Join, and elegance will shape you and my hand will guide your frame, teach poise through phantom steps. The red won’t claim you; it’s just the stage for our art."
+                },
+                {
+                  "option": "B",
+                  "text": "You might lose yourself. The red’s hungry, and dancing pulls you in. Elegance comes at a cost; you could drown in crimson before the lesson’s done."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "mirror_observer",
+          "name": "The Mirror Observer",
+          "imagePath": "/assets/boosters/vermilion_reverie/mirror_observer.jpg",
+          "videoPath": "/assets/boosters/vermilion_reverie/mirror_observer.mp4",
+          "questionId": "watching_other_times",
+          "personality": {
+            "archetype": "wise",
+            "traits": ["contemplative", "voyeuristic", "analytical", "detached"],
+            "emotionalState": "calm",
+            "trustLevel": 80,
+            "communicationStyle": "cryptic"
+          },
+          "difficulty": 7,
+          "relationship": 0,
+          "backstory": "They discovered that each mirror in the ballroom shows dancers from different time periods, and they've made it their study to catalog and understand these temporal echoes. They speak of seeing the same souls dancing across centuries, playing out eternal patterns of love, loss, and longing in endless crimson variations.",
+          "motivations": ["understanding_temporal_patterns", "cataloging_eternal_dancers", "witnessing_truth"],
+          "fears": ["mirrors_going_dark", "losing_objectivity", "being_pulled_into_the_dance"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do the mirrors show history’s dance, or just your longing for lost times?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "History’s dance, across ages and souls twirl in 18th-century minuets, 20th-century tangos, all in red. I catalog their patterns, love and loss repeating. My longing’s irrelevant to their truth."
+                },
+                {
+                  "option": "B",
+                  "text": "My longing, perhaps. I see what I ache for and eras I never lived, dances I never joined. The mirrors might just reflect my wish, not history."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Are the dancers trapped in time, or do they choose to waltz forever?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "They choose and souls bound by passion, not chains, return to this crimson step across centuries. I’ve seen their eyes; they revel in the eternal turn, not trapped but tethered by desire."
+                },
+                {
+                  "option": "B",
+                  "text": "Trapped, I think. Time loops them here, no choice in it. Their steps repeat without will, just echoes the mirrors can’t release. I watch, but they’re caged."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I look in your mirror, will I see my past dance, or join theirs?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Look, and you’ll see theirs and centuries of others spinning, inviting you in. You might join, step into their waltz across time. Your past stays yours; theirs beckons."
+                },
+                {
+                  "option": "B",
+                  "text": "You’d see your past, probably. The mirror digs into you, shows your old steps. Joining’s not likely; it’s personal, not shared. You’d just watch yourself."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fever_gallery",
+      "name": "Fever Gallery",
+      "description": "An art gallery where paintings bleed their colors onto the floors and walls, creating ever-changing murals of liquid crimson. The artworks depict scenes that shift and morph when viewed peripherally - faces become screaming mouths, pastoral scenes transform into battlefields, and portraits weep tears that pool at the base of their frames in growing puddles of red paint.",
+      "imagePath": "/assets/boosters/vermilion_reverie/fever_gallery.jpg",
+      "videoPath": "/assets/boosters/vermilion_reverie/fever_gallery.mp4",
+      "musicPath": "/assets/boosters/vermilion_reverie/dripping_symphony.mp3",
+      "index": 1,
+      "dangerLevel": 6,
+      "atmosphere": "chaotic",
+      "weather": {
+        "type": "clear",
+        "intensity": "light",
+        "visibility": 85
+      },
+      "timeOfDay": "dusk",
+      "specialFeatures": ["bleeding_paintings", "morphing_artwork", "liquid_murals", "weeping_portraits"],
+      "characters": [
+        {
+          "id": "bleeding_curator",
+          "name": "The Bleeding Curator",
+          "imagePath": "/assets/boosters/vermilion_reverie/bleeding_curator.jpg",
+          "videoPath": "/assets/boosters/vermilion_reverie/bleeding_curator.mp4",
+          "questionId": "cataloging_impossible_art",
+          "personality": {
+            "archetype": "neutral",
+            "traits": ["meticulous", "artistic", "overwhelmed", "passionate"],
+            "emotionalState": "agitated",
+            "trustLevel": 55,
+            "communicationStyle": "direct"
+          },
+          "difficulty": 6,
+          "relationship": 0,
+          "backstory": "They attempt to maintain order in a gallery where the art refuses to stay static, constantly documenting changes and trying to understand the rules governing the transformations. Their hands are permanently stained red from touching paintings that leave their mark, and they've begun to see the bleeding as the artworks trying to communicate.",
+          "motivations": ["understanding_the_changes", "preserving_art_history", "communicating_with_paintings"],
+          "fears": ["losing_control", "art_escaping_frames", "being_consumed_by_red"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you document to control the bleeding art, or to hear what it’s saying?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "To hear it and each shift, each crimson drip, speaks. I log every change, not to control, but to translate. The art’s alive, whispering through red; I’m its scribe."
+                },
+                {
+                  "option": "B",
+                  "text": "Control, mostly. If I don’t track the changes, it’s chaos. The bleeding’s just mess, not message. I document to keep some order, not to listen."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does the red on your hands mark you as curator, or as part of the gallery?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Part of it and the red claims me, stains me into the collection. I’m curator and canvas now, touched by every piece. I belong to this fever as much as they do."
+                },
+                {
+                  "option": "B",
+                  "text": "Just curator. It’s a mark of duty, not ownership. I handle the art, so I wear its color. I’m separate, still in charge, not absorbed."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If a painting bleeds on me, will I understand its story, or become it?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "You’ll understand and its red will seep in, tell you its pain, its creation. You won’t become it, but you’ll carry its tale, a witness marked by crimson narrative."
+                },
+                {
+                  "option": "B",
+                  "text": "You’d become it, likely. The bleed doesn’t just tell; it transforms. Touch, and you might melt into the frame, live its scene. I’d stay clear."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "paint_whisperer",
+          "name": "The Paint Whisperer",
+          "imagePath": "/assets/boosters/vermilion_reverie/paint_whisperer.jpg",
+          "videoPath": "/assets/boosters/vermilion_reverie/paint_whisperer.mp4",
+          "questionId": "listening_to_liquid_voices",
+          "personality": {
+            "archetype": "mysterious",
+            "traits": ["intuitive", "fluid", "empathetic", "unstable"],
+            "emotionalState": "fearful",
+            "trustLevel": 40,
+            "communicationStyle": "cryptic"
+          },
+          "difficulty": 9,
+          "relationship": 0,
+          "backstory": "They claim to hear voices in the dripping paint, conversations between the artworks and confessions from the artists who created them. They spend hours with their ear pressed to wet canvases, translating what they hear into cryptic warnings about the nature of creation and the price of bringing dreams into reality.",
+          "motivations": ["translating_paint_voices", "warning_others", "serving_as_medium"],
+          "fears": ["paint_going_silent", "losing_translation_ability", "drowning_in_red"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do the paintings confess their makers’ sins, or just scream their own pain?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Both and makers’ sins ooze through, regrets of brush and soul, but the paintings scream too, their own agony of being born. I hear every layer, every crimson cry."
+                },
+                {
+                  "option": "B",
+                  "text": "Just pain, their own. Paintings don’t care about artists once made; they wail for themselves, for existing. I listen, but it’s all canvas grief, not human."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Are your warnings for us, or to appease the voices in the red?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "For you and I’m their medium, bound to relay what creation costs, what dreams bleed. The voices demand I warn, so you don’t paint your own ruin in ignorance."
+                },
+                {
+                  "option": "B",
+                  "text": "To appease them, mostly. The red whispers nag until I speak. Warning you quiets them a bit, but it’s their peace I’m after, not yours."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I listen to a canvas, will I hear its truth, or risk madness in the drip?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "You’ll hear truth and lean in, and its confession will seep through, raw and red. Madness is a risk, yes, but truth often is. I’ll guide you to listen safely."
+                },
+                {
+                  "option": "B",
+                  "text": "Madness, likely. The drip’s a trap; it pulls minds under. Truth’s there, but twisted, drowning you in crimson noise. I wouldn’t risk it if I were you."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scarlet_theater",
+      "name": "Scarlet Theater",
+      "description": "A grand theater where the curtains are made of flowing blood that parts to reveal different scenes each time they open. The audience consists of empty seats that applaud at inappropriate moments, and on stage, shadow puppets perform personal nightmares while a phantom orchestra plays discordant melodies that seem to emerge from the theater-goers' own suppressed memories.",
+      "imagePath": "/assets/boosters/vermilion_reverie/scarlet_theater.jpg",
+      "videoPath": "/assets/boosters/vermilion_reverie/scarlet_theater.mp4",
+      "musicPath": "/assets/boosters/vermilion_reverie/discordant_memories.mp3",
+      "index": 2,
+      "dangerLevel": 8,
+      "atmosphere": "tense",
+      "weather": {
+        "type": "clear",
+        "intensity": "light",
+        "visibility": 75
+      },
+      "timeOfDay": "night",
+      "specialFeatures": ["blood_curtains", "applauding_empty_seats", "shadow_puppet_nightmares", "phantom_orchestra"],
+      "characters": [
+        {
+          "id": "nightmare_director",
+          "name": "The Nightmare Director",
+          "imagePath": "/assets/boosters/vermilion_reverie/nightmare_director.jpg",
+          "videoPath": "/assets/boosters/vermilion_reverie/nightmare_director.mp4",
+          "questionId": "directing_fears",
+          "personality": {
+            "archetype": "chaotic",
+            "traits": ["dramatic", "controlling", "insightful", "manipulative"],
+            "emotionalState": "agitated",
+            "trustLevel": 30,
+            "communicationStyle": "aggressive"
+          },
+          "difficulty": 9,
+          "relationship": 0,
+          "backstory": "They claim to direct personalized performances for each visitor, somehow knowing their deepest fears and staging them with perfect, terrible accuracy. They believe that by forcing people to watch their nightmares performed, they can help them overcome their fears - or at least understand why those fears exist in the first place.",
+          "motivations": ["revealing_hidden_fears", "creating_perfect_performances", "forcing_confrontation"],
+          "fears": ["losing_the_audience", "running_out_of_nightmares", "empty_stages"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you stage my fears to heal me, or just to watch me break on your stage?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "To heal and your terror, played out in scarlet shadow, loses its grip when seen. I craft each scene to show you why it haunts, to free you through facing it."
+                },
+                {
+                  "option": "B",
+                  "text": "To watch, perhaps. Breaking’s dramatic, and this theater thrives on raw reaction. Healing might happen, but I’m here for the performance, your unraveling act."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "How do you know my nightmares so well, or are they just guesses painted red?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "I know them and your dread seeps in, whispers to me through the crimson air. No guesses; I see your shadow’s tremble, stage it true. Red just frames what’s yours."
+                },
+                {
+                  "option": "B",
+                  "text": "Guesses, tinted red for effect. I throw out common fears, see what sticks. You project the rest. It’s theater, not insight, dressed in bloody flair."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I watch my fear performed, will I conquer it, or feed it more power?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "You’ll conquer and watching strips its mystery, lays it bare on my stage. Fear weakens when exposed; you’ll master it, not feed it, under these scarlet lights."
+                },
+                {
+                  "option": "B",
+                  "text": "It might grow. Seeing it live can fatten fear, give it teeth. Conquest’s not guaranteed; some leave here haunted worse. Watch at your peril."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "phantom_usher",
+          "name": "The Phantom Usher",
+          "imagePath": "/assets/boosters/vermilion_reverie/phantom_usher.jpg",
+          "videoPath": "/assets/boosters/vermilion_reverie/phantom_usher.mp4",
+          "questionId": "seating_invisible_guests",
+          "personality": {
+            "archetype": "guardian",
+            "traits": ["polite", "formal", "dutiful", "disconnected"],
+            "emotionalState": "calm",
+            "trustLevel": 70,
+            "communicationStyle": "gentle"
+          },
+          "difficulty": 5,
+          "relationship": 0,
+          "backstory": "They continue to guide invisible patrons to their seats, taking tickets that don't exist and helping audience members who aren't there. They maintain perfect theater etiquette even in this impossible place, believing that proper ceremony and respect for the arts can bring meaning to even the most surreal performances.",
+          "motivations": ["maintaining_theater_etiquette", "serving_invisible_patrons", "preserving_cultural_traditions"],
+          "fears": ["improper_seating", "disrupting_performances", "empty_theater"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you seat ghosts to honor tradition, or because you can’t see the theater’s empty?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Tradition, always and etiquette holds this place sacred, even in red surrealism. I seat them because ceremony matters, whether they’re real or not. The arts demand respect."
+                },
+                {
+                  "option": "B",
+                  "text": "I can’t see it empty. My eyes fill the seats with patrons; it’s instinct now. Tradition’s an excuse. I just can’t bear a void where applause should be."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Do your invisible guests applaud, or is the clapping just in your mind?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "They applaud and palm against phantom palm, a sound I’ve guided to their seats. It’s real in this scarlet space, a reward for the art. I hear it clear."
+                },
+                {
+                  "option": "B",
+                  "text": "Just in my mind, probably. I imagine it, fill the silence. I’ve seated them so long, I can’t tell if it’s their hands or my hope clapping."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I take a seat, will you guide me as a guest, or leave me for the nightmares?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "I’ll guide you and take your ticket, real or not, and find your perfect view. You’re a guest, honored under my care. Nightmares won’t claim you while I usher."
+                },
+                {
+                  "option": "B",
+                  "text": "I might leave you. My patrons are many, invisible or not. If nightmares call, you’re on your own. I’ve got a theater to run, not just you."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "hasEchoesOfIsolation": false,
+  "echoEventTable": [],
+  "exclusiveMemoryFragments": [],
+  "frostOverlay": false,
+  "premiumAuroraEvents": false,
+  "locationWeightingOnFirstUse": 0.85,
+  "uniqueAchievements": [],
+  "uniqueArtifacts": [],
+  "cosmeticBadge": "crimson_mask_badge",
+  "availableFrom": "2024-12-01T00:00:00Z",
+  "expiresAt": null,
+  "isPremium": false,
+  "devNotes": "Standard Vermilion Reverie pack focusing on fever dream aesthetics and surreal red-tinted environments. Explores themes of memory, performance, art coming alive, and the thin line between dream and reality. Characters are trapped in endless performances of beauty and horror, creating an atmosphere of elegant nightmare."
+}

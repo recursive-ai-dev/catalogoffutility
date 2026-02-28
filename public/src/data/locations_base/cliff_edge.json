@@ -1,0 +1,148 @@
+{
+  "id": "cliff",
+  "name": "Cliff’s Edge (Lunar Verge)",
+  "description": "You stand at a cliff above a vast, glassy ocean. The moon hangs too large, too close, illuminating endless possibilities and endless endings.",
+  "imagePath": "/images/locations/cliff_image.jpg",
+  "videoPath": "/videos/locations/cliff_video.mp4",
+  "musicPath": "/music/locations/cliff_bgm.mp3",
+  "index": 4,
+  "dangerLevel": 7,
+  "atmosphere": "sublime",
+  "weather": { "type": "windy", "intensity": "howling", "visibility": 95 },
+  "timeOfDay": "night",
+  "specialFeatures": ["moonlit_ocean", "infinite_drop", "tide_whispers"],
+  "characters": [
+    {
+      "id": "cliff_moon_watcher",
+      "name": "Moon Watcher",
+      "imagePath": "/images/locations/cliff_moon_watcher_image.jpg",
+      "videoPath": "/videos/npcs/cliff_moon_watcher_video.mp4",
+      "questionId": "cliff_moon_watcher",
+      "personality": {
+        "archetype": "seer",
+        "traits": ["still", "solemn", "wise"],
+        "emotionalState": "haunted",
+        "trustLevel": 50,
+        "communicationStyle": "poetic"
+      },
+      "difficulty": 6,
+      "relationship": 0,
+      "backstory": "A figure who never looks away from the moon. Sometimes, they weep silver tears.",
+      "motivations": ["witnessing endings", "recording tides"],
+      "fears": ["daylight", "memory loss"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Does the moon pull differently since the world tilted?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "The pull's the same and we're what's different. Gravity's an honest merchant; it's our bones that learned new ways to ache. I measure the discrepancy in tide tables written on my spine."
+            },
+            {
+              "option": "B",
+              "text": "Tilted implies there was ever a correct angle. The moon pulls what it always pulled and dreams, blood, the silver thread between sanity and howling. We just feel it more now that we're mostly hollow."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Have you counted all its faces, or do new ones keep appearing?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Twenty-eight faces in the classical count, forty-three since the atmosphere thinned. Each one remembers something we've forgotten and I'm cataloguing them before they turn away completely. The newest one looks like regret wearing pearls."
+            },
+            {
+              "option": "B",
+              "text": "Counting assumes they hold still. I've seen the same face become stranger between heartbeats, familiar craters rearranging when I dare to breathe. Better to witness than quantify."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "Will you teach me the patience to watch without wanting?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Wanting's the first thing you feed to the vigil. Then hope. Then fear of forgetting. What's left sits cleaner than meditation and you become a recording device for light that traveled centuries to die in your retina. I'll show you the posture if you're serious."
+            },
+            {
+              "option": "B",
+              "text": "Patience isn't taught; it's eroded into you. Each night scrapes away another layer of urgency until you're bare nerve watching bare sky. Come back when you've forgotten what you came for."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "id": "cliff_diver",
+      "name": "The Diver",
+      "imagePath": "/images/locations/cliff_diver_image.jpg",
+      "videoPath": "/videos/npcs/cliff_diver_video.mp4",
+      "questionId": "cliff_diver",
+      "personality": {
+        "archetype": "risk_taker",
+        "traits": ["reckless", "charming", "melancholic"],
+        "emotionalState": "restless",
+        "trustLevel": 30,
+        "communicationStyle": "joking"
+      },
+      "difficulty": 7,
+      "relationship": 0,
+      "backstory": "Claims they can show you what lies beneath, but has never climbed back up.",
+      "motivations": ["leaping", "finding the bottom"],
+      "fears": ["surface tension", "waking up"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Do you calculate the distance, or does falling feel like faith?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Faith's for people who expect to land somewhere specific. I calculate in increments of transformation and this many meters until the wind rewrites your skeleton, that many until gravity becomes a love song. It's very precise abandonment."
+            },
+            {
+              "option": "B",
+              "text": "Distance is just time wearing a different mask. I measure in the weight of almost and almost ready, almost free, almost the person I was before I learned edges were optional. Math ruins the mythology."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Is the water patient, or does it hunger like the height?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Hunger's too simple and the water practices a kind of liquid mathematics, solving for the variable of your velocity. It's been calculating your arrival since before you were born. Patient implies it could choose otherwise."
+            },
+            {
+              "option": "B",
+              "text": "Water's just gravity in a different costume. The height promises transformation; the water delivers it. Neither patient nor hungry and just inevitable, like the way your cells remember being ocean."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "Will you jump today, or are you still perfecting the approach?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Today's jump lives in my muscles already and I've fallen a thousand times between breakfast and this conversation. The approach is the art; the leap's just punctuation. Watch my shoulders for the tell."
+            },
+            {
+              "option": "B",
+              "text": "Perfection's a leash that keeps you on the ledge. I jump constantly in the space between thoughts. What you're seeing is just the rehearsal bleeding through. The real dive happens where you can't follow."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    }
+  ]
+}

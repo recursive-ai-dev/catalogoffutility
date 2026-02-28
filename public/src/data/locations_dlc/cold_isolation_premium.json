@@ -1,0 +1,1100 @@
+{
+  "id": "cold_isolation_premium",
+  "name": "Cold Isolation",
+  "description": "Experience the haunting beauty of isolation through five emotionally resonant winter locations. Features the exclusive 'Echoes of Isolation' narrative system that weaves phantom memories and ambient storytelling throughout your journey. Each location holds fragments of stories left behind, waiting to be discovered in the endless cold.",
+  "version": "1.0.0",
+  "rarity": "legendary",
+  "priceCAD": 12.99,
+  "unlockRequirements": {
+    "daysSurvived": 7,
+    "loginStreak": 3
+  },
+  "locations": [
+    {
+      "id": "obsidian_tundra",
+      "name": "Obsidian Tundra",
+      "description": "Jagged spires of volcanic glass pierce through endless white snow, creating a landscape where beauty and terror merge. The obsidian reflects distorted images of visitors, showing glimpses of memories that may not be their own. Wind carries whispers through the sharp formations, speaking of choices made in darker times.",
+      "imagePath": "/assets/boosters/cold_isolation/obsidian_tundra.jpg",
+      "videoPath": "/assets/boosters/cold_isolation/obsidian_tundra.mp4",
+      "musicPath": "/assets/boosters/cold_isolation/obsidian_winds.mp3",
+      "index": 0,
+      "dangerLevel": 8,
+      "atmosphere": "mysterious",
+      "weather": {
+        "type": "clear",
+        "intensity": "light",
+        "visibility": 85
+      },
+      "timeOfDay": "dusk",
+      "specialFeatures": ["reflective_obsidian_spires", "echo_chambers", "memory_fragments", "phantom_whispers"],
+      "characters": [
+        {
+          "id": "glass_carver",
+          "name": "The Glass Carver",
+          "imagePath": "/assets/boosters/cold_isolation/glass_carver.jpg",
+          "videoPath": "/assets/boosters/cold_isolation/glass_carver.mp4",
+          "questionId": "obsidian_reflection_choice",
+          "personality": {
+            "archetype": "mysterious",
+            "traits": ["perfectionist", "haunted", "artistic", "isolated"],
+            "emotionalState": "calm",
+            "trustLevel": 60,
+            "communicationStyle": "poetic"
+          },
+          "difficulty": 7,
+          "relationship": 0,
+          "backstory": "Once a renowned sculptor who worked with the finest materials, they came to this tundra seeking the perfect medium. The obsidian here calls to them, but each piece carved reveals memories that were meant to stay buried. They continue their work, unable to stop, as each sculpture shows a fragment of someone else's lost past.",
+          "motivations": ["artistic_perfection", "understanding_the_past", "finding_redemption"],
+          "fears": ["imperfection", "losing_artistic_vision", "the_memories_in_the_glass"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you carve the obsidian to shape beauty, or to uncover what it hides?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Both, though hiding’s truer and each cut peels back a layer of someone’s forgotten grief, a memory not mine but sharper than my own. Beauty’s just the scar left behind."
+                },
+                {
+                  "option": "B",
+                  "text": "Beauty’s the goal, always was. The obsidian’s perfect, even if it whispers things I don’t want to hear. I ignore the hidden; I’m crafting, not confessing."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Are the memories in the glass yours, or do they belong to the tundra itself?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Not mine and they’re the tundra’s ghosts, frozen in black mirror until my chisel frees them. I see faces I’ve never known, choices I never made, bleeding through each stroke."
+                },
+                {
+                  "option": "B",
+                  "text": "They’re mine, I think, just buried deep. The tundra’s just a mirror, showing me what I’ve tried to forget. The glass doesn’t own them; I do."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I touch your sculpture, will I see the memories too, or just cold stone?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Touch it, and you’ll see and fingers on glass become windows to someone’s lost winter. You’ll feel their regret, their farewells. It’s not just stone; it’s a wound still open."
+                },
+                {
+                  "option": "B",
+                  "text": "You’ll feel nothing but cold. The memories stay locked unless you’ve got a blade to cut them free. It’s stone to anyone who doesn’t carve."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "mirror_keeper",
+          "name": "The Mirror Keeper",
+          "imagePath": "/assets/boosters/cold_isolation/mirror_keeper.jpg",
+          "videoPath": "/assets/boosters/cold_isolation/mirror_keeper.mp4",
+          "questionId": "reflection_truth_choice",
+          "personality": {
+            "archetype": "guardian",
+            "traits": ["protective", "wise", "melancholic", "duty_bound"],
+            "emotionalState": "sad",
+            "trustLevel": 75,
+            "communicationStyle": "direct"
+          },
+          "difficulty": 6,
+          "relationship": 0,
+          "backstory": "They tend to the obsidian formations, polishing their surfaces and ensuring the reflections remain clear. Long ago, they made a promise to someone they loved to guard these mirrors until they returned. Decades have passed, but they continue their vigil, watching for a familiar face in the dark glass that never comes.",
+          "motivations": ["keeping_promises", "protecting_memories", "waiting_for_reunion"],
+          "fears": ["breaking_their_vow", "losing_hope", "the_obsidian_shattering"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you polish the glass to see them again, or to keep their memory from fading?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "To see them and I swore I’d wait, and each shine might bring their face back through the dark. Fading’s inevitable, but I’ll keep the mirror clear until my last breath for that chance."
+                },
+                {
+                  "option": "B",
+                  "text": "Memory’s all I’ve got. Polishing keeps it sharp, even if they’re never coming. I don’t look for them anymore; I just can’t let the reflection dull."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does the obsidian show your past, or only the past of others?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Others, always and strangers’ regrets, their frozen goodbyes, never mine. My past is buried too deep for even this glass to reach. I see theirs instead, waiting for the one I lost."
+                },
+                {
+                  "option": "B",
+                  "text": "It’s mine, distorted. Every face is a version of what I remember, twisted by time. I don’t believe in others’ stories; it’s just my own, reflected wrong."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If they return in the reflection, will you join them there, or stay in the cold?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "I’ll join them and step through the glass if I must, leave the cold behind. My promise was to wait, not to stay. If they’re there, that’s where I belong, mirror or not."
+                },
+                {
+                  "option": "B",
+                  "text": "I’d stay. Seeing them would be enough; I’ve made my home in this frost. Joining’s a dream I can’t afford. The cold’s my vow now."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "abandoned_town",
+      "name": "Hollowed Crossing",
+      "description": "A small town frozen in time, where ghostly figures walk the empty streets, repeating the same routines they had in life. Street lights flicker on and off in no particular pattern, and shop windows display goods that change when you're not looking. The residents don't seem to notice visitors, too lost in their endless loops of memory.",
+      "imagePath": "/assets/boosters/cold_isolation/abandoned_town.jpg",
+      "videoPath": "/assets/boosters/cold_isolation/abandoned_town.mp4",
+      "musicPath": "/assets/boosters/cold_isolation/hollow_streets.mp3",
+      "index": 1,
+      "dangerLevel": 6,
+      "atmosphere": "mysterious",
+      "weather": {
+        "type": "foggy",
+        "intensity": "moderate",
+        "visibility": 50
+      },
+      "timeOfDay": "night",
+      "specialFeatures": ["phantom_residents", "shifting_shop_windows", "memory_loops", "echoing_footsteps"],
+      "characters": [
+        {
+          "id": "last_resident",
+          "name": "The Last Resident",
+          "imagePath": "/assets/boosters/cold_isolation/last_resident.jpg",
+          "videoPath": "/assets/boosters/cold_isolation/last_resident.mp4",
+          "questionId": "staying_or_leaving_choice",
+          "personality": {
+            "archetype": "neutral",
+            "traits": ["stubborn", "nostalgic", "lonely", "resigned"],
+            "emotionalState": "sad",
+            "trustLevel": 45,
+            "communicationStyle": "gentle"
+          },
+          "difficulty": 5,
+          "relationship": 0,
+          "backstory": "The only living person left in Hollowed Crossing, they refuse to leave despite the town's decay. They remember when the streets were filled with laughter and the shops were bustling with life. Each day they try to maintain normalcy, talking to the ghosts as if they were still alive, hoping their presence keeps the town's spirit from fading completely.",
+          "motivations": ["preserving_memories", "maintaining_normalcy", "refusing_to_give_up"],
+          "fears": ["complete_abandonment", "losing_the_past", "being_forgotten"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you stay to keep the town alive, or because you can’t bear to be the last to leave?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "I stay for the town and its heartbeat’s faint, but I’m the pulse now. If I go, the laughter, the market days, all vanish for good. I’m not last; I’m the keeper."
+                },
+                {
+                  "option": "B",
+                  "text": "Leaving’s worse than staying. I can’t be the one to lock the door on everything we were. It’s not about life; it’s about not being the end."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Do the ghosts answer when you speak, or are you just talking to snow and shadow?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "They answer, in their way and flickers in the fog, a nod from a silhouette. I know their routines, their smiles. It’s not just snow; it’s memory echoing back."
+                },
+                {
+                  "option": "B",
+                  "text": "It’s just me and the emptiness. I talk because silence is heavier than loss. Shadows don’t reply, but saying their names keeps something here."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I stay a while, will I become part of the town’s memory, or just another ghost to you?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Stay, and you’ll weave into the Crossing’s story and sit on Mrs. Harrow’s porch, sip phantom tea. You’ll be memory, not ghost, as long as I’m here to name you."
+                },
+                {
+                  "option": "B",
+                  "text": "You’d just fade into the fog like the rest. I’d see you, maybe, but you’d be another shape to talk at, not with. Staying doesn’t make you real here."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "postal_phantom",
+          "name": "The Postal Phantom",
+          "imagePath": "/assets/boosters/cold_isolation/postal_phantom.jpg",
+          "videoPath": "/assets/boosters/cold_isolation/postal_phantom.mp4",
+          "questionId": "undelivered_messages_choice",
+          "personality": {
+            "archetype": "guardian",
+            "traits": ["dedicated", "methodical", "trapped", "sorrowful"],
+            "emotionalState": "agitated",
+            "trustLevel": 30,
+            "communicationStyle": "cryptic"
+          },
+          "difficulty": 8,
+          "relationship": 0,
+          "backstory": "A spectral mail carrier who continues their route through the empty town, carrying letters that will never be delivered. They died during their final delivery run and now walk the same path eternally, checking mailboxes that will never be opened, delivering correspondence to houses where no one lives to receive them.",
+          "motivations": ["completing_their_route", "delivering_final_messages", "finding_peace"],
+          "fears": ["unfinished_duties", "forgotten_messages", "eternal_repetition"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you carry letters for the living, or are they all addressed to the gone?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "All to the gone and envelopes sealed with last words, regrets, farewells never sent. My bag’s heavy with what the living couldn’t say in time. No one left to write back."
+                },
+                {
+                  "option": "B",
+                  "text": "Some are for the living, I think, but they’re not here to claim them. I carry them anyway, just in case someone shows up. Most are lost causes, though."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does delivering to empty houses ease your burden, or just deepen the cold?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "It deepens the cold and each slot I fill is a door no one opens, a silence that freezes deeper into me. But I can’t stop; the route’s my tether, even if it chills."
+                },
+                {
+                  "option": "B",
+                  "text": "It eases, a little. Dropping a letter feels like progress, even to empty boxes. The cold’s there, sure, but duty warms just enough to keep going."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I take a letter from your bag, will it free you, or bind me to your route?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Take it, and you’ll feel the weight I carry and my freedom’s not in giving, but you’ll walk my path in dreams, hearing names no mailbox knows. It binds, not frees."
+                },
+                {
+                  "option": "B",
+                  "text": "Take one, and I might rest a step lighter. It could free a piece of me, though I doubt it. You’d just hold paper, not my curse. Try it."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "under_ice",
+      "name": "Submerged Sanctuary",
+      "description": "Trapped beneath a thick layer of lake ice, this otherworldly space exists in perpetual twilight. Shafts of blue light filter down through the frozen surface above, illuminating a surreal underwater cathedral. The silence is profound, broken only by the distant cracking of ice and the gentle sound of your own breathing in this impossible pocket of air.",
+      "imagePath": "/assets/boosters/cold_isolation/under_ice.jpg",
+      "videoPath": "/assets/boosters/cold_isolation/under_ice.mp4",
+      "musicPath": "/assets/boosters/cold_isolation/submerged_hymns.mp3",
+      "index": 2,
+      "dangerLevel": 9,
+      "atmosphere": "mysterious",
+      "weather": {
+        "type": "clear",
+        "intensity": "light",
+        "visibility": 70
+      },
+      "timeOfDay": "dawn",
+      "specialFeatures": ["ice_ceiling", "underwater_cathedral", "light_shafts", "air_pocket_chambers"],
+      "characters": [
+        {
+          "id": "ice_diver",
+          "name": "The Ice Diver",
+          "imagePath": "/assets/boosters/cold_isolation/ice_diver.jpg",
+          "videoPath": "/assets/boosters/cold_isolation/ice_diver.mp4",
+          "questionId": "surface_or_depth_choice",
+          "personality": {
+            "archetype": "wise",
+            "traits": ["contemplative", "fearless", "spiritual", "detached"],
+            "emotionalState": "calm",
+            "trustLevel": 80,
+            "communicationStyle": "poetic"
+          },
+          "difficulty": 9,
+          "relationship": 0,
+          "backstory": "They plunged through the ice years ago, chasing something precious that had fallen into the depths. Instead of drowning, they discovered this impossible space and chose to remain. They speak of finding clarity in the cold depths, of truths that can only be seen when stripped of the warmth and noise of the surface world.",
+          "motivations": ["seeking_truth", "finding_inner_peace", "protecting_the_sanctuary"],
+          "fears": ["returning_to_surface_chaos", "losing_clarity", "the_ice_melting"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Did you find what you dove for, or did the cold give you something better?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Not what I sought, but better and clarity, sharper than any lost trinket. The cold stripped away the surface’s lies, showed me truths that float only in silence like this."
+                },
+                {
+                  "option": "B",
+                  "text": "I found nothing I came for. The cold’s just a thief, taking warmth for no reward. I stay because going back empty-handed feels worse than staying."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does the ice above feel like a shield, or a cage keeping you from the world?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "A shield and it guards this quiet, this truth, from the chaos up there. The world’s noise can’t pierce it. I’m safe in the blue twilight, where thoughts finally still."
+                },
+                {
+                  "option": "B",
+                  "text": "A cage, sometimes. It locks me from warmth, from voices. I chose it, sure, but there are days I stare up, wondering if I’ve just buried myself alive."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If the ice cracks, will you swim up to save yourself, or stay to guard this place?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "I’ll stay and this sanctuary’s worth more than my breath. If it cracks, I’ll guard its last moments, sink with its truths. The surface holds nothing I need anymore."
+                },
+                {
+                  "option": "B",
+                  "text": "I’d swim up, fight for air. I love this place, but survival’s instinct. I’d come back, though, dive again to rebuild what’s lost. I’m not ready to drown."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "frozen_priest",
+          "name": "The Frozen Priest",
+          "imagePath": "/assets/boosters/cold_isolation/frozen_priest.jpg",
+          "videoPath": "/assets/boosters/cold_isolation/frozen_priest.mp4",
+          "questionId": "salvation_through_cold_choice",
+          "personality": {
+            "archetype": "guardian",
+            "traits": ["devout", "protective", "mysterious", "transformed"],
+            "emotionalState": "hopeful",
+            "trustLevel": 65,
+            "communicationStyle": "cryptic"
+          },
+          "difficulty": 7,
+          "relationship": 0,
+          "backstory": "Once a traditional clergyman, they followed a vision that led them beneath the ice to build this underwater sanctuary. They believe the cold purifies the soul and that this place offers a different kind of salvation - one found through isolation and surrender to the elements. They tend to this sacred space, waiting for others who might need its unique form of peace.",
+          "motivations": ["spreading_cold_salvation", "maintaining_the_sanctuary", "helping_lost_souls"],
+          "fears": ["the_sanctuary_being_destroyed", "failing_in_their_mission", "warmth_corrupting_the_space"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you preach cold as salvation, or just the only peace you’ve found?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Salvation, true and pure and the cold strips sin like frost burns flesh, leaves only the soul’s core. I’ve seen it save, down here where warmth can’t lie. This is gospel."
+                },
+                {
+                  "option": "B",
+                  "text": "It’s just peace, the only kind I’ve got left. Cold numbs what hurt above, quiets the noise. I call it salvation, but it’s really just survival."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does the ice cathedral echo with prayers, or only the silence of surrender?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Prayers, always and they resonate in the blue, amplified by ice walls. Surrender’s the first step, but the echoes are pleas, hopes, purified by the chill into something holy."
+                },
+                {
+                  "option": "B",
+                  "text": "Silence, mostly. Surrender’s all that’s left when warmth’s gone. Prayers might’ve been here once, but now it’s just the quiet of giving in."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I seek your salvation, will I find peace in the cold, or just lose myself to it?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Seek, and you’ll find peace and the cold will carve away your burdens, reveal a still center. You won’t lose yourself; you’ll be refined, reborn in this frozen font."
+                },
+                {
+                  "option": "B",
+                  "text": "You might lose yourself. The cold’s peace isn’t gentle; it takes more than it gives. I’d guide you, but salvation here’s a gamble with what you are."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mountain_peak",
+      "name": "Avalanche's Edge",
+      "description": "A precarious mountain summit where the snow has recently settled after a devastating avalanche below. The peak offers a commanding view of the destruction in the valley, where entire forests lie buried under white. The wind here carries sounds from the catastrophe - creaking wood, settling snow, and sometimes what might be voices calling from beneath.",
+      "imagePath": "/assets/boosters/cold_isolation/mountain_peak.jpg",
+      "videoPath": "/assets/boosters/cold_isolation/mountain_peak.mp4",
+      "musicPath": "/assets/boosters/cold_isolation/mountain_winds.mp3",
+      "index": 3,
+      "dangerLevel": 10,
+      "atmosphere": "dangerous",
+      "weather": {
+        "type": "snowy",
+        "intensity": "moderate",
+        "visibility": 60
+      },
+      "timeOfDay": "day",
+      "specialFeatures": ["avalanche_scars", "unstable_cornices", "echoing_calls", "buried_valley_view"],
+      "characters": [
+        {
+          "id": "summit_watcher",
+          "name": "The Summit Watcher",
+          "imagePath": "/assets/boosters/cold_isolation/summit_watcher.jpg",
+          "videoPath": "/assets/boosters/cold_isolation/summit_watcher.mp4",
+          "questionId": "warning_or_silence_choice",
+          "personality": {
+            "archetype": "wise",
+            "traits": ["vigilant", "burdened", "responsible", "isolated"],
+            "emotionalState": "fearful",
+            "trustLevel": 90,
+            "communicationStyle": "direct"
+          },
+          "difficulty": 8,
+          "relationship": 0,
+          "backstory": "They've made it their duty to watch for signs of future avalanches, having survived the great slide that buried the valley below. Haunted by guilt for not warning others in time, they now maintain a lonely vigil on the peak, documenting weather patterns and snow conditions, hoping to prevent another tragedy while being slowly consumed by isolation and responsibility.",
+          "motivations": ["preventing_future_disasters", "atoning_for_past_failures", "protecting_others"],
+          "fears": ["another_avalanche", "failing_again", "being_too_late"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you watch the snow for redemption, or just to stop another scar on the mountain?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Redemption drives me and each note I take, each wind shift I log, is penance for those I didn’t save. Stopping scars matters, but it’s the ghosts below that keep me watching."
+                },
+                {
+                  "option": "B",
+                  "text": "Just the scars. The mountain’s wounded enough; I can’t let it bleed again. Redemption’s a fantasy for someone who didn’t hear the screams. I’m just practical now."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does the wind carry warnings, or just the echoes of what you couldn’t prevent?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Both and it howls with warnings in pressure drops and gusts, but it also drags up the cries I failed to heed. I listen harder now, sifting guilt from forecast."
+                },
+                {
+                  "option": "B",
+                  "text": "Just echoes. The wind’s cruel, replaying what’s gone. I try to hear warnings, but it’s mostly memory, taunting. I watch anyway; it’s all I’ve got."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If another avalanche comes, will you warn me to run, or stand with me against it?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "I’ll warn you and scream until my lungs give out to get you clear. I’ve lost too many to stand still again. Run when I say; I’ll face it alone if I must."
+                },
+                {
+                  "option": "B",
+                  "text": "I’d stand with you. Warning didn’t save them before; facing it might be all that’s left. We’d watch the white come together, at least."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "snow_searcher",
+          "name": "The Snow Searcher",
+          "imagePath": "/assets/boosters/cold_isolation/snow_searcher.jpg",
+          "videoPath": "/assets/boosters/cold_isolation/snow_searcher.mp4",
+          "questionId": "hope_or_acceptance_choice",
+          "personality": {
+            "archetype": "chaotic",
+            "traits": ["desperate", "determined", "obsessive", "grief_stricken"],
+            "emotionalState": "agitated",
+            "trustLevel": 40,
+            "communicationStyle": "aggressive"
+          },
+          "difficulty": 6,
+          "relationship": 0,
+          "backstory": "They lost everything in the avalanche - family, home, purpose - and refuse to accept that anyone buried below is truly gone. Day after day, they climb to the peak and call down to the valley, listening for responses that may only exist in their mind. Their search has become an obsession that keeps them alive but prevents them from healing.",
+          "motivations": ["finding_survivors", "refusing_to_give_up", "denying_loss"],
+          "fears": ["accepting_death", "stopping_the_search", "silence_from_below"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you call out hoping for an answer, or just to drown out the silence of loss?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Hoping, always hoping and each shout’s a lifeline, a chance they’ll yell back. Silence is the enemy, but I’m not drowning it; I’m fighting it with every name I remember."
+                },
+                {
+                  "option": "B",
+                  "text": "It’s just the silence I can’t stand. Calling’s noise, nothing more. I don’t expect answers anymore; I just need something to fill the void where they were."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Do you hear replies in the wind, or is it just your grief echoing back?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Replies, sometimes and I swear I hear their voices, faint under the snow, calling my name. It’s not just grief; it’s them, still there, waiting for me to dig."
+                },
+                {
+                  "option": "B",
+                  "text": "It’s grief, I know it. The wind plays tricks, mimics their tones. But I listen anyway, because even an echo feels like they’re not completely gone."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I help you search, will we find them, or just bury ourselves in the snow?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Help me, and we’ll find them and I feel it, they’re close. The snow’s deep, but two voices are louder than one. We won’t bury ourselves; we’ll pull them free."
+                },
+                {
+                  "option": "B",
+                  "text": "Searching might bury us. The snow’s a trap, heavy and endless. I’d take the help, but don’t expect survivors. We’d just freeze together, probably."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "arctic_iceberg",
+      "name": "Umbrella Grove",
+      "description": "A massive iceberg floating in dark arctic waters, its surface dotted with dozens of open black umbrellas planted like strange flowers in the ice. Each umbrella is perfectly pristine despite the harsh conditions, and they seem to catch sounds rather than rain - whispers, sobbing, and fragments of conversations that drift across the frozen landscape like ghosts of human connection.",
+      "imagePath": "/assets/boosters/cold_isolation/arctic_iceberg.jpg",
+      "videoPath": "/assets/boosters/cold_isolation/arctic_iceberg.mp4",
+      "musicPath": "/assets/boosters/cold_isolation/umbrella_whispers.mp3",
+      "index": 4,
+      "dangerLevel": 7,
+      "atmosphere": "mysterious",
+      "weather": {
+        "type": "clear",
+        "intensity": "light",
+        "visibility": 80
+      },
+      "timeOfDay": "dusk",
+      "specialFeatures": ["black_umbrellas", "sound_catching", "floating_isolation", "whisper_gallery"],
+      "characters": [
+        {
+          "id": "umbrella_gardener",
+          "name": "The Umbrella Gardener",
+          "imagePath": "/assets/boosters/cold_isolation/umbrella_gardener.jpg",
+          "videoPath": "/assets/boosters/cold_isolation/umbrella_gardener.mp4",
+          "questionId": "grief_collection_choice",
+          "personality": {
+            "archetype": "guardian",
+            "traits": ["meticulous", "empathetic", "sorrowful", "nurturing"],
+            "emotionalState": "sad",
+            "trustLevel": 85,
+            "communicationStyle": "gentle"
+          },
+          "difficulty": 5,
+          "relationship": 0,
+          "backstory": "They tend to the umbrella garden with obsessive care, each black umbrella representing someone who was lost to the cold and isolation. They believe the umbrellas catch the final words and thoughts of the departed, preserving them in this floating memorial. They speak to each umbrella by name, sharing news and keeping the memories alive in their endless vigil.",
+          "motivations": ["honoring_the_dead", "preserving_memories", "tending_the_memorial"],
+          "fears": ["forgetting_names", "umbrellas_being_damaged", "the_iceberg_melting"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you plant umbrellas for each lost soul, or just the ones you knew?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Each one, known or not and every soul the cold took gets a canopy here. I learn their names from whispers caught in the fabric, speak to them daily. No one’s forgotten on my watch."
+                },
+                {
+                  "option": "B",
+                  "text": "Just the ones I knew, at first. Now it’s anyone I hear of. The umbrellas multiply, but I can’t catch every loss. Some slip through, unnamed."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Do the umbrellas shelter grief, or trap it to replay forever?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "They shelter, but also hold and grief’s kept safe under black silk, replaying in soft echoes so it’s never lost. It’s not a trap; it’s a garden of last breaths, tended with care."
+                },
+                {
+                  "option": "B",
+                  "text": "They trap it, I think. Grief loops in the canopy, caught like rain that won’t fall. I can’t let it go, though; trapping’s better than forgetting."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I name someone to remember, will you add an umbrella for them too?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Name them, and I’ll plant one and speak their story, and I’ll anchor their whisper here. This grove grows for all who need it. Your loss will stand with the rest, remembered."
+                },
+                {
+                  "option": "B",
+                  "text": "I’d like to, but space is tight. I’d need to know them better, feel their weight. Not every name gets a spot; I’ve got to choose who lasts."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "sound_collector",
+          "name": "The Sound Collector",
+          "imagePath": "/assets/boosters/cold_isolation/sound_collector.jpg",
+          "videoPath": "/assets/boosters/cold_isolation/sound_collector.mp4",
+          "questionId": "capturing_voices_choice",
+          "personality": {
+            "archetype": "mysterious",
+            "traits": ["obsessive", "artistic", "haunted", "perfectionist"],
+            "emotionalState": "agitated",
+            "trustLevel": 50,
+            "communicationStyle": "cryptic"
+          },
+          "difficulty": 9,
+          "relationship": 0,
+          "backstory": "They discovered that the umbrellas don't just catch sound - they preserve it, creating an archive of human emotion frozen in time. They've become addicted to collecting these audio fragments, believing they're assembling the world's greatest symphony of loss and longing. They speak in whispers, afraid their own voice might contaminate the perfect collection they're building.",
+          "motivations": ["completing_the_symphony", "preserving_human_voices", "achieving_audio_perfection"],
+          "fears": ["losing_collected_sounds", "their_own_voice_corrupting_the_collection", "the_symphony_being_incomplete"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you collect sounds for art, or to keep the lost from fading completely?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Art, but it’s salvation too and each sob, each whisper, builds a symphony that won’t let them vanish. I’m scoring their last notes so the cold can’t erase them. It’s beauty and memory, woven."
+                },
+                {
+                  "option": "B",
+                  "text": "Just art. The lost are gone; I’m not saving them. I collect for the sound, the perfect composition. Their fading’s sad, but it’s not my fight."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does your whispering protect the collection, or just hide your own voice from it?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Protects it and my voice, even soft, could taint the purity of their final words. I whisper to guard the archive, keep their loss pristine. Mine doesn’t belong in this chorus."
+                },
+                {
+                  "option": "B",
+                  "text": "Hides it, I guess. I’m afraid I’d hear myself in the umbrellas, mixed with their pain. Whispering keeps me out, keeps it theirs. I’m just the listener."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I listen to your symphony, will I hear their pain, or become part of it?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "You’ll hear it and their pain, raw and frozen, layered in a melody of endings. You won’t join it; you’ll just carry its echo, a witness to what the cold claimed."
+                },
+                {
+                  "option": "B",
+                  "text": "You’d become it, maybe. Listening pulls you in; their loss could latch to yours. I’d warn against it and hear a fragment, sure, but the whole might drown you."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "hasEchoesOfIsolation": true,
+  "echoEventTable": [
+    {
+      "id": "footsteps_in_snow",
+      "probability": 0.15,
+      "triggerLocations": ["obsidian_tundra", "mountain_peak", "arctic_iceberg"],
+      "audioPath": "/assets/boosters/cold_isolation/echoes/footsteps_snow.mp3",
+      "visualEffect": "subtle_footprint_trail",
+      "text": "You hear the crunch of footsteps in snow behind you, but when you turn, only your own tracks mark the pristine white surface.",
+      "emotionalImpact": "unease"
+    },
+    {
+      "id": "phantom_radio",
+      "probability": 0.10,
+      "triggerLocations": ["abandoned_town"],
+      "audioPath": "/assets/boosters/cold_isolation/echoes/radio_static.mp3",
+      "visualEffect": "flickering_street_lights",
+      "text": "A faint radio broadcast bleeds through the static - someone reading the weather report for a town that no longer exists.",
+      "emotionalImpact": "melancholy"
+    },
+    {
+      "id": "ice_memories",
+      "probability": 0.12,
+      "triggerLocations": ["under_ice", "arctic_iceberg"],
+      "audioPath": "/assets/boosters/cold_isolation/echoes/ice_whispers.mp3",
+      "visualEffect": "shimmer_in_ice",
+      "text": "For a moment, you see faces in the ice - expressions of peace, fear, or longing frozen in time before they fade.",
+      "emotionalImpact": "wonder"
+    },
+    {
+      "id": "distant_calls",
+      "probability": 0.08,
+      "triggerLocations": ["mountain_peak"],
+      "audioPath": "/assets/boosters/cold_isolation/echoes/distant_voices.mp3",
+      "visualEffect": "snow_swirl",
+      "text": "Voices call from the buried valley below - names shouted into the wind, growing fainter with each echo.",
+      "emotionalImpact": "sorrow"
+    },
+    {
+      "id": "umbrella_songs",
+      "probability": 0.11,
+      "triggerLocations": ["arctic_iceberg"],
+      "audioPath": "/assets/boosters/cold_isolation/echoes/umbrella_hum.mp3",
+      "visualEffect": "umbrella_gentle_sway",
+      "text": "The black umbrellas begin to hum softly in harmony, as if remembering a lullaby sung long ago to quiet the crying.",
+      "emotionalImpact": "comfort"
+    }
+  ],
+  "exclusiveMemoryFragments": [
+    {
+      "id": "glass_carvers_journal",
+      "name": "Glass Carver's Journal",
+      "description": "Sketches and notes about carving memories from obsidian, with increasingly frantic observations about whose memories they really are.",
+      "location": "obsidian_tundra",
+      "rarity": "epic",
+      "unlockCondition": "speak_to_glass_carver_three_times"
+    },
+    {
+      "id": "final_letter",
+      "name": "Final Letter",
+      "description": "An undelivered letter found clutched in phantom hands, containing words that were never meant to be left unsaid.",
+      "location": "abandoned_town",
+      "rarity": "legendary",
+      "unlockCondition": "follow_postal_phantom_complete_route"
+    },
+    {
+      "id": "underwater_prayer",
+      "name": "Underwater Prayer",
+      "description": "A prayer written on waterproof paper, speaking of finding salvation in the depths where others fear to look.",
+      "location": "under_ice",
+      "rarity": "rare",
+      "unlockCondition": "meditate_in_sanctuary_for_full_day_cycle"
+    },
+    {
+      "id": "avalanche_warning",
+      "name": "Avalanche Warning",
+      "description": "Weather notes and snow conditions from the day before the great slide, with desperate annotations about signs that were missed.",
+      "location": "mountain_peak",
+      "rarity": "epic",
+      "unlockCondition": "help_summit_watcher_with_measurements"
+    },
+    {
+      "id": "umbrella_symphony",
+      "name": "Umbrella Symphony",
+      "description": "Sheet music composed from the sounds collected in the black umbrellas, a haunting melody of final words.",
+      "location": "arctic_iceberg",
+      "rarity": "legendary",
+      "unlockCondition": "listen_to_all_umbrella_sounds_in_sequence"
+    }
+  ],
+  "frostOverlay": true,
+  "premiumAuroraEvents": true,
+  "locationWeightingOnFirstUse": 0.85,
+  "uniqueAchievements": [
+    {
+      "id": "first_echo",
+      "name": "First Echo",
+      "description": "Experience your first Echo of Isolation event",
+      "category": "exploration",
+      "rarity": "common",
+      "maxProgress": 1,
+      "rewards": [
+        {
+          "type": "sanity",
+          "value": "5",
+          "description": "Small sanity boost for embracing the echoes"
+        }
+      ]
+    },
+    {
+      "id": "phantom_listener",
+      "name": "Phantom Listener",
+      "description": "Experience the 'footsteps in snow' echo 5 times",
+      "category": "exploration",
+      "rarity": "rare",
+      "maxProgress": 5,
+      "rewards": [
+        {
+          "type": "unlock",
+          "value": "phantom_tracker",
+          "description": "Ability to sense when phantom events are about to occur"
+        }
+      ]
+    },
+    {
+      "id": "radio_archaeologist",
+      "name": "Radio Archaeologist",
+      "description": "Listen to 10 different phantom radio broadcasts",
+      "category": "knowledge",
+      "rarity": "epic",
+      "maxProgress": 10,
+      "rewards": [
+        {
+          "type": "unlock",
+          "value": "radio_frequency_guide",
+          "description": "Access to decoded messages from the phantom broadcasts"
+        }
+      ]
+    },
+    {
+      "id": "ice_reader",
+      "name": "Ice Reader",
+      "description": "Witness 15 different faces in the ice memories",
+      "category": "knowledge",
+      "rarity": "epic",
+      "maxProgress": 15,
+      "rewards": [
+        {
+          "type": "insight",
+          "value": "25",
+          "description": "Enhanced ability to read emotions in frozen expressions"
+        }
+      ]
+    },
+    {
+      "id": "voice_of_the_buried",
+      "name": "Voice of the Buried",
+      "description": "Hear the distant calls echo 20 times from the mountain peak",
+      "category": "survival",
+      "rarity": "legendary",
+      "maxProgress": 20,
+      "rewards": [
+        {
+          "type": "unlock",
+          "value": "avalanche_communion",
+          "description": "Ability to commune with voices from beneath the snow"
+        }
+      ]
+    },
+    {
+      "id": "umbrella_conductor",
+      "name": "Umbrella Conductor",
+      "description": "Orchestrate the umbrella songs by visiting during specific weather conditions",
+      "category": "special",
+      "rarity": "legendary",
+      "maxProgress": 1,
+      "rewards": [
+        {
+          "type": "cosmetic",
+          "value": "sound_wave_aura",
+          "description": "Visual sound waves appear around you during echo events"
+        }
+      ]
+    },
+    {
+      "id": "echoes_collector",
+      "name": "Echo Collector",
+      "description": "Experience all 5 different types of Echo events across Cold Isolation locations",
+      "category": "exploration",
+      "rarity": "rare",
+      "maxProgress": 5,
+      "rewards": [
+        {
+          "type": "cosmetic",
+          "value": "frost_ui_theme",
+          "description": "Unlocks the exclusive Frost UI theme with aurora effects"
+        }
+      ]
+    },
+    {
+      "id": "echo_virtuoso",
+      "name": "Echo Virtuoso",
+      "description": "Experience 50 total Echo events of any type",
+      "category": "exploration",
+      "rarity": "mythic",
+      "maxProgress": 50,
+      "rewards": [
+        {
+          "type": "unlock",
+          "value": "echo_frequency_control",
+          "description": "Ability to influence when echo events occur"
+        },
+        {
+          "type": "cosmetic",
+          "value": "echo_master_badge",
+          "description": "Exclusive badge showing mastery over isolation echoes"
+        }
+      ]
+    },
+    {
+      "id": "memory_guardian",
+      "name": "Memory Guardian",
+      "description": "Collect all exclusive Memory Fragments from the Cold Isolation pack",
+      "category": "knowledge",
+      "rarity": "legendary",
+      "maxProgress": 5,
+      "rewards": [
+        {
+          "type": "unlock",
+          "value": "cold_isolation_gallery",
+          "description": "Unlocks the Memory Gallery where collected fragments can be reviewed"
+        }
+      ]
+    },
+    {
+      "id": "solitude_master",
+      "name": "Master of Solitude",
+      "description": "Survive 10 days while experiencing at least 3 echo events per day",
+      "category": "survival",
+      "rarity": "epic",
+      "maxProgress": 10,
+      "rewards": [
+        {
+          "type": "sanity",
+          "value": "15",
+          "description": "Permanent +15 sanity bonus - isolation becomes a source of strength"
+        }
+      ]
+    },
+    {
+      "id": "aurora_witness",
+      "name": "Aurora Witness",
+      "description": "Experience 3 premium aurora events during echo moments",
+      "category": "special",
+      "rarity": "epic",
+      "maxProgress": 3,
+      "rewards": [
+        {
+          "type": "cosmetic",
+          "value": "aurora_emanation",
+          "description": "Faint aurora lights occasionally emanate from your character"
+        }
+      ]
+    }
+  ],
+  "uniqueArtifacts": [
+    {
+      "id": "obsidian_mirror_shard",
+      "name": "Obsidian Mirror Shard",
+      "description": "A piece of reflective volcanic glass that sometimes shows glimpses of memories that aren't your own. Provides insight into the nature of reflection and truth.",
+      "type": "artifact",
+      "rarity": "epic",
+      "effects": [
+        {
+          "type": "insight",
+          "magnitude": 15,
+          "duration": -1,
+          "conditions": ["in_cold_locations"]
+        }
+      ],
+      "discoveryLocation": "obsidian_tundra"
+    },
+    {
+      "id": "phantom_postmark",
+      "name": "Phantom Postmark",
+      "description": "A stamp that never quite seems to stick to envelopes, yet somehow validates messages sent to those no longer able to receive them. Eases the burden of unfinished communication.",
+      "type": "artifact",
+      "rarity": "rare",
+      "effects": [
+        {
+          "type": "relationship",
+          "magnitude": 10,
+          "duration": -1,
+          "conditions": ["speaking_to_lonely_npcs"]
+        }
+      ],
+      "discoveryLocation": "abandoned_town"
+    },
+    {
+      "id": "ice_sanctuary_key",
+      "name": "Ice Sanctuary Key",
+      "description": "A key made of never-melting ice that opens doors to inner peace and understanding. Grants access to deeper truths hidden beneath the surface.",
+      "type": "key",
+      "rarity": "legendary",
+      "effects": [
+        {
+          "type": "sanity_boost",
+          "magnitude": 20,
+          "duration": 3,
+          "conditions": ["in_submerged_sanctuary"]
+        },
+        {
+          "type": "unlock",
+          "magnitude": 1,
+          "duration": -1,
+          "conditions": ["hidden_dialogue_options"]
+        }
+      ],
+      "discoveryLocation": "under_ice"
+    }
+  ],
+  "cosmeticBadge": "frost_crystal_badge",
+  "availableFrom": "2024-12-01T00:00:00Z",
+  "expiresAt": null,
+  "isPremium": true,
+  "devNotes": "Premium Cold Isolation pack featuring the complete Echoes of Isolation system. All 5 locations include phantom narrative triggers, exclusive memory fragments, and ambient storytelling. The frost overlay and aurora events provide unique visual experiences for premium users. Character relationships and backstories are designed to create emotional resonance around themes of loss, isolation, and finding meaning in solitude. Each location should feel like a meditation on different aspects of being alone, while the Echo system ensures that premium users experience a deeper, more immersive narrative layer that standard pack users don't access."
+}

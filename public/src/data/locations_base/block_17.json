@@ -1,0 +1,185 @@
+{
+  "id": "block_17",
+  "name": "Block 17",
+  "description": "A monolithic block of concrete apartments. Its windows leer, balconies jutting at impossible angles. Someone or something waits at every threshold.",
+  "imagePath": "/images/locations/block_17_still.jpg",
+  "videoPaths": [
+    "/videos/locations/block_17_main.mp4",
+    "/videos/locations/block_17_alt_01.mp4"
+  ],
+  "musicPaths": [
+    "/music/locations/block_17_bgm_01.mp3",
+    "/music/locations/block_17_bgm_02.mp3",
+    "/music/locations/block_17_bgm_03.mp3"
+  ],
+  "sfxPaths": [
+    "/sfx/locations/concrete_echo.wav",
+    "/sfx/locations/truck_running.wav",
+    "/sfx/locations/muffled_tv.wav",
+    "/sfx/locations/steps_on_tile.wav",
+    "/sfx/locations/distant_arguing.wav"
+  ],
+  "index": 1,
+  "dangerLevel": 7,
+  "atmosphere": "claustrophobic",
+  "weather": { "type": "humid", "intensity": "stagnant", "visibility": 60 },
+  "timeOfDay": "night",
+  "temperature": "cold, clammy",
+  "specialFeatures": ["impossible_geometry", "watching_windows", "echoes"],
+  "ambience": [
+    "distant sirens",
+    "children playing (faded)",
+    "doors slamming, echoing up stairwells",
+    "laughter that doesn't quite resolve"
+  ],
+  "lighting": {
+    "type": "flickering fluorescent",
+    "color": "sickly yellow-green",
+    "intensity": 15
+  },
+  "smell": ["wet concrete", "old cigarettes", "boiled cabbage"],
+  "characters": [
+    {
+      "id": "abram_simonis",
+      "name": "Abram Simonis",
+      "imagePath": "/images/npcs/abram_simonis_still.jpg",
+      "videoPath": "/videos/npcs/abram_simonis_video.mp4",
+      "musicPaths": ["/music/npcs/abram_theme.mp3"],
+      "sfxPaths": [
+        "/sfx/npcs/abram_keychain.wav",
+        "/sfx/npcs/abram_counting.wav"
+      ],
+      "ambience": [
+        "heavy, deliberate footsteps",
+        "pages turning",
+        "hushed whispers"
+      ],
+      "questionId": "abram_simonis",
+      "personality": {
+        "archetype": "warden",
+        "traits": ["watchful", "stern", "absent"],
+        "emotionalState": "tense",
+        "trustLevel": 35,
+        "communicationStyle": "blunt"
+      },
+      "difficulty": 7,
+      "relationship": 0,
+      "backstory": "Self appointed superintendant of the apartment complex. He marks arrivals, but claims to have never seen one. Only departures and absences.",
+      "motivations": ["keeping order", "identifying intruders"],
+      "fears": ["abandonment", "empty halls"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Do you remember? When the corridors breathed with more than just dust mites and my counting?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Each grain of settled silence... proves you belong here and counted. Catalogued, crystallized in the amber of my vigilance... Your footsteps align with the creaking I've memorized since the exodus."
+            },
+            {
+              "option": "B",
+              "text": "Memory's a luxury for those who haven't watched paint peel in real-time... Keep your nostalgia... I traffic in present tense infractions and the weight of 'keys' that open nothing..."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Have you noticed? How your shadow, falls different from the stains that preceded you?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Different is disorder... Your edges blur, where theirs held firm and a smudge on my ledger. An asterisk in the margin. I'll file you under 'pending' review until you learn to cast darkness correctly..."
+            },
+            {
+              "option": "B",
+              "text": "Every shadow here earns its shape through repetition. Yours flickers like a moth against protocol, throwing patterns I've spent decades straightening. Consistency is the only currency left."
+            }
+          ],
+          "correctAnswer": "B"
+        },
+        {
+          "encounter": 3,
+          "question": "Will you clean the... handprints... from my door that weren't there yesterday?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Those marks... Predate your arrival by years... And you're just now seeing what was always there! I preserve evidence... Not erase it... Each smudge is a census of the gone."
+            },
+            {
+              "option": "B",
+              "text": "Your door collects what you attract... I... maintain order. Not innocence... Wipe your own ghosts OR wear them. MY jurisdiction ends at 'structural' integrity."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "id": "apartment_lost_resident",
+      "name": "Lost Resident",
+      "imagePath": "/images/locations/apartment_lost_resident_image.jpg",
+      "videoPath": "/videos/npcs/apartment_lost_resident_video.mp4",
+      "questionId": "apartment_lost_resident",
+      "personality": {
+        "archetype": "fragment",
+        "traits": ["confused", "hopeful", "dissolving"],
+        "emotionalState": "desperate",
+        "trustLevel": 25,
+        "communicationStyle": "rambling"
+      },
+      "difficulty": 6,
+      "relationship": 0,
+      "backstory": "Claims to have lived here for years, but can't remember any door leading out.",
+      "motivations": ["finding the exit", "remembering their room"],
+      "fears": ["vanishing", "being replaced"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Did we share a mailbox once, or am I conflating you with the taste of rust?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Rust and recognition bleed the same copper through my teeth. Maybe we did, maybe we will and time's a lazy river here, doubling back through the same silt. Your face fits the empty frame."
+            },
+            {
+              "option": "B",
+              "text": "Mailboxes are for people with addresses. I'm more like the echo between apartment numbers, the draft that forgets which window birthed it. Don't pin me to your timeline."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Is this the third floor or have I been climbing the same flight since Tuesday?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Tuesday was vertical too and I remember because the stairwell hiccupped and Wednesday never came. We're wherever legs stop mattering and arrival becomes academic. Third floor, thirty-third, does it matter when the door numbers swim?"
+            },
+            {
+              "option": "B",
+              "text": "Floors are a conspiracy of concrete and consensus. Count if it comforts you, but I've been here long enough to know ascending and descending taste identical in the dark."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "Can you help me find my unit—the one with the morning light?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Morning light lives in 4B, 7G, and the space between my ribs where I store tomorrow's disappointments. I'll walk you there if you promise to remember me when you find it and I'm collecting witnesses to prove I existed."
+            },
+            {
+              "option": "B",
+              "text": "Your unit's wherever you stop looking. Morning's just another rumor the windows spread to keep us searching. I gave up on coordinates when the hallways started breathing backwards."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    }
+  ]
+}

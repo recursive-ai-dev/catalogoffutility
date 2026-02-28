@@ -1,0 +1,19 @@
+{
+  "id": "cabin",
+  "name": "The Cabin",
+  "description": "You wake in a small cabin. Four walls, a bed, a table... and a single door. The only way out. Beyond it, something waits. Here, you can breathe. Rest. Prepare. When you step through that door, reality shifts. Strange locations. Odd encounters. Tests of your sanity, your understanding of what it means to exist. But for now... you're safe.",
+  "imagePath": "/images/locations/cabin_image.jpg",
+  "videoPath": "/videos/locations/cabin_video.mp4",
+  "musicPath": "/music/locations/cabin_bgm.mp3",
+  "index": 0,
+  "dangerLevel": 0,
+  "atmosphere": "peaceful",
+  "weather": {
+    "type": "clear",
+    "intensity": "light",
+    "visibility": 100
+  },
+  "timeOfDay": "day",
+  "specialFeatures": ["safe_zone", "save_point", "resting_spot", "single_exit"],
+  "characters": []
+}

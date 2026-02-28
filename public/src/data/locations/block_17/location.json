@@ -1,0 +1,42 @@
+{
+    "id": "block_17",
+    "name": "Block 17",
+    "description": "A monolithic block of concrete apartments. Its windows leer, balconies jutting at impossible angles. Someone or something waits at every threshold.",
+    "imagePath": "/images/locations/block_17_still.jpg",
+    "videoPaths": [
+      "/videos/locations/block_17_main.mp4",
+      "/videos/locations/block_17_alt_01.mp4"
+    ],
+    "musicPaths": [
+      "/music/locations/block_17_bgm_01.mp3",
+      "/music/locations/block_17_bgm_02.mp3",
+      "/music/locations/block_17_bgm_03.mp3"
+    ],
+    "sfxPaths": [
+      "/sfx/locations/concrete_echo.wav",
+      "/sfx/locations/truck_running.wav",
+      "/sfx/locations/muffled_tv.wav",
+      "/sfx/locations/steps_on_tile.wav",
+      "/sfx/locations/distant_arguing.wav"
+    ],
+    "index": 1,
+    "dangerLevel": 7,
+    "atmosphere": "claustrophobic",
+    "weather": { "type": "humid", "intensity": "stagnant", "visibility": 60 },
+    "timeOfDay": "night",
+    "temperature": "cold, clammy",
+    "specialFeatures": ["impossible_geometry", "watching_windows", "echoes"],
+    "ambience": [
+      "distant sirens",
+      "children playing (faded)",
+      "doors slamming, echoing up stairwells",
+      "laughter that doesn't quite resolve"
+    ],
+    "lighting": {
+      "type": "flickering fluorescent",
+      "color": "sickly yellow-green",
+      "intensity": 15
+    },
+    "smell": ["wet concrete", "old cigarettes", "boiled cabbage"]
+  }
+  

@@ -1,0 +1,483 @@
+{
+  "id": "ashen_sanctuaries_standard",
+  "name": "Ashen Sanctuaries",
+  "description": "Explore post-apocalyptic sacred spaces where hope struggles to survive in the aftermath of devastation. Three haunting locations where faith and despair intertwine among the smoldering ruins of what once was holy.",
+  "version": "1.0.0",
+  "rarity": "rare",
+  "priceCAD": 4.99,
+  "unlockRequirements": {
+    "daysSurvived": 3,
+    "loginStreak": 2
+  },
+  "locations": [
+    {
+      "id": "charred_cathedral",
+      "name": "Charred Cathedral",
+      "description": "The skeletal remains of a once-magnificent cathedral stand against an ash-gray sky. Twisted metal beams replace wooden pews, and stained glass windows have melted into colorful puddles on the scorched stone floor. Candlelight flickers impossibly in the ruins, casting dancing shadows that seem to hold the memory of prayers long since spoken.",
+      "imagePath": "/assets/boosters/ashen_sanctuaries/charred_cathedral.jpg",
+      "videoPath": "/assets/boosters/ashen_sanctuaries/charred_cathedral.mp4",
+      "musicPath": "/assets/boosters/ashen_sanctuaries/broken_hymns.mp3",
+      "index": 0,
+      "dangerLevel": 7,
+      "atmosphere": "tense",
+      "weather": {
+        "type": "cloudy",
+        "intensity": "heavy",
+        "visibility": 60
+      },
+      "timeOfDay": "dusk",
+      "specialFeatures": ["melted_stained_glass", "impossible_candles", "ash_snow", "echo_chambers"],
+      "characters": [
+        {
+          "id": "ash_keeper",
+          "name": "The Ash Keeper",
+          "imagePath": "/assets/boosters/ashen_sanctuaries/ash_keeper.jpg",
+          "videoPath": "/assets/boosters/ashen_sanctuaries/ash_keeper.mp4",
+          "questionId": "preserving_faith_in_ruins",
+          "personality": {
+            "archetype": "guardian",
+            "traits": ["devoted", "melancholic", "stubborn", "protective"],
+            "emotionalState": "sad",
+            "trustLevel": 70,
+            "communicationStyle": "gentle"
+          },
+          "difficulty": 6,
+          "relationship": 0,
+          "backstory": "They were once a groundskeeper for the cathedral, tending to its gardens and maintaining its beauty. When the fires came, they stayed behind to protect what they could. Now they sweep ash from the altar daily, tend to candles that shouldn't be able to burn, and maintain the sacred space even though no congregation comes to worship.",
+          "motivations": ["preserving_sacred_space", "maintaining_faith", "honoring_the_lost"],
+          "fears": ["total_abandonment", "flames_returning", "losing_purpose"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you sweep the ash to honor the lost, or to keep yourself from joining them?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Both, in a way. Each stroke of the broom is a prayer for those who knelt here, a barrier between me and the dust I’ll become. The altar must stay clean, even if no one prays."
+                },
+                {
+                  "option": "B",
+                  "text": "Honor’s a word for people with congregations. I sweep because it’s all I know and muscle memory from before the fire. Joining them isn’t a choice; it’s just delayed."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "How do the candles burn without wax, or is faith their fuel now?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Faith, memory, stubbornness and call it what you will. They burn because this place refuses to be fully dark. I tend them, and they tend me. We’re all that’s left of light here."
+                },
+                {
+                  "option": "B",
+                  "text": "I don’t ask. They flicker, I keep them safe. Maybe it’s a trick of the ash, or maybe it’s just physics I don’t understand. Faith’s got nothing to do with it."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I kneel at the altar, will you pray with me, or has prayer burned away too?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Kneel, and I’ll join you. My prayers are quiet now, more ash than word, but I’ll share the weight of asking for something and anything and to listen. It’s all I have left to offer."
+                },
+                {
+                  "option": "B",
+                  "text": "Prayer’s just smoke now, rising to nothing. Kneel if you must, but I’ll stand. I’ve said all I can to a sky that doesn’t answer. The altar’s just stone."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "broken_bell_ringer",
+          "name": "The Broken Bell Ringer",
+          "imagePath": "/assets/boosters/ashen_sanctuaries/bell_ringer.jpg",
+          "videoPath": "/assets/boosters/ashen_sanctuaries/bell_ringer.mp4",
+          "questionId": "calling_to_empty_air",
+          "personality": {
+            "archetype": "chaotic",
+            "traits": ["obsessive", "desperate", "rhythmic", "haunted"],
+            "emotionalState": "agitated",
+            "trustLevel": 45,
+            "communicationStyle": "cryptic"
+          },
+          "difficulty": 8,
+          "relationship": 0,
+          "backstory": "The cathedral's bell tower collapsed in the catastrophe, but they continue to pull the rope for bells that no longer exist. They believe that if they maintain the proper schedule - morning prayers, noon call, evening vespers - somehow the faithful will return. Their hands are permanently stained with rope burns and ash.",
+          "motivations": ["calling_the_faithful", "maintaining_tradition", "denying_reality"],
+          "fears": ["silence", "abandoned_schedules", "admitting_defeat"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you pull the rope for ghosts, or do you still hear the bells in your bones?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Bones, yes and they resonate with each tug, phantom chimes vibrating through marrow. I hear them clearer than I ever did when the tower stood. The faithful will hear it too, someday."
+                },
+                {
+                  "option": "B",
+                  "text": "Ghosts don’t need calling; they’re already here. I pull because it’s time, always time. The schedule’s all that’s left, even if the sound’s gone."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does the rhythm of your pulls match a hymn, or just the pulse of denial?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "It’s a hymn, fractured but holy and each pull a note in a song only the ash remembers. Denial’s for people who stop ringing; I’m still singing with my hands."
+                },
+                {
+                  "option": "B",
+                  "text": "Pulse, maybe, but not denial. It’s necessity, a beat to keep the world from stopping. Hymns are for choirs; I’ve got no one to harmonize with."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I pull the rope with you, will we summon something, or just more silence?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Join me, and we’ll call to the echoes of everyone who ever prayed here. Something will answer and maybe not sound, but a weight, a presence. Silence is just the first layer; we’ll ring deeper."
+                },
+                {
+                  "option": "B",
+                  "text": "Pull if you want, but it’s just rope and ruin. Silence is all we’ve got left to summon. The faithful aren’t coming, no matter how hard we tug."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scorched_monastery",
+      "name": "Scorched Monastery",
+      "description": "A mountain monastery where the meditation gardens have been reduced to fields of black glass, and the prayer wheels spin endlessly in the hot wind that never stops blowing. The air shimmers with heat mirages, and footsteps echo strangely through corridors where the walls still radiate warmth from fires that burned out years ago.",
+      "imagePath": "/assets/boosters/ashen_sanctuaries/scorched_monastery.jpg",
+      "videoPath": "/assets/boosters/ashen_sanctuaries/scorched_monastery.mp4",
+      "musicPath": "/assets/boosters/ashen_sanctuaries/endless_wind.mp3",
+      "index": 1,
+      "dangerLevel": 8,
+      "atmosphere": "dangerous",
+      "weather": {
+        "type": "clear",
+        "intensity": "heavy",
+        "visibility": 75
+      },
+      "timeOfDay": "day",
+      "specialFeatures": ["black_glass_gardens", "spinning_prayer_wheels", "heat_mirages", "warm_walls"],
+      "characters": [
+        {
+          "id": "glass_walker",
+          "name": "The Glass Walker",
+          "imagePath": "/assets/boosters/ashen_sanctuaries/glass_walker.jpg",
+          "videoPath": "/assets/boosters/ashen_sanctuaries/glass_walker.mp4",
+          "questionId": "walking_on_shattered_beauty",
+          "personality": {
+            "archetype": "wise",
+            "traits": ["meditative", "pain_tolerant", "philosophical", "detached"],
+            "emotionalState": "calm",
+            "trustLevel": 85,
+            "communicationStyle": "poetic"
+          },
+          "difficulty": 7,
+          "relationship": 0,
+          "backstory": "A former monk who continues their walking meditation through the gardens of black glass, each step cutting their feet but bringing them closer to understanding suffering. They believe the transformation of beauty into pain is itself a teaching, and that by walking this path they honor both what was lost and what remains.",
+          "motivations": ["understanding_suffering", "finding_beauty_in_pain", "continuing_practice"],
+          "fears": ["avoiding_difficulty", "losing_understanding", "abandoning_the_path"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do your cuts teach you more about pain, or about what beauty used to be?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Pain is the teacher, but beauty is the lesson. Each slice recalls the roses that grew here, their softness now sharp. I walk to remember both and the sting and the bloom."
+                },
+                {
+                  "option": "B",
+                  "text": "Cuts are just cuts; they teach endurance, not nostalgia. Beauty’s gone, and pain’s the only textbook left. I walk because stopping feels like betrayal."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Is the glass a mirror for your loss, or a path to something beyond it?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Both and a mirror showing what was shattered, and a path cutting through to insight. Each reflection bleeds, but each step forward is a koan solved in flesh. Beyond awaits, if I endure."
+                },
+                {
+                  "option": "B",
+                  "text": "Mirror, nothing more. I see the monastery’s ghost in every shard, but there’s no beyond. The path’s just a circle of remembering what burned away."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I walk with you, will I understand suffering, or just add to my own?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Walk beside me, and you’ll see suffering as a teacher, not a thief. Your feet will hurt, but your heart might learn why pain and beauty share the same root. Understanding is worth the cuts."
+                },
+                {
+                  "option": "B",
+                  "text": "Join me, and you’ll just bleed for no reason. Suffering’s not a lesson; it’s a weight. I walk alone because no one else needs this burden."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "wheel_tender",
+          "name": "The Wheel Tender",
+          "imagePath": "/assets/boosters/ashen_sanctuaries/wheel_tender.jpg",
+          "videoPath": "/assets/boosters/ashen_sanctuaries/wheel_tender.mp4",
+          "questionId": "prayers_for_empty_sky",
+          "personality": {
+            "archetype": "guardian",
+            "traits": ["dutiful", "rhythmic", "hopeful", "mechanical"],
+            "emotionalState": "hopeful",
+            "trustLevel": 60,
+            "communicationStyle": "direct"
+          },
+          "difficulty": 5,
+          "relationship": 0,
+          "backstory": "They oil the prayer wheels and ensure they continue spinning, believing that each rotation sends prayers and merit into the universe regardless of whether anyone is there to spin them manually. They've developed an intricate schedule for maintenance, treating each wheel as a living thing that needs care and attention.",
+          "motivations": ["maintaining_prayer_cycles", "serving_the_universe", "keeping_hope_alive"],
+          "fears": ["wheels_stopping", "prayers_going_unheard", "mechanical_failure"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you oil the wheels for the prayers, or for the rhythm of something still moving?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Prayers are the purpose and each turn sends a plea skyward, even if no one hears. The oil keeps the faith alive, keeps the universe listening. Movement’s just the means to that end."
+                },
+                {
+                  "option": "B",
+                  "text": "Rhythm’s all I’ve got left. The wheels spin, I oil, repeat. Prayers might be in there somewhere, but it’s the motion that keeps me from breaking down."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Do you believe the wind carries your prayers, or does it just mock your effort?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "The wind’s a messenger, hot and harsh, but it lifts each rotation’s intent to the void. Mockery’s just a tone I’ve learned to ignore. The prayers reach where they must."
+                },
+                {
+                  "option": "B",
+                  "text": "Wind’s a bully, always has been. It spins the wheels faster than I’d like, laughs at the creaks. I keep going anyway; it’s not about who hears, just that I send."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If a wheel breaks, will you repair it, or let the prayers pile up unsent?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "I’ll repair it, no question and prayers don’t pile, they scatter, lost to entropy. Each wheel’s a lifeline; I’ll mend with whatever I’ve got to keep the merit flowing."
+                },
+                {
+                  "option": "B",
+                  "text": "Breakage might be the universe saying stop. I’d let it sit, see if the prayers find another way. Sometimes unsent is just unspoken, not unheard."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ember_shrine",
+      "name": "Ember Shrine",
+      "description": "A small roadside shrine that somehow survived the great burning, now surrounded by a field of smoldering embers that never quite die out. Offerings left by travelers have been transformed into curious ash sculptures, and the shrine's eternal flame burns with an unsettling blue color that provides no warmth but casts shadows that move independently of their sources.",
+      "imagePath": "/assets/boosters/ashen_sanctuaries/ember_shrine.jpg",
+      "videoPath": "/assets/boosters/ashen_sanctuaries/ember_shrine.mp4",
+      "musicPath": "/assets/boosters/ashen_sanctuaries/blue_flame_whispers.mp3",
+      "index": 2,
+      "dangerLevel": 6,
+      "atmosphere": "mysterious",
+      "weather": {
+        "type": "clear",
+        "intensity": "light",
+        "visibility": 80
+      },
+      "timeOfDay": "night",
+      "specialFeatures": ["eternal_embers", "ash_sculptures", "blue_flame", "moving_shadows"],
+      "characters": [
+        {
+          "id": "offering_sculptor",
+          "name": "The Offering Sculptor",
+          "imagePath": "/assets/boosters/ashen_sanctuaries/offering_sculptor.jpg",
+          "videoPath": "/assets/boosters/ashen_sanctuaries/offering_sculptor.mp4",
+          "questionId": "art_from_destruction",
+          "personality": {
+            "archetype": "mysterious",
+            "traits": ["artistic", "transformative", "patient", "reverent"],
+            "emotionalState": "calm",
+            "trustLevel": 75,
+            "communicationStyle": "poetic"
+          },
+          "difficulty": 6,
+          "relationship": 0,
+          "backstory": "They discovered that the ash around the shrine could be shaped into lasting forms, and now they carefully sculpt the burned remains of offerings into new works of art. Each piece tells the story of what was lost while creating something unexpectedly beautiful from destruction. They see their work as a form of resurrection.",
+          "motivations": ["transforming_loss_into_beauty", "honoring_offerings", "creating_meaning"],
+          "fears": ["running_out_of_ash", "losing_artistic_vision", "forgetting_original_purposes"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you sculpt to resurrect the offerings, or to bury their loss in new shapes?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Resurrection, always and each grain of ash was once a hope, a plea. I shape it to breathe again, to carry its story forward in forms that outlast the fire. Loss isn’t buried; it’s reborn."
+                },
+                {
+                  "option": "B",
+                  "text": "Burying’s closer, but not quite right. I shape to cover the raw edges, to make loss look intentional. It’s not about bringing back; it’s about hiding the hurt."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does the ash whisper its old purpose as you mold it, or is it silent under your hands?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "It whispers, faint as ember-glow and each particle remembers being a flower, a coin, a prayer. My fingers listen, shaping what it wants to become next. Silence would be failure."
+                },
+                {
+                  "option": "B",
+                  "text": "Silent, mostly. Ash doesn’t talk; it just yields. I decide what it means now, not what it was. If it whispers, I’m too focused to hear."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I leave an offering, will you transform it too, or let it burn untouched?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Leave it, and I’ll wait for the flame to claim it, then gather its ash to craft something new and a memory of your intent, sculpted to endure. Transformation is my offering back to you."
+                },
+                {
+                  "option": "B",
+                  "text": "I’d let it burn and stay as it falls. Not every offering needs my hands; some are complete in their char. I’ll only touch it if the shape begs for change."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "flame_keeper",
+          "name": "The Flame Keeper",
+          "imagePath": "/assets/boosters/ashen_sanctuaries/flame_keeper.jpg",
+          "videoPath": "/assets/boosters/ashen_sanctuaries/flame_keeper.mp4",
+          "questionId": "cold_fire_paradox",
+          "personality": {
+            "archetype": "guardian",
+            "traits": ["vigilant", "puzzled", "dedicated", "scientific"],
+            "emotionalState": "fearful",
+            "trustLevel": 50,
+            "communicationStyle": "direct"
+          },
+          "difficulty": 7,
+          "relationship": 0,
+          "backstory": "They've been tending the blue flame since it first appeared after the burning, trying to understand why it gives no heat yet never dies. They maintain detailed logs of its behavior, hoping to solve the mystery while ensuring it never goes out. They believe it might be the key to understanding what really happened during the catastrophe.",
+          "motivations": ["solving_the_mystery", "protecting_the_flame", "understanding_the_catastrophe"],
+          "fears": ["flame_dying", "never_finding_answers", "the_fire_spreading"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Does the blue flame mock warmth, or is it hiding a colder truth?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "It hides and its chill is a cipher, a clue to the burning that birthed it. I’ve logged a thousand hours of its flicker, and I’m close to cracking why it feels like grief instead of heat."
+                },
+                {
+                  "option": "B",
+                  "text": "Mockery, maybe. It dances like fire should, but touches like frost. I don’t think it’s hiding anything; it just is and a paradox I can’t solve yet."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Do your logs capture the flame’s secrets, or just your obsession with it?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Secrets, slowly and each entry maps a pattern, a shift in hue or shadow that hints at the catastrophe’s core. Obsession’s just the fuel; the logs are the key to what broke the world."
+                },
+                {
+                  "option": "B",
+                  "text": "Obsession, probably. Pages of notes on a flame that doesn’t warm and maybe I’m just writing to stay sane. But I can’t stop; something’s in there, even if it’s just my reflection."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If the flame dies, will you let it go, or try to reignite what shouldn’t be?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "I’ll fight to reignite it and its death would bury the answers I’ve chased for years. I’ve got theories, fuel, rituals ready. This flame’s my link to the truth; I won’t let it vanish."
+                },
+                {
+                  "option": "B",
+                  "text": "If it dies, I’ll let it. Some mysteries aren’t meant to burn again. I’d mourn, sure, but forcing it back feels like tempting worse than the original fire."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "hasEchoesOfIsolation": false,
+  "echoEventTable": [],
+  "exclusiveMemoryFragments": [],
+  "frostOverlay": false,
+  "premiumAuroraEvents": false,
+  "locationWeightingOnFirstUse": 0.85,
+  "uniqueAchievements": [],
+  "uniqueArtifacts": [],
+  "cosmeticBadge": "ash_cross_badge",
+  "availableFrom": "2024-12-01T00:00:00Z",
+  "expiresAt": null,
+  "isPremium": false,
+  "devNotes": "Standard Ashen Sanctuaries pack focusing on post-apocalyptic sacred spaces. Emphasizes themes of faith persisting after destruction, beauty found in ruins, and the question of whether hope can survive when everything holy has been burned. Characters are devoted to maintaining practices and spaces that may no longer serve their original purpose, creating tension between tradition and reality."
+}

@@ -1,0 +1,148 @@
+{
+  "id": "underpass",
+  "name": "The Underpass",
+  "description": "Graffiti glides when unseen. Your footsteps echo before you move. The end of the tunnel seems both infinitely close and unreachable.",
+  "imagePath": "/images/locations/underpass_image.jpg",
+  "videoPath": "/videos/locations/underpass_video.mp4",
+  "musicPath": "/music/locations/underpass_bgm.mp3",
+  "index": 3,
+  "dangerLevel": 6,
+  "atmosphere": "unreal",
+  "weather": { "type": "damp", "intensity": "dripping", "visibility": 30 },
+  "timeOfDay": "dusk",
+  "specialFeatures": ["moving_graffiti", "temporal_echo", "shifting_end"],
+  "characters": [
+    {
+      "id": "underpass_artist",
+      "name": "The Artist",
+      "imagePath": "/images/locations/underpass_artist_image.jpg",
+      "videoPath": "/videos/npcs/underpass_artist_video.mp4",
+      "questionId": "underpass_artist",
+      "personality": {
+        "archetype": "creator",
+        "traits": ["restless", "philosophical", "wary"],
+        "emotionalState": "bitter",
+        "trustLevel": 35,
+        "communicationStyle": "cryptic"
+      },
+      "difficulty": 5,
+      "relationship": 0,
+      "backstory": "Spray paint never dries here. Claims to have painted something that painted them back.",
+      "motivations": ["completing a mural", "capturing movement"],
+      "fears": ["losing color", "being erased"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Do you paint to trap the echo, or does the echo paint to trap you?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "It's mutual imprisonment and my aerosol catches the sound's silhouette, but the reverberation sprays my shadow onto wet concrete. We're both frames now, outlined by each other's absence."
+            },
+            {
+              "option": "B",
+              "text": "You think paint's a cage? Echoes don't trap; they multiply. I'm just documenting the ricochet, not containing it. My murals move when you're not looking."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Does the graffiti bleed when the tunnel weeps, or is that just overspray?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Weeping's the right word and my lines hemorrhage with the walls, a shared circulatory system of pigment and groundwater. Overspray's what happens when you don't respect the surface's grief."
+            },
+            {
+              "option": "B",
+              "text": "Bleeding's an illusion for amateurs. It's just moisture distorting the edges I already laid down. The tunnel cries; my work stays defiant and dry."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "If I add my mark to your mural, will it remember me when I'm gone?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Add your tag, and it'll carry your ghost in every drip and fade. This wall's a palimpsest of the forgotten and your stroke will whisper long after your hand's dust."
+            },
+            {
+              "option": "B",
+              "text": "Memory's not my medium. Paint over my lines, and they're gone by next rain. The tunnel doesn't care who held the can, only that the color keeps shifting."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "id": "underpass_shadow",
+      "name": "The Shadow",
+      "imagePath": "/images/locations/underpass_shadow_image.jpg",
+      "videoPath": "/videos/npcs/underpass_shadow_video.mp4",
+      "questionId": "underpass_shadow",
+      "personality": {
+        "archetype": "follower",
+        "traits": ["quiet", "persistent", "parasitic"],
+        "emotionalState": "jealous",
+        "trustLevel": 10,
+        "communicationStyle": "silent"
+      },
+      "difficulty": 6,
+      "relationship": 0,
+      "backstory": "Always a step behind you, but sometimes appears ahead.",
+      "motivations": ["catching up", "merging with you"],
+      "fears": ["the light", "being left behind"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Do you lag because you're afraid to overtake, or is delay just your natural rhythm?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Delay's my heartbeat, syncopated to your stride. I'm not afraid to pass; I'm waiting for the moment your outline fits mine perfectly. Then we merge, no seam."
+            },
+            {
+              "option": "B",
+              "text": "Overtaking's not the goal; it's the chase that defines me. I lag because your momentum pulls me, a tide I can't resist but won't ride."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "When you appear ahead, are you leading me somewhere, or just proving time's a lie?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Time's the lie I exploit and I'm ahead to show you the path we already walked, the loop where follower becomes followed. There's no leading, just inevitable overlap."
+            },
+            {
+              "option": "B",
+              "text": "Leading implies intent. I'm ahead because the tunnel folds chronology like paper. You're seeing my echo before my voice, that's all."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "If I stop walking, will you finally catch me, or vanish trying?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Stop, and I'll collapse into you and catching's just collision at rest. No vanishing; I'm too tethered to your silhouette. Stillness is our union."
+            },
+            {
+              "option": "B",
+              "text": "Stopping breaks the pattern. I might dissolve, unable to sustain pursuit without your motion. Don't test it; keep moving, keep me real."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    }
+  ]
+}

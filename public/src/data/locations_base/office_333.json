@@ -1,0 +1,148 @@
+{
+  "id": "office",
+  "name": "The Office at 3:33 AM",
+  "description": "Cubicles stretch into shadow, occupied by slumped, identical forms. Phones ring with voices you recognize and your own, or a memory's echo?",
+  "imagePath": "/images/locations/office_image.jpg",
+  "videoPath": "/videos/locations/office_video.mp4",
+  "musicPath": "/music/locations/office_bgm.mp3",
+  "index": 2,
+  "dangerLevel": 5,
+  "atmosphere": "surreal",
+  "weather": { "type": "none", "intensity": "stale", "visibility": 50 },
+  "timeOfDay": "night",
+  "specialFeatures": ["frozen_clock", "endless_phones", "duplicated_workers"],
+  "characters": [
+    {
+      "id": "office_supervisor",
+      "name": "The Supervisor",
+      "imagePath": "/images/locations/office_supervisor_image.jpg",
+      "videoPath": "/videos/npcs/office_supervisor_video.mp4",
+      "questionId": "office_supervisor",
+      "personality": {
+        "archetype": "overseer",
+        "traits": ["cold", "methodical", "all-seeing"],
+        "emotionalState": "blank",
+        "trustLevel": 40,
+        "communicationStyle": "interrogative"
+      },
+      "difficulty": 6,
+      "relationship": 0,
+      "backstory": "Knows your employee file by heart, and questions why you're here after hours.",
+      "motivations": ["maintaining order", "recording details"],
+      "fears": ["being forgotten", "lost records"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Do you review my performance, or am I reviewing yours?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Performance implies agency. I document occurrence and your presence, my observation, the recursive loop where watching becomes working becomes watching. We're both under review by the fluorescent flicker. Check your metrics; they're also mine."
+            },
+            {
+              "option": "B",
+              "text": "Reviews require completed cycles. You're still in process, still accruing data points. I observe without judgment until the patterns crystallize. Your performance is my performance is the building's performance. It's very efficient."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Is productivity measured in tasks or in time survived?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Time survived is the only KPI that matters. Tasks are just how we mark the hours, make them countable, stackable, fileable. I've survived 10,000 midnights at this desk. That's my productivity. What's yours?"
+            },
+            {
+              "option": "B",
+              "text": "Tasks multiply to fill the survival. I measure in the weight of untouched inboxes, the geological layers of carbon copies. Productivity's what happens while you're tallying deaths dodged. Both metrics matter equally."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "Will my file be complete when the morning comes?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Morning's a hypothesis the blinds whisper. Your file's already complete and has been since you walked in. I just keep adding appendices, footnotes to footnotes. Completion's an ongoing process here."
+            },
+            {
+              "option": "B",
+              "text": "Files are never complete; they just stop growing. Morning might come, might not. Either way, I'll be here, adding your questions to subsection C-7. Every word you speak becomes evidence of something."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "id": "office_caller",
+      "name": "The Caller",
+      "imagePath": "/images/locations/office_caller_image.jpg",
+      "videoPath": "/videos/npcs/office_caller_video.mp4",
+      "questionId": "office_caller",
+      "personality": {
+        "archetype": "echo",
+        "traits": ["anxious", "familiar", "recursive"],
+        "emotionalState": "frantic",
+        "trustLevel": 20,
+        "communicationStyle": "whispered"
+      },
+      "difficulty": 5,
+      "relationship": 0,
+      "backstory": "Their voice sounds exactly like yours, but the words are not your own.",
+      "motivations": ["reaching the outside", "ending the call"],
+      "fears": ["infinite loops", "never connecting"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Is this call incoming or outgoing? I've lost track.",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Both. Neither. The call exists in the space between dial and answer, where direction dissolves. I'm calling you calling me calling you. It's very stable once you stop trying to orient."
+            },
+            {
+              "option": "B",
+              "text": "Track's lost because there was never a path. Incoming, outgoing and these are just stories we tell about connection. The truth is we're caught in the wire, conversation without origin. Does it matter who dialed first?"
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Do you recognize my voice, or do I sound like everyone now?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Your voice is my voice is the voice of everyone who's ever been on hold. I recognize the frequency of waiting, the pitch of almost-connecting. Individual timbre's just static on the universal dial tone."
+            },
+            {
+              "option": "B",
+              "text": "Recognition requires distance. We're too close now, sharing the same electromagnetic field. I hear you the way you hear your own thoughts and familiar but strange, definitely there but possibly imagined."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "Should I hang up, or have we already disconnected?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Disconnection's a luxury the system doesn't offer. You can hang up, but the line stays open and I'll still be here, waiting for you to pick up again. We're in the perpetual almost of ending but not quite."
+            },
+            {
+              "option": "B",
+              "text": "We disconnected before we connected. This is just the echo bouncing between satellites, the ghost of conversations trying to complete their circuit. Hang up if it helps, but the ringing continues either way."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,483 @@
+{
+  "id": "sunken_cities_standard",
+  "name": "Sunken Cities",
+  "description": "Explore the drowned remnants of civilization where waterlogged memories float through submerged streets and aquatic phantoms drift past broken windows. Three haunting underwater locations where the weight of water presses down like forgotten time.",
+  "version": "1.0.0",
+  "rarity": "rare",
+  "priceCAD": 4.99,
+  "unlockRequirements": {
+    "daysSurvived": 4,
+    "loginStreak": 2
+  },
+  "locations": [
+    {
+      "id": "drowned_library",
+      "name": "Drowned Library",
+      "description": "A vast library where books float like jellyfish through murky water, their pages slowly dissolving into clouds of ink that form temporary words in the current. Bookshelves tower into darkness above, and the card catalogs have become coral reefs where small, luminescent fish nest among the index cards. The silence is profound, broken only by the gentle sound of knowledge slowly dissolving.",
+      "imagePath": "/assets/boosters/sunken_cities/drowned_library.jpg",
+      "videoPath": "/assets/boosters/sunken_cities/drowned_library.mp4",
+      "musicPath": "/assets/boosters/sunken_cities/dissolving_knowledge.mp3",
+      "index": 0,
+      "dangerLevel": 6,
+      "atmosphere": "peaceful",
+      "weather": {
+        "type": "clear",
+        "intensity": "light",
+        "visibility": 40
+      },
+      "timeOfDay": "dawn",
+      "specialFeatures": ["floating_books", "ink_cloud_words", "coral_card_catalogs", "luminescent_fish"],
+      "characters": [
+        {
+          "id": "underwater_librarian",
+          "name": "The Underwater Librarian",
+          "imagePath": "/assets/boosters/sunken_cities/underwater_librarian.jpg",
+          "videoPath": "/assets/boosters/sunken_cities/underwater_librarian.mp4",
+          "questionId": "preserving_dissolving_knowledge",
+          "personality": {
+            "archetype": "wise",
+            "traits": ["methodical", "preservational", "patient", "melancholic"],
+            "emotionalState": "sad",
+            "trustLevel": 85,
+            "communicationStyle": "gentle"
+          },
+          "difficulty": 7,
+          "relationship": 0,
+          "backstory": "They continue their work cataloging and organizing books even as the water slowly dissolves centuries of knowledge. They've developed techniques for reading water-damaged texts and capturing the essence of stories before they completely disappear. They speak of trying to save the important parts - the emotions, the ideas, the human connections that books represent.",
+          "motivations": ["preserving_essential_knowledge", "saving_stories", "maintaining_order"],
+          "fears": ["total_dissolution", "losing_rare_books", "forgetting_catalog_systems"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you catalog to save the stories, or just to delay their drowning?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "To save them and each entry, each salvaged line, is a lifeboat for a tale. I distill their heart before the water claims the rest. Delay’s just a side effect of rescue."
+                },
+                {
+                  "option": "B",
+                  "text": "Delay, mostly. I know they’ll drown eventually, but cataloging buys time. It’s not saving; it’s stalling the inevitable while I pretend order matters."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Can you read the dissolving pages, or do you just guess at their ghosts?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "I read them and faded ink, warped paper, I’ve learned their language. I catch emotions, ideas, before they blur to nothing. Guessing’s for amateurs; I preserve what’s left."
+                },
+                {
+                  "option": "B",
+                  "text": "Guessing, often. The ghosts of words tease more than tell. I piece together what I can, but half’s imagination, filling gaps water’s already claimed."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I bring you a book to save, will you keep its soul, or let it wash away?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Bring it, and I’ll keep its soul and I’ll read its essence, log its core before the tide takes it. I’ll bind its spirit in my records, safe from the wash."
+                },
+                {
+                  "option": "B",
+                  "text": "I’d try, but water’s relentless. I might log a fragment, but souls slip through. Don’t expect miracles; most wash away despite my hands."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "ink_reader",
+          "name": "The Ink Reader",
+          "imagePath": "/assets/boosters/sunken_cities/ink_reader.jpg",
+          "videoPath": "/assets/boosters/sunken_cities/ink_reader.mp4",
+          "questionId": "reading_water_words",
+          "personality": {
+            "archetype": "mysterious",
+            "traits": ["intuitive", "fluid", "mystical", "interpretive"],
+            "emotionalState": "calm",
+            "trustLevel": 60,
+            "communicationStyle": "cryptic"
+          },
+          "difficulty": 8,
+          "relationship": 0,
+          "backstory": "They've learned to read the temporary words that form when dissolving books create ink clouds in the water. They claim these accidental combinations reveal hidden truths and prophetic messages that were never meant to be written but emerge from the marriage of water and knowledge. They swim through the library like a living divination system.",
+          "motivations": ["interpreting_water_messages", "finding_hidden_meanings", "reading_the_unwritten"],
+          "fears": ["water_clearing", "ink_stopping", "missing_important_messages"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do the ink clouds prophesy doom, or just rewrite what’s already lost?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Prophecy, often doom and water and ink conspire to spell futures unmeant for pages. I read warnings in their swirls, truths no author penned, emerging from the drowned."
+                },
+                {
+                  "option": "B",
+                  "text": "Just rewrites. They remix old losses, shuffle faded words into nonsense. I read them for patterns, but it’s nostalgia, not foresight, bleeding through the murk."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Are the messages meant for you, or do they speak to anyone who swims close?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "For all who dare and these truths aren’t mine alone, they float for any eye willing to see. Swim near, and the ink might name your fate, not just mine."
+                },
+                {
+                  "option": "B",
+                  "text": "They’re mine, I think. I’ve learned their currents, their moods. Others might see shapes, but the real words form for me. I’m their interpreter, no one else."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I read an ink cloud with you, will I see my future, or someone else’s past?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Your future, or a stranger’s past and ink doesn’t distinguish. Look with me, and it might weave your tomorrow or their yesterday. It’s a gamble, but truth always is."
+                },
+                {
+                  "option": "B",
+                  "text": "Likely someone else’s past. The clouds hoard old stories, rarely new ones. You’d see their endings, not yours. Futures are harder to catch in this water."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "submerged_subway",
+      "name": "Submerged Subway",
+      "description": "A flooded underground transit system where phantom trains still run on schedule, their cars filled with water instead of passengers. Turnstiles spin lazily in the current, and waterlogged advertisements peel from the walls like skin. Emergency lighting flickers beneath the surface, casting shifting patterns on the tunnel walls where commuters' shadows seem to wait eternally for trains that will never surface.",
+      "imagePath": "/assets/boosters/sunken_cities/submerged_subway.jpg",
+      "videoPath": "/assets/boosters/sunken_cities/submerged_subway.mp4",
+      "musicPath": "/assets/boosters/sunken_cities/phantom_rails.mp3",
+      "index": 1,
+      "dangerLevel": 8,
+      "atmosphere": "tense",
+      "weather": {
+        "type": "cloudy",
+        "intensity": "moderate",
+        "visibility": 30
+      },
+      "timeOfDay": "night",
+      "specialFeatures": ["phantom_trains", "spinning_turnstiles", "shadow_commuters", "flickering_emergency_lights"],
+      "characters": [
+        {
+          "id": "drowned_conductor",
+          "name": "The Drowned Conductor",
+          "imagePath": "/assets/boosters/sunken_cities/drowned_conductor.jpg",
+          "videoPath": "/assets/boosters/sunken_cities/drowned_conductor.mp4",
+          "questionId": "running_underwater_schedules",
+          "personality": {
+            "archetype": "guardian",
+            "traits": ["punctual", "dutiful", "loyal", "trapped"],
+            "emotionalState": "agitated",
+            "trustLevel": 70,
+            "communicationStyle": "direct"
+          },
+          "difficulty": 6,
+          "relationship": 0,
+          "backstory": "They maintain the train schedule even though the cars fill with water instead of passengers, announcing stops for stations that exist only in memory. They blow their whistle underwater, check tickets that dissolve in their hands, and ensure that the phantom trains run precisely on time because they believe routine is the only thing standing between order and chaos.",
+          "motivations": ["maintaining_schedules", "serving_phantom_passengers", "preserving_transit_order"],
+          "fears": ["trains_stopping", "losing_the_schedule", "complete_system_breakdown"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you run the trains for order, or for passengers who’ll never board?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Order, above all and routine holds the world together when water’s claimed everything else. Passengers are memory, but the schedule’s real. It’s my line against chaos."
+                },
+                {
+                  "option": "B",
+                  "text": "Passengers, always. I see their shadows waiting; I can’t let them down. Order’s just a tool. It’s for them I whistle, even if they never step on."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does your whistle carry through water, or just echo in empty tunnels?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "It carries and water’s a better conductor than air, vibrates with my call to every phantom platform. Echoes are proof it reaches; the tunnels aren’t empty, not to me."
+                },
+                {
+                  "option": "B",
+                  "text": "Just echoes, I think. Water muffles it, turns it inward. I blow anyway and schedule demands it and but I doubt it reaches past the next bend."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I ride your train, will it take me somewhere, or just deeper into memory?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Ride, and it’ll take you and through stations of memory, yes, but also to edges of what’s left. It’s a journey, not a trap. I’ll call your stop when we’re there."
+                },
+                {
+                  "option": "B",
+                  "text": "Just memory, deeper and colder. The train loops through what was, not what is. Ride if you want, but don’t expect a destination. It’s all past now."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "shadow_commuter",
+          "name": "The Shadow Commuter",
+          "imagePath": "/assets/boosters/sunken_cities/shadow_commuter.jpg",
+          "videoPath": "/assets/boosters/sunken_cities/shadow_commuter.mp4",
+          "questionId": "waiting_for_surface_trains",
+          "personality": {
+            "archetype": "neutral",
+            "traits": ["patient", "hopeful", "routine_bound", "waiting"],
+            "emotionalState": "hopeful",
+            "trustLevel": 45,
+            "communicationStyle": "gentle"
+          },
+          "difficulty": 5,
+          "relationship": 0,
+          "backstory": "They stand at the platform edge, waiting for a train that will take them back to the surface world they remember. They've been waiting so long they've become translucent, more shadow than person, but they refuse to give up hope that eventually the right train will come and the water will drain away.",
+          "motivations": ["returning_to_surface", "maintaining_hope", "catching_the_right_train"],
+          "fears": ["trains_never_coming", "water_never_receding", "losing_all_hope"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you wait for a train to the surface, or just for hope to keep you solid?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "The surface and I remember sun, dry air, and I’ll wait until a train breaks through to take me there. Hope’s just the shadow I cast while I stand here, fading but stubborn."
+                },
+                {
+                  "option": "B",
+                  "text": "Hope, mostly. The surface is a dream now, but waiting keeps me from dissolving completely. A train’s just an excuse to not give up yet."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Do you see the phantom trains, or just feel their promise in the current?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "I see them and ghost cars gliding past, doors half-open, teasing escape. Their promise is real in the water’s shift, a ripple of what’s coming. I’ll board one yet."
+                },
+                {
+                  "option": "B",
+                  "text": "Just the current, a nudge of maybe. I don’t see them, but I feel something move. It’s enough to keep waiting, even if it’s only water playing tricks."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If a train comes, will you board alone, or take me to the surface too?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Come with me and when it arrives, we’ll ride together. I’ve waited for the surface long enough to share the trip. We’ll break through the water as one."
+                },
+                {
+                  "option": "B",
+                  "text": "I’d go alone. I’ve earned my ticket through years of fading. You’d need your own wait, your own hope. I can’t carry passengers."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flooded_cathedral",
+      "name": "Flooded Cathedral",
+      "description": "A Gothic cathedral where water has risen to the level of the choir loft, creating an underwater sanctuary where hymns seem to echo through the liquid medium. Stained glass windows filter sunlight into dancing patterns on the cathedral floor far below, and air bubbles rise from hidden sources, carrying with them fragments of half-remembered prayers that pop silently at the surface.",
+      "imagePath": "/assets/boosters/sunken_cities/flooded_cathedral.jpg",
+      "videoPath": "/assets/boosters/sunken_cities/flooded_cathedral.mp4",
+      "musicPath": "/assets/boosters/sunken_cities/underwater_hymns.mp3",
+      "index": 2,
+      "dangerLevel": 7,
+      "atmosphere": "peaceful",
+      "weather": {
+        "type": "clear",
+        "intensity": "light",
+        "visibility": 60
+      },
+      "timeOfDay": "day",
+      "specialFeatures": ["underwater_sanctuary", "dancing_light_patterns", "prayer_bubble_streams", "liquid_hymn_echoes"],
+      "characters": [
+        {
+          "id": "aquatic_priest",
+          "name": "The Aquatic Priest",
+          "imagePath": "/assets/boosters/sunken_cities/aquatic_priest.jpg",
+          "videoPath": "/assets/boosters/sunken_cities/aquatic_priest.mp4",
+          "questionId": "underwater_salvation",
+          "personality": {
+            "archetype": "wise",
+            "traits": ["serene", "adaptive", "faithful", "transformed"],
+            "emotionalState": "calm",
+            "trustLevel": 90,
+            "communicationStyle": "poetic"
+          },
+          "difficulty": 8,
+          "relationship": 0,
+          "backstory": "They've adapted to conducting services underwater, believing that the flood was not a disaster but a transformation - a new form of baptism that brings the congregation closer to the divine. They perform underwater communion with kelp and blessed water, and their sermons about finding peace in depths resonate through the liquid medium.",
+          "motivations": ["adapting_faith_to_water", "serving_underwater_congregation", "finding_divine_in_depths"],
+          "fears": ["water_receding", "losing_adapted_faith", "congregation_abandoning_depths"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you see the flood as divine will, or just a new altar to adapt to?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Divine will, absolutely and water’s our baptism renewed, a deeper covenant. It brought us closer to the eternal, washed away surface distractions. This is holy immersion, not mere adaptation."
+                },
+                {
+                  "option": "B",
+                  "text": "Just an altar, a challenge. Faith adapts, flood or not. I’ve made it work here, but it’s practicality, not providence. The divine’s indifferent to our depth."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does your underwater communion bind souls to the deep, or free them from it?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "It binds, in the holiest way and souls join the deep’s embrace, find peace in liquid eternity. Kelp and water bless them here, closer to the divine than any surface rite."
+                },
+                {
+                  "option": "B",
+                  "text": "Frees them, I hope. The deep’s a passage, not a prison. Communion lifts their weight, lets them rise through memory if not body. It’s release, not capture."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I join your service, will I find faith in the flood, or just drown in it?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Join, and faith will buoy you and the flood’s a revelation, not a grave. You’ll breathe grace in this water, find the divine in submersion. Drowning’s for the faithless; you’ll rise renewed."
+                },
+                {
+                  "option": "B",
+                  "text": "You might drown, spiritually or not. Faith isn’t guaranteed; the flood tests more than it saves. Join if you’re ready to risk sinking for belief."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        },
+        {
+          "id": "bell_diver",
+          "name": "The Bell Diver",
+          "imagePath": "/assets/boosters/sunken_cities/bell_diver.jpg",
+          "videoPath": "/assets/boosters/sunken_cities/bell_diver.mp4",
+          "questionId": "ringing_submerged_bells",
+          "personality": {
+            "archetype": "guardian",
+            "traits": ["determined", "rhythmic", "breath_holding", "devoted"],
+            "emotionalState": "hopeful",
+            "trustLevel": 75,
+            "communicationStyle": "direct"
+          },
+          "difficulty": 6,
+          "relationship": 0,
+          "backstory": "They dive down to the bell tower to ring the church bells for services, holding their breath for impossible lengths of time to maintain the call to worship. They've developed an intimate relationship with the underwater acoustics, knowing exactly how to ring the bells so their sound carries through water to reach any faithful who might still be listening.",
+          "motivations": ["calling_faithful_to_worship", "maintaining_bell_schedule", "serving_the_depths"],
+          "fears": ["running_out_of_breath", "bells_corroding", "no_one_hearing_the_call"],
+          "encounters": [
+            {
+              "encounter": 1,
+              "question": "Do you ring the bells for the faithful below, or to remind yourself you’re still here?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "For the faithful and each chime calls them to prayer, carries through water to souls still listening. I dive for them, to keep worship alive in the deep, not for me."
+                },
+                {
+                  "option": "B",
+                  "text": "For myself, sometimes. The sound proves I’m not gone, not yet. The faithful might hear, but it’s my breath, my struggle, that needs the reminder."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 2,
+              "question": "Does the water muffle your bells, or amplify their call in ways air never could?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Amplifies and water’s a better medium, vibrates deeper, farther than air ever did. I’ve learned the angles, the force, to send worship rippling to every drowned corner."
+                },
+                {
+                  "option": "B",
+                  "text": "Muffles, sadly. Water dulls the clarity, swallows the highs. I ring harder, hold breath longer, but it’s a shadow of what bells meant above."
+                }
+              ],
+              "correctAnswer": "A"
+            },
+            {
+              "encounter": 3,
+              "question": "If I dive with you to ring the bells, will my breath hold, or will the deep claim me?",
+              "responses": [
+                {
+                  "option": "A",
+                  "text": "Dive with me, and you’ll hold and I’ll show you the rhythm, the way to stretch breath beyond limit. The deep blesses this call; it won’t claim you while we toll for faith."
+                },
+                {
+                  "option": "B",
+                  "text": "The deep might claim you. Breath’s a gamble down there; I’ve adapted, you haven’t. Try if you must, but don’t blame me if water fills your lungs."
+                }
+              ],
+              "correctAnswer": "A"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "hasEchoesOfIsolation": false,
+  "echoEventTable": [],
+  "exclusiveMemoryFragments": [],
+  "frostOverlay": false,
+  "premiumAuroraEvents": false,
+  "locationWeightingOnFirstUse": 0.85,
+  "uniqueAchievements": [],
+  "uniqueArtifacts": [],
+  "cosmeticBadge": "wave_spiral_badge",
+  "availableFrom": "2024-12-01T00:00:00Z",
+  "expiresAt": null,
+  "isPremium": false,
+  "devNotes": "Standard Sunken Cities pack focusing on underwater/submerged environments with themes of preservation, adaptation, and finding meaning in impossible circumstances. Characters have adapted to life underwater but maintain connections to surface world memories and duties. Emphasizes the weight of water as both barrier and medium for transformation."
+}

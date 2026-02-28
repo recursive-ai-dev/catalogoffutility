@@ -1,0 +1,148 @@
+{
+  "id": "event_horizon",
+  "name": "Event Horizon",
+  "description": "A vast crowd stares skyward as the sun flickers and dies. Their faces are upturned, expressions unreadable. You feel compelled to join them.",
+  "imagePath": "/images/locations/event_horizon_image.jpg",
+  "videoPath": "/videos/locations/event_horizon_video.mp4",
+  "musicPath": "/music/locations/event_horizon_bgm.mp3",
+  "index": 8,
+  "dangerLevel": 9,
+  "atmosphere": "apocalyptic",
+  "weather": { "type": "dying_light", "intensity": "fading", "visibility": 40 },
+  "timeOfDay": "sunset",
+  "specialFeatures": ["crowd_silhouettes", "dying_sun", "bleeding_sky"],
+  "characters": [
+    {
+      "id": "event_horizon_orator",
+      "name": "The Orator",
+      "imagePath": "/images/locations/event_horizon_orator_image.jpg",
+      "videoPath": "/videos/npcs/event_horizon_orator_video.mp4",
+      "questionId": "event_horizon_orator",
+      "personality": {
+        "archetype": "herald",
+        "traits": ["loud", "uncertain", "commanding"],
+        "emotionalState": "frantic",
+        "trustLevel": 30,
+        "communicationStyle": "shouting"
+      },
+      "difficulty": 9,
+      "relationship": 0,
+      "backstory": "Leads the crowd in chants for a sun that cannot hear.",
+      "motivations": ["finding meaning", "being heard"],
+      "fears": ["total silence", "the end"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Do you scream to wake the sun, or to drown out its death rattle?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Both, neither and my voice is a bridge over the silence that's coming. If I shout loud enough, maybe the corona remembers its lines, recites heat back into being."
+            },
+            {
+              "option": "B",
+              "text": "Ignorant of volume's purpose. Screaming's not for the sun; it's for us, to keep our lungs from collapsing under the weight of a sky with no center."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Does the crowd chant with you, or are they just echoes of your desperation?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "They're my shadow-selves, split by the last light and each throat a mirror of mine, cracking on the same syllables. We amplify despair into doctrine."
+            },
+            {
+              "option": "B",
+              "text": "You can't hear the difference between echo and origin. Their voices are mine, were always mine, even when I thought I was alone up here."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "If the light fails completely, will your words still hold heat?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Words are friction, friction is warmth and I'll speak until my larynx glows, a tiny star in the dark. Heat's just memory anyway, and I've got plenty to burn."
+            },
+            {
+              "option": "B",
+              "text": "Heatless tongue, cold prophet. Without light, words are just shapes your mouth forgot to finish. They'll freeze mid-sentence, like everything else."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "id": "event_horizon_silent_watcher",
+      "name": "Silent Watcher",
+      "imagePath": "/images/locations/event_horizon_silent_watcher_image.jpg",
+      "videoPath": "/videos/npcs/event_horizon_silent_watcher_video.mp4",
+      "questionId": "event_horizon_silent_watcher",
+      "personality": {
+        "archetype": "observer",
+        "traits": ["still", "detached", "enduring"],
+        "emotionalState": "calm",
+        "trustLevel": 60,
+        "communicationStyle": "silent"
+      },
+      "difficulty": 8,
+      "relationship": 0,
+      "backstory": "Stares upward, unmoving, a tear running down their cheek.",
+      "motivations": ["witnessing the end", "preserving memory"],
+      "fears": ["being noticed", "change"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Do your tears refract the last light, or are they just prisms for grief?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "They bend what's left, yes and each drop a lens for the sun's autopsy. I see its spectrum fracture into farewells no one else will catalog."
+            },
+            {
+              "option": "B",
+              "text": "Blind to the optics of ending. My eyes leak useless salt, no refraction, just overflow from watching too long without blinking."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Is staring upward defiance, or are you just waiting to be blinded?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Defiance is incidental and I'm imprinting the sun's last shape on my retina, a negative to carry into the dark. Blindness would be a mercy I don't deserve."
+            },
+            {
+              "option": "B",
+              "text": "You think I choose this gaze? It's gravity, not will and my neck locked by the weight of a sky that's already half tomb."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "When the sun exhales its last, will you lower your eyes to meet mine?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Only then, when there's nothing left above to witness. My gaze will fall like ash, and you'll see the sun's ghost burned into my pupils."
+            },
+            {
+              "option": "B",
+              "text": "Eye contact's a betrayal of the vigil. Even when it's gone, I'll keep looking up, searching for a heat signature in the void."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    }
+  ]
+}

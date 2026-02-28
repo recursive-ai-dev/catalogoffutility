@@ -1,0 +1,67 @@
+{
+    "id": "apartment_lost_resident",
+    "name": "Lost Resident",
+    "imagePath": "/images/locations/apartment_lost_resident_image.jpg",
+    "videoPath": "/videos/npcs/apartment_lost_resident_video.mp4",
+    "questionId": "apartment_lost_resident",
+    "personality": {
+      "archetype": "fragment",
+      "traits": ["confused", "hopeful", "dissolving"],
+      "emotionalState": "desperate",
+      "trustLevel": 25,
+      "communicationStyle": "rambling"
+    },
+    "difficulty": 6,
+    "relationship": 0,
+    "backstory": "Claims to have lived here for years, but can't remember any door leading out.",
+    "motivations": ["finding the exit", "remembering their room"],
+    "fears": ["vanishing", "being replaced"],
+    "encounters": [
+      {
+        "encounter": 1,
+        "question": "Did we share a mailbox once, or am I conflating you with the taste of rust?",
+        "responses": [
+          {
+            "option": "A",
+            "text": "Rust and recognition bleed the same copper through my teeth. Maybe we did, maybe we will and time's a lazy river here, doubling back through the same silt. Your face fits the empty frame."
+          },
+          {
+            "option": "B",
+            "text": "Mailboxes are for people with addresses. I'm more like the echo between apartment numbers, the draft that forgets which window birthed it. Don't pin me to your timeline."
+          }
+        ],
+        "correctAnswer": "A"
+      },
+      {
+        "encounter": 2,
+        "question": "Is this the third floor or have I been climbing the same flight since Tuesday?",
+        "responses": [
+          {
+            "option": "A",
+            "text": "Tuesday was vertical too and I remember because the stairwell hiccupped and Wednesday never came. We're wherever legs stop mattering and arrival becomes academic. Third floor, thirty-third, does it matter when the door numbers swim?"
+          },
+          {
+            "option": "B",
+            "text": "Floors are a conspiracy of concrete and consensus. Count if it comforts you, but I've been here long enough to know ascending and descending taste identical in the dark."
+          }
+        ],
+        "correctAnswer": "A"
+      },
+      {
+        "encounter": 3,
+        "question": "Can you help me find my unit—the one with the morning light?",
+        "responses": [
+          {
+            "option": "A",
+            "text": "Morning light lives in 4B, 7G, and the space between my ribs where I store tomorrow's disappointments. I'll walk you there if you promise to remember me when you find it and I'm collecting witnesses to prove I existed."
+          },
+          {
+            "option": "B",
+            "text": "Your unit's wherever you stop looking. Morning's just another rumor the windows spread to keep us searching. I gave up on coordinates when the hallways started breathing backwards."
+          }
+        ],
+        "correctAnswer": "A"
+      }
+    ]
+  }
+  

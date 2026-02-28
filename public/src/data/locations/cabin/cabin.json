@@ -1,0 +1,58 @@
+{
+  "id": "cabin",
+  "name": "The Cabin",
+  "description": "Your safe haven. A rustic cabin with familiar comforts and essential survival tools.",
+  "imagePath": "/images/locations/cabin_image.jpg",
+  "videoPath": "/videos/locations/cabin_video.mp4",
+  "musicPath": "/music/locations/cabin_bgm.mp3",
+  "index": 0,
+  "dangerLevel": 0,
+  "atmosphere": "peaceful",
+  "weather": {
+    "type": "clear",
+    "intensity": "light",
+    "visibility": 100
+  },
+  "timeOfDay": "day",
+  "specialFeatures": ["safe_zone", "save_point", "radio_access"],
+  "characters": [
+    {
+      "id": "cabin_guardian_spirit",
+      "name": "Guardian Spirit",
+      "imagePath": "/images/locations/cabin_guardian_spirit_image.jpg",
+      "videoPath": "/videos/npcs/cabin_guardian_spirit_video.mp4",
+      "questionId": "cabin_guardian_spirit",
+      "personality": {
+        "archetype": "guardian",
+        "traits": ["protective", "wise", "ancient"],
+        "emotionalState": "calm",
+        "trustLevel": 85,
+        "communicationStyle": "gentle"
+      },
+      "difficulty": 1,
+      "relationship": 0,
+      "backstory": "An ancient spirit that protects this sacred cabin from dark forces.",
+      "motivations": ["protecting travelers", "maintaining balance"],
+      "fears": ["corruption of the sanctuary", "forgotten memories"]
+    },
+    {
+      "id": "cabin_memory_keeper",
+      "name": "Memory Keeper",
+      "imagePath": "/images/locations/cabin_memory_keeper_image.jpg",
+      "videoPath": "/videos/npcs/cabin_memory_keeper_video.mp4",
+      "questionId": "cabin_memory_keeper",
+      "personality": {
+        "archetype": "wise",
+        "traits": ["nostalgic", "melancholic", "insightful"],
+        "emotionalState": "sad",
+        "trustLevel": 70,
+        "communicationStyle": "poetic"
+      },
+      "difficulty": 2,
+      "relationship": 0,
+      "backstory": "A keeper of lost memories who dwells in the spaces between thoughts.",
+      "motivations": ["preserving forgotten stories", "helping others remember"],
+      "fears": ["total amnesia", "meaningless existence"]
+    }
+  ]
+}

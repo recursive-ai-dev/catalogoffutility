@@ -1,0 +1,148 @@
+{
+  "id": "field",
+  "name": "Field of Tall Grass",
+  "description": "Grass taller than your head, every step illuminated only by your flashlight. Shapes move just beyond its reach. Nothing is ever quite still.",
+  "imagePath": "/images/locations/field_image.jpg",
+  "videoPath": "/videos/locations/field_video.mp4",
+  "musicPath": "/music/locations/field_bgm.mp3",
+  "index": 6,
+  "dangerLevel": 7,
+  "atmosphere": "paranoid",
+  "weather": { "type": "night", "intensity": "silent", "visibility": 15 },
+  "timeOfDay": "night",
+  "specialFeatures": ["hidden_paths", "distant_whispers", "moving_shapes"],
+  "characters": [
+    {
+      "id": "field_watcher",
+      "name": "The Watcher",
+      "imagePath": "/images/locations/field_watcher_image.jpg",
+      "videoPath": "/videos/npcs/field_watcher_video.mp4",
+      "questionId": "field_watcher",
+      "personality": {
+        "archetype": "observer",
+        "traits": ["patient", "invisible", "quiet"],
+        "emotionalState": "curious",
+        "trustLevel": 25,
+        "communicationStyle": "silent"
+      },
+      "difficulty": 8,
+      "relationship": 0,
+      "backstory": "Never seen directly, but always present. Hears every footstep.",
+      "motivations": ["studying you", "waiting"],
+      "fears": ["discovery", "dawn"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Do you taste the copper where footsteps bruise the earth?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Then you understand and every print's a wound that won't stop seeping. Watch how the grass recoils, how it remembers your weight long after you've forgotten walking."
+            },
+            {
+              "option": "B",
+              "text": "Blind tongues always miss the metal. Keep stumbling through stems that catalog your trespass, pretending the field doesn't archive every breath you steal."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Does the distance between us feel like held breath or hemorrhage?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Space bleeds purpose. I count your blinks through blade-gaps, measure panic in the quiver of your jaw. This watching and it's the only circulation left."
+            },
+            {
+              "option": "B",
+              "text": "You mistake proximity for connection. I'm the gap between your inhale and understanding why the grass grows teeth at dusk."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "When wind bends the stalks, do you hear them whispering your real name?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Finally, someone who knows nomenclature rots from the inside. The grass speaks in decomposed syllables, each blade a tongue that's tasted what you'll become."
+            },
+            {
+              "option": "B",
+              "text": "Deaf to your own taxonomy. The field's been spelling your autopsy in seedheads, but you keep reading it as weather."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "id": "field_lost_child",
+      "name": "Lost Child",
+      "imagePath": "/images/locations/field_lost_child_image.jpg",
+      "videoPath": "/videos/npcs/field_lost_child_video.mp4",
+      "questionId": "field_lost_child",
+      "personality": {
+        "archetype": "fragment",
+        "traits": ["afraid", "innocent", "lonely"],
+        "emotionalState": "fearful",
+        "trustLevel": 10,
+        "communicationStyle": "whimpering"
+      },
+      "difficulty": 8,
+      "relationship": 0,
+      "backstory": "Calls out for help but flees from any light.",
+      "motivations": ["finding home", "being seen"],
+      "fears": ["dark shapes", "silence"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Will you catch me if I stop running from the help that hurts?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "No, no, no and catching means touching means knowing means dying. Stay far, stay floating, let me drown in the safety of almost-saved."
+            },
+            {
+              "option": "B",
+              "text": "Liar's hands, reaching like mother's did before the grass grew through her teeth. I know what help looks like and it has eyes that swallow."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Do you see how my shadow runs faster than my feet?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "You understand! It knows where I'm going before I do, fleeing futures I haven't lived yet. Sometimes I think it's the only honest part left."
+            },
+            {
+              "option": "B",
+              "text": "Stop looking at the ground. My shadow's not the problem and it's the light that keeps finding me, marking me for collection."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "If I hold still enough, will I become grass too?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Almost there, almost green, almost silent. The stalks teach stillness as camouflage, roots as escape routes. Maybe grass-children don't need saving."
+            },
+            {
+              "option": "B",
+              "text": "Movement's the disease, not the cure. You want to fix what's perfect in its breaking, make me loud when whispers keep me whole."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    }
+  ]
+}

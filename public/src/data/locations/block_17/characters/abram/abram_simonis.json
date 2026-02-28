@@ -1,0 +1,77 @@
+{
+    "id": "abram_simonis",
+    "name": "Abram Simonis",
+    "imagePath": "/images/npcs/abram_simonis_still.jpg",
+    "videoPath": "/videos/npcs/abram_simonis_video.mp4",
+    "musicPaths": ["/music/npcs/abram_theme.mp3"],
+    "sfxPaths": [
+      "/sfx/npcs/abram_keychain.wav",
+      "/sfx/npcs/abram_counting.wav"
+    ],
+    "ambience": [
+      "heavy, deliberate footsteps",
+      "pages turning",
+      "hushed whispers"
+    ],
+    "questionId": "abram_simonis",
+    "personality": {
+      "archetype": "warden",
+      "traits": ["watchful", "stern", "absent"],
+      "emotionalState": "tense",
+      "trustLevel": 35,
+      "communicationStyle": "blunt"
+    },
+    "difficulty": 7,
+    "relationship": 0,
+    "backstory": "Self appointed superintendant of the apartment complex. He marks arrivals, but claims to have never seen one. Only departures and absences.",
+    "motivations": ["keeping order", "identifying intruders"],
+    "fears": ["abandonment", "empty halls"],
+    "encounters": [
+      {
+        "encounter": 1,
+        "question": "Do you remember? When the corridors breathed with more than just dust mites and my counting?",
+        "responses": [
+          {
+            "option": "A",
+            "text": "Each grain of settled silence... proves you belong here and counted. Catalogued, crystallized in the amber of my vigilance... Your footsteps align with the creaking I've memorized since the exodus."
+          },
+          {
+            "option": "B",
+            "text": "Memory's a luxury for those who haven't watched paint peel in real-time... Keep your nostalgia... I traffic in present tense infractions and the weight of 'keys' that open nothing..."
+          }
+        ],
+        "correctAnswer": "A"
+      },
+      {
+        "encounter": 2,
+        "question": "Have you noticed? How your shadow, falls different from the stains that preceded you?",
+        "responses": [
+          {
+            "option": "A",
+            "text": "Different is disorder... Your edges blur, where theirs held firm and a smudge on my ledger. An asterisk in the margin. I'll file you under 'pending' review until you learn to cast darkness correctly..."
+          },
+          {
+            "option": "B",
+            "text": "Every shadow here earns its shape through repetition. Yours flickers like a moth against protocol, throwing patterns I've spent decades straightening. Consistency is the only currency left."
+          }
+        ],
+        "correctAnswer": "B"
+      },
+      {
+        "encounter": 3,
+        "question": "Will you clean the... handprints... from my door that weren't there yesterday?",
+        "responses": [
+          {
+            "option": "A",
+            "text": "Those marks... Predate your arrival by years... And you're just now seeing what was always there! I preserve evidence... Not erase it... Each smudge is a census of the gone."
+          },
+          {
+            "option": "B",
+            "text": "Your door collects what you attract... I... maintain order. Not innocence... Wipe your own ghosts OR wear them. MY jurisdiction ends at 'structural' integrity."
+          }
+        ],
+        "correctAnswer": "A"
+      }
+    ]
+  }
+  

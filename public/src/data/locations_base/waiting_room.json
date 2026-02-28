@@ -1,0 +1,148 @@
+{
+  "id": "waiting_room",
+  "name": "The Waiting Room",
+  "description": "Rows of plastic chairs, flickering overhead lights, a cracked clock with no hands. The number being called is always one before yours.",
+  "imagePath": "/images/locations/waiting_room_image.jpg",
+  "videoPath": "/videos/locations/waiting_room_video.mp4",
+  "musicPath": "/music/locations/waiting_room_bgm.mp3",
+  "index": 9,
+  "dangerLevel": 2,
+  "atmosphere": "liminal",
+  "weather": { "type": "artificial", "intensity": "buzzing", "visibility": 100 },
+  "timeOfDay": "timeless",
+  "specialFeatures": ["endless_queue", "number_calls", "blinking_lights"],
+  "characters": [
+    {
+      "id": "waiting_room_attendant",
+      "name": "The Attendant",
+      "imagePath": "/images/locations/waiting_room_attendant_image.jpg",
+      "videoPath": "/videos/npcs/waiting_room_attendant_video.mp4",
+      "questionId": "waiting_room_attendant",
+      "personality": {
+        "archetype": "administrator",
+        "traits": ["bored", "efficient", "unhelpful"],
+        "emotionalState": "apathetic",
+        "trustLevel": 50,
+        "communicationStyle": "monotone"
+      },
+      "difficulty": 2,
+      "relationship": 0,
+      "backstory": "Calls numbers that never match yours. Glances at you without seeing.",
+      "motivations": ["passing time", "avoiding responsibility"],
+      "fears": ["being late", "no more numbers"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Do you call the numbers randomly, or is there a pattern I'll never guess?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Pattern's there, etched in the bureaucracy of waiting. You're just not on the list yet and maybe you were, and I forgot to announce it. Check your ticket; it's probably expired."
+            },
+            {
+              "option": "B",
+              "text": "Random's too much effort. I call what the clipboard tells me, and it doesn't care about your guesswork. Keep waiting; that's the only rule that sticks."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Have you ever called your own number, or are you stuck here too?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Once, maybe and I dreamed I did. Heard my name in the static, but the chair wouldn't let me stand. We're all waiting for something, even the ones behind the counter."
+            },
+            {
+              "option": "B",
+              "text": "My number's not in the system. I checked. I'm just the voice, not the queue. Don't ask questions that make the lights flicker; it confuses the paperwork."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "If I leave my seat, will my turn come up, or am I forfeit forever?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Leave, and the system might notice and might skip you out of spite, might call you the second your shadow's gone. Forfeit’s a strong word, but the chairs remember who sat where."
+            },
+            {
+              "option": "B",
+              "text": "Seats don't own your turn. Walk away, come back, it’s all the same. The numbers don’t care about your posture or your patience. They just keep rolling."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "id": "waiting_room_echo",
+      "name": "Familiar Echo",
+      "imagePath": "/images/locations/waiting_room_echo_image.jpg",
+      "videoPath": "/videos/npcs/waiting_room_echo_video.mp4",
+      "questionId": "waiting_room_echo",
+      "personality": {
+        "archetype": "fragment",
+        "traits": ["nervous", "fidgety", "uncanny"],
+        "emotionalState": "anxious",
+        "trustLevel": 40,
+        "communicationStyle": "fast"
+      },
+      "difficulty": 2,
+      "relationship": 0,
+      "backstory": "Keeps looking at you as if you should remember them.",
+      "motivations": ["being noticed", "passing the time"],
+      "fears": ["being skipped", "never leaving"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Do I know you from somewhere, or is this place just playing tricks?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "You do, you did, you will and time’s a bad receptionist here, misfiling faces. I’m the one you forgot to call back, waiting since the clock lost its hands."
+            },
+            {
+              "option": "B",
+              "text": "Tricks, always tricks. This room mirrors whoever sits longest. I’m just your reflection with a different ticket number. Don’t stare too hard; you’ll see yourself."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Are you waiting for someone to recognize you, or just for your number?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Recognition’s the real ticket out. Numbers are just noise; a familiar glance could cut through years of queue. Keep looking and maybe I’m your missed connection."
+            },
+            {
+              "option": "B",
+              "text": "Numbers are all that matter. Recognition’s a distraction, a glitch in the waiting. I don’t need your eyes; I need the speaker to say I’m next."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "If they call my number before yours, will you still be here when I look back?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "I’ll linger, a smudge on the edge of your peripheral and here until you remember why my face itches at your memory. Go ahead, answer the call; I’ve got nowhere else."
+            },
+            {
+              "option": "B",
+              "text": "I’ll vanish the second you turn. This place doesn’t keep leftovers once your turn’s up. Don’t look back; you’ll just see an empty chair."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    }
+  ]
+}

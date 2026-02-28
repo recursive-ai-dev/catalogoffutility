@@ -1,0 +1,9 @@
+{
+  "welcome": "Welcome",
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "language": {
+    "select": "Select Language"
+  }
+}

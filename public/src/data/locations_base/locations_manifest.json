@@ -1,0 +1,12 @@
+[
+  {"id": "elevator", "name": "The Infinite Elevator"},
+  {"id": "apartment", "name": "The Apartment Block’s Maw"},
+  {"id": "office", "name": "The Office at 3:33 AM"},
+  {"id": "underpass", "name": "The Underpass"},
+  {"id": "cliff", "name": "Cliff’s Edge (Lunar Verge)"},
+  {"id": "infestation", "name": "Infestation Room"},
+  {"id": "field", "name": "Field of Tall Grass"},
+  {"id": "ashlands", "name": "The Ashlands"},
+  {"id": "event_horizon", "name": "Event Horizon"},
+  {"id": "waiting_room", "name": "The Waiting Room"}
+]

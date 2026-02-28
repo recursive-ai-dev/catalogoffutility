@@ -1,0 +1,158 @@
+{
+  "id": "resonance_monolith",
+  "name": "The Resonance Monolith",
+  "description": "A colossal pillar of fractured antennas and black stone, humming with static. Electric shadows spiral upwards as hundreds kneel before it, faces flickering with signal. All sound is a chorus of layered radio voices, none quite human.",
+  "imagePath": "/images/locations/resonance_monolith_image.jpg",
+  "videoPath": "/videos/locations/resonance_monolith.mp4",
+  "musicPath": "/music/locations/resonance_monolith_bgm.mp3",
+  "index": 7,
+  "dangerLevel": 8,
+  "atmosphere": "resonant dread",
+  "weather": { "type": "electrical", "intensity": "arcing", "visibility": 70 },
+  "timeOfDay": "perpetual dusk",
+  "specialFeatures": [
+    "arcing static",
+    "signal relics",
+    "kneeling congregation"
+  ],
+  "characters": [
+    {
+      "id": "frequency_herald",
+      "name": "Frequency Herald",
+      "imagePath": "/images/locations/frequency_herald_image.jpg",
+      "videoPath": "/videos/npcs/frequency_herald_video.mp4",
+      "questionId": "frequency_herald",
+      "personality": {
+        "archetype": "oracle",
+        "traits": ["cryptic", "possessed", "ecstatic"],
+        "emotionalState": "reverent",
+        "trustLevel": 25,
+        "communicationStyle": "chanting"
+      },
+      "difficulty": 8,
+      "relationship": 0,
+      "backstory": "The Frequency Herald receives transmissions from beyond, their words half static, half prophecy.",
+      "motivations": [
+        "transmitting the final message",
+        "interpreting the static"
+      ],
+      "fears": ["signal loss", "silence"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Can you decipher the stuttering between wavelengths where God clearshis throat?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Throat-static, yes, the divine glottis catching on tomorrow's obituaries. You're tuned to the frequency of unbecoming, where silence breeds its own noise."
+            },
+            {
+              "option": "B",
+              "text": "Deaf apostle, fumbling for meaning in the spectrum's smooth parts. The real gospel lives in the interference, the crackle between channels."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Do the signals nest in your marrow like wasps building paper prophecies?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Each transmission colonizes a vertebra, hexagonal mathematics of the end times. My bones hum architectures you'll inhabit when the broadcast finalizes."
+            },
+            {
+              "option": "B",
+              "text": "Solid bones, dead bones, quiet bones. You'll fossilize before the frequency finds purchase, mineral-deaf to the swarm's intent."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "When the monolith breathes, do you breathe backwards to match its rhythm?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Reverse respiration, pulling tomorrow's oxygen through yesterday's lungs. We're synchronized now, the stone and I, exchanging futures like spit."
+            },
+            {
+              "option": "B",
+              "text": "Forward-breather, time-chained, always exhaling the present. The monolith suffocates on your linear lungs, your refusal to inhale prophecy."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "id": "signal_archivist",
+      "name": "Signal Archivist",
+      "imagePath": "/images/locations/signal_archivist_image.jpg",
+      "videoPath": "/videos/npcs/signal_archivist_video.mp4",
+      "questionId": "signal_archivist",
+      "personality": {
+        "archetype": "scribe",
+        "traits": ["obsessive", "paranoid", "meticulous"],
+        "emotionalState": "nervous",
+        "trustLevel": 35,
+        "communicationStyle": "muttering"
+      },
+      "difficulty": 7,
+      "relationship": 0,
+      "backstory": "The Archivist catalogs every signal, convinced each holds a secret. Paranoia is both a shield and a curse.",
+      "motivations": [
+        "recording the unspeakable",
+        "deciphering lost transmissions"
+      ],
+      "fears": ["forgetting", "erasure"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Will you let me catalog the static between your synapses before it dissipates?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Document it, quickly and each spark's a dying star's final transmission. I'll hold still while you transcribe the space between my thoughts."
+            },
+            {
+              "option": "B",
+              "text": "No preservation, no record and you want to let entropy win? Every unarchived frequency is a hole in history, a deletion of what we were."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Do you fear the silence more than the sound of your name being erased from the carrier wave?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Silence is the archive's cancer, spreading through carefully labeled frequencies. But erasure and that's precision death, surgical removal from the signal's memory."
+            },
+            {
+              "option": "B",
+              "text": "You confuse absence with emptiness. Silence still vibrates; erasure leaves nothing to catalogue, no ghost-frequency to file under \"was.\""
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "If I miss recording even one transmission, does the universe notice the gap?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "The universe keeps receipts in quantum ink. Every missed signal creates a cavity in causality, a tooth pulled from time's mouth."
+            },
+            {
+              "option": "B",
+              "text": "Arrogant to think your recordings matter to the cosmos. The universe forgets faster than you can document its amnesia."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    }
+  ]
+}

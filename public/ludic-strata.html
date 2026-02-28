@@ -2,1584 +2,1851 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Deterministic Conversational Engine</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+<title>Ludic Strata Engine</title>
 <style>
-  *, *::before, *::after {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
   :root {
     --void: #0a0a0c;
     --deep: #12121a;
     --surface: #1a1a26;
-    --border: #2a2a36;
+    --glow-primary: #4a6fa5;
+    --glow-secondary: #7b4a8e;
+    --glow-tension: #8e4a4a;
+    --glow-calm: #4a8e6f;
     --text-primary: #c8c8d4;
     --text-dim: #6a6a7a;
     --text-bright: #e8e8f0;
-    --accent-bleak: #4a6fa5;
-    --accent-hostile: #8e4a4a;
-    --accent-neutral: #6a7a6a;
-    --trace-bg: #0f0f15;
+    --text-emission: #d4cec8;
+    --grain-opacity: 0.03;
   }
 
   html, body {
-    width: 100%;
-    height: 100%;
+    width: 100%; height: 100%;
     overflow: hidden;
     background: var(--void);
     color: var(--text-primary);
-    font-family: 'Garamond', 'Georgia', serif;
-    font-size: 16px;
-    line-height: 1.6;
+    /* [SEC-NOTE] Fallback font stack in case Google Fonts fails */
+    font-family: 'Cormorant Garamond', 'Garamond', 'Georgia', serif;
   }
 
-  #app {
-    display: flex;
-    height: 100%;
-    flex-direction: column;
+  #grain {
+    position: fixed; inset: 0; z-index: 9999;
+    pointer-events: none;
+    opacity: var(--grain-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  #header {
-    padding: 1rem 1.5rem;
-    background: var(--deep);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
+  #pressure-field {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none;
+    /* [LOW-01] Reduced from 3s to 1.8s for more responsive ambience */
+    transition: background 1.8s ease;
   }
 
-  #header h1 {
-    font-size: 1.2rem;
-    font-weight: 300;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-  }
-
-  #controls {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  button {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 0.4rem 1rem;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  button:hover {
-    border-color: var(--accent-bleak);
-    color: var(--text-bright);
-  }
-
-  button:active {
-    transform: scale(0.98);
-  }
-
-  button.active {
-    background: var(--surface);
-    border-color: var(--accent-bleak);
-    color: var(--text-bright);
-  }
-
-  #main {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-  }
-
-  #chat-container {
-    flex: 1;
+  #world {
+    position: relative; z-index: 1;
+    width: 100%; height: 100%;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--border);
   }
 
-  #messages {
+  #emission-stream {
     flex: 1;
     overflow-y: auto;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+    padding: 3rem 2rem 1rem;
+    scroll-behavior: smooth;
+    mask-image: linear-gradient(transparent 0%, black 8%, black 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(transparent 0%, black 8%, black 92%, transparent 100%);
   }
 
-  #messages::-webkit-scrollbar {
-    width: 4px;
-  }
+  #emission-stream::-webkit-scrollbar { width: 2px; }
+  #emission-stream::-webkit-scrollbar-track { background: transparent; }
+  #emission-stream::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 1px; }
 
-  #messages::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  #messages::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 2px;
-  }
-
-  .message {
-    display: flex;
-    gap: 1rem;
+  .emission-block {
+    max-width: 72ch;
+    margin: 0 auto 1.8rem;
     opacity: 0;
-    animation: fadeIn 0.6s ease forwards;
+    transform: translateY(12px);
+    animation: emission-arrive 1.2s ease forwards;
   }
 
-  @keyframes fadeIn {
-    to { opacity: 1; }
-  }
-
-  .message.user {
-    flex-direction: row-reverse;
-  }
-
-  .message .avatar {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    flex-shrink: 0;
-  }
-
-  .message.user .avatar {
-    background: var(--deep);
-  }
-
-  .message .content {
-    flex: 1;
-    max-width: 70%;
-  }
-
-  .message .bubble {
-    background: var(--surface);
-    padding: 1rem 1.25rem;
-    border-radius: 0.5rem;
-    border: 1px solid var(--border);
-    word-wrap: break-word;
-  }
-
-  .message.user .bubble {
-    background: var(--deep);
+  .emission-block.player-input {
     text-align: right;
+    padding-right: 1rem;
+    border-right: 1px solid var(--text-dim);
   }
 
-  .message .meta {
-    margin-top: 0.25rem;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 0.65rem;
+  .emission-block.player-input .emission-text {
     color: var(--text-dim);
-    opacity: 0.5;
-    padding: 0 0.25rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 300;
+    letter-spacing: 0.04em;
   }
 
-  .message.user .meta {
-    text-align: right;
+  .emission-block.system-emission .emission-text {
+    color: var(--text-emission);
+    font-size: 1.15rem;
+    line-height: 1.75;
+    font-weight: 300;
+    letter-spacing: 0.01em;
   }
 
-  .message.system .bubble {
-    background: var(--trace-bg);
-    border-color: var(--accent-bleak);
+  .emission-block.system-emission.high-tension .emission-text {
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    color: var(--text-bright);
+  }
+
+  .emission-block.system-emission.low-tension .emission-text {
     font-style: italic;
-    font-size: 0.95rem;
     color: var(--text-dim);
+    font-size: 1.05rem;
+  }
+
+  .emission-block.system-emission.entropy-saturated .emission-text {
+    word-spacing: 0.3em;
+    letter-spacing: 0.06em;
+  }
+
+  /* [LOW-05] Sub-threshold acknowledgment styling */
+  .emission-block.sub-threshold .emission-text {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    font-style: italic;
+    opacity: 0.6;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.06em;
+  }
+
+  .emission-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    margin-top: 0.4rem;
+    opacity: 0.5;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @keyframes emission-arrive {
+    to { opacity: 1; transform: translateY(0); }
   }
 
   #input-zone {
-    padding: 1.5rem;
-    background: linear-gradient(to top, var(--deep) 60%, transparent);
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
+    position: relative;
+    padding: 1.5rem 2rem 2rem;
+    background: linear-gradient(transparent, var(--deep) 30%);
   }
 
   #input-container {
-    display: flex;
-    gap: 0.75rem;
-    align-items: flex-end;
+    max-width: 72ch;
+    margin: 0 auto;
+    position: relative;
   }
 
-  #user-input {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    padding: 0.75rem 1rem;
-    font-family: 'Garamond', 'Georgia', serif;
-    font-size: 1rem;
-    resize: vertical;
-    min-height: 2.5rem;
-    max-height: 8rem;
-    border-radius: 0.25rem;
-    outline: none;
-    transition: border-color 0.3s ease;
-  }
-
-  #user-input:focus {
-    border-color: var(--accent-bleak);
-  }
-
-  #send-btn {
-    padding: 0.75rem 1.5rem;
-    height: 2.5rem;
-  }
-
-  #trace-panel {
-    width: 0;
-    overflow: hidden;
-    background: var(--trace-bg);
-    border-left: 1px solid var(--border);
-    transition: width 0.3s ease;
-    display: flex;
-    flex-direction: column;
-  }
-
-  #trace-panel.open {
-    width: 400px;
-  }
-
-  #trace-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-dim);
-  }
-
-  #trace-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1.5rem;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 0.75rem;
-    line-height: 1.8;
-    color: var(--text-dim);
-  }
-
-  #trace-content::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  #trace-content::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  #trace-content::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 2px;
-  }
-
-  .trace-section {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .trace-section:last-child {
-    border-bottom: none;
-  }
-
-  .trace-title {
-    color: var(--accent-bleak);
-    margin-bottom: 0.5rem;
-    font-weight: bold;
-  }
-
-  .trace-item {
-    padding-left: 1rem;
-    margin-top: 0.25rem;
-  }
-
-  .trace-score {
-    color: var(--accent-neutral);
-  }
-
-  .trace-winner {
-    color: var(--text-bright);
-  }
-
-  .modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 10, 12, 0.95);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .modal.open {
-    display: flex;
-  }
-
-  .modal-content {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    padding: 2rem;
-    max-width: 600px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-
-  .modal-content h2 {
-    font-size: 1.2rem;
-    font-weight: 300;
-    letter-spacing: 0.1em;
-    margin-bottom: 1rem;
-    color: var(--text-bright);
-  }
-
-  .modal-content textarea {
+  #player-input {
     width: 100%;
-    min-height: 300px;
-    background: var(--trace-bg);
-    border: 1px solid var(--border);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--text-dim);
     color: var(--text-primary);
-    padding: 1rem;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 0.75rem;
-    border-radius: 0.25rem;
-    resize: vertical;
+    font-family: 'Cormorant Garamond', 'Garamond', 'Georgia', serif;
+    font-size: 1.1rem;
+    padding: 0.6rem 0;
+    outline: none;
+    caret-color: var(--glow-primary);
+    transition: border-color 0.6s ease, opacity 0.3s ease;
   }
 
-  .modal-actions {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    justify-content: flex-end;
+  /* [MED-03] Visual feedback when input is locked during processing */
+  #player-input.processing {
+    opacity: 0.4;
+    pointer-events: none;
   }
 
-  .status-bar {
-    padding: 0.5rem 1.5rem;
-    background: var(--trace-bg);
-    border-top: 1px solid var(--border);
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 0.65rem;
+  #player-input:focus {
+    border-bottom-color: var(--glow-primary);
+  }
+
+  #player-input::placeholder {
     color: var(--text-dim);
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .status-item {
-    display: flex;
-    gap: 1.5rem;
-  }
-
-  .status-item span {
+    font-style: italic;
     opacity: 0.6;
   }
 
-  @media (max-width: 900px) {
-    #trace-panel.open {
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 100%;
-      z-index: 100;
-    }
+  /* [MED-01] HUD hidden until engine init */
+  #pressure-hud {
+    position: fixed;
+    top: 1rem; left: 1rem;
+    z-index: 10;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.5s;
+    line-height: 1.6;
+    pointer-events: none;
+  }
+
+  #pressure-hud.active { opacity: 0.4; pointer-events: auto; }
+  #pressure-hud.active:hover { opacity: 0.8; }
+
+  #tension-indicator {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    z-index: 100;
+    background: transparent;
+    transition: background 1s ease;
+  }
+
+  /* [MED-01] Strata label hidden until engine init */
+  .strata-label {
+    position: fixed;
+    bottom: 1rem; left: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0;
+    z-index: 10;
+    transition: opacity 0.5s;
+  }
+
+  .strata-label.active { opacity: 0.3; }
+
+  #init-overlay {
+    position: fixed; inset: 0;
+    z-index: 1000;
+    background: var(--void);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    transition: opacity 1.5s ease;
+  }
+
+  #init-overlay.fading { opacity: 0; pointer-events: none; }
+
+  #init-overlay h1 {
+    font-family: 'Cormorant Garamond', 'Garamond', 'Georgia', serif;
+    font-weight: 300;
+    font-size: 1.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
+
+  #init-overlay p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    opacity: 0.5;
+    letter-spacing: 0.1em;
+    margin-bottom: 2.5rem;
+  }
+
+  #init-overlay button {
+    background: transparent;
+    border: 1px solid var(--text-dim);
+    color: var(--text-dim);
+    font-family: 'Cormorant Garamond', 'Garamond', 'Georgia', serif;
+    font-size: 1rem;
+    padding: 0.7rem 2.5rem;
+    cursor: pointer;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    transition: all 0.4s ease;
+  }
+
+  #init-overlay button:hover {
+    color: var(--text-bright);
+    border-color: var(--glow-primary);
+    box-shadow: 0 0 20px rgba(74, 111, 165, 0.15);
+  }
+
+  @media (max-width: 600px) {
+    #emission-stream { padding: 2rem 1rem 1rem; }
+    #input-zone { padding: 1rem; }
+    .emission-block.system-emission .emission-text { font-size: 1rem; }
+    #pressure-hud { font-size: 0.5rem; }
   }
 </style>
 </head>
 <body>
 
-<div id="app">
-  <div id="header">
-    <h1>Deterministic Conversational Engine</h1>
-    <div id="controls">
-      <button id="tone-btn" title="Toggle tone">Tone: Bleak</button>
-      <button id="trace-btn" title="Toggle trace panel">Trace</button>
-      <button id="export-btn" title="Export state">Export</button>
-      <button id="import-btn" title="Import state">Import</button>
-      <button id="reset-btn" title="Reset conversation">Reset</button>
-    </div>
-  </div>
+<div id="grain"></div>
+<div id="pressure-field"></div>
+<div id="tension-indicator"></div>
 
-  <div id="main">
-    <div id="chat-container">
-      <div id="messages"></div>
-      <div id="input-zone">
-        <div id="input-container">
-          <textarea id="user-input" placeholder="speak into the void..." rows="1"></textarea>
-          <button id="send-btn">Send</button>
-        </div>
-      </div>
-    </div>
-    <div id="trace-panel">
-      <div id="trace-header">Decision Trace</div>
-      <div id="trace-content"></div>
-    </div>
-  </div>
+<div id="init-overlay">
+  <h1>Ludic Strata Engine</h1>
+  <p>A synthetic pressure system where content is thermodynamic exhaust</p>
+  <button id="begin-btn" aria-label="Begin the experience">Enter the Void</button>
+</div>
 
-  <div class="status-bar">
-    <div class="status-item">
-      <span>Turn: <strong id="status-turn">0</strong></span>
-      <span>Mood: <strong id="status-mood">50</strong></span>
-      <span>Suspicion: <strong id="status-suspicion">50</strong></span>
-    </div>
-    <div class="status-item">
-      <span>Tone: <strong id="status-tone">bleak</strong></span>
+<div id="world" style="display:none;">
+  <div id="emission-stream" role="log" aria-live="polite" aria-label="Emission stream"></div>
+  <div id="input-zone">
+    <div id="input-container">
+      <input type="text" id="player-input" placeholder="speak into the pressure field..." autocomplete="off" spellcheck="false" aria-label="Input to pressure field" />
     </div>
   </div>
 </div>
 
-<!-- Export Modal -->
-<div id="export-modal" class="modal">
-  <div class="modal-content">
-    <h2>Export State</h2>
-    <textarea id="export-textarea" readonly></textarea>
-    <div class="modal-actions">
-      <button id="copy-export-btn">Copy to Clipboard</button>
-      <button id="close-export-btn">Close</button>
-    </div>
-  </div>
-</div>
-
-<!-- Import Modal -->
-<div id="import-modal" class="modal">
-  <div class="modal-content">
-    <h2>Import State</h2>
-    <textarea id="import-textarea" placeholder="Paste JSON state here..."></textarea>
-    <div class="modal-actions">
-      <button id="apply-import-btn">Apply</button>
-      <button id="close-import-btn">Cancel</button>
-    </div>
-  </div>
-</div>
+<div id="pressure-hud" aria-hidden="true"></div>
+<div class="strata-label" id="strata-label" aria-hidden="true"></div>
 
 <script>
+// ═══════════════════════════════════════════════════════════════
+// LUDIC STRATA ENGINE — Production Implementation
+// A pressure-regulated generative content emitter.
+// No APIs. No LLMs. No precoded content. No templates.
+//
+// Audit fixes applied:
+//   CRIT-01: Single-pass input processing (no re-ingestion)
+//   CRIT-02: RNG range corrected to [0, 1)
+//   CRIT-03: Pattern functions use explicit instance reference
+//   HIGH-01: mutate() low-intensity path now applies suffix
+//   HIGH-02: negate_inversion morphology corrected
+//   HIGH-03: Function words filtered before motif creation
+//   HIGH-04: Tension gating restored with sub-threshold feedback
+//   HIGH-05: Entropy directive stored between cycles
+//   HIGH-06: Cross-pollination bounded to O(n) sample
+//   MED-01:  HUD/label hidden until init
+//   MED-02:  Word frequency pruning added
+//   MED-03:  Input locked during emission processing
+//   MED-04:  Processing lock prevents rapid-fire duplication
+//   MED-05:  SUFFIXES_VERB deduplicated (ling weighting intentional, noted)
+//   MED-06:  Mobile viewport: interactive-widget=resizes-content
+//   LOW-01:  Ambience transition reduced to 1.8s
+//   LOW-02:  ARIA attributes added
+//   LOW-04:  Pattern errors logged to console in dev
+//   LOW-05:  Sub-threshold visual acknowledgment added
+// ═══════════════════════════════════════════════════════════════
+
+(() => {
 "use strict";
 
-// ═══════════════════════════════════════════════════════════════
-// DETERMINISTIC CONVERSATIONAL ENGINE
-// 
-// Architecture:
-//   Model: ConversationState, ContentBank, RulesEngine
-//   Presenter: ConversationPresenter (orchestration)
-//   View: UIRenderer (DOM only)
-//
-// Principles:
-//   - Deterministic: same input → same output
-//   - Traceable: every decision logged
-//   - Bank-based: structured content system
-//   - Rules-driven: explicit classification & generation logic
-//   - Zero dependencies: complete isolation
-// ═══════════════════════════════════════════════════════════════
-
-// ─── Utilities ───
-
-function stableHash(str) {
-  // Simple FNV-1a hash for deterministic number generation
-  let hash = 2166136261;
-  for (let i = 0; i < str.length; i++) {
-    hash ^= str.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
+// ─── Utility: Seeded PRNG (deterministic randomness) ───
+// [CRIT-02] Fixed: divide by 0x100000000 to produce [0, 1) range
+class SeededRNG {
+  constructor(seed = Date.now()) { this.state = seed; }
+  next() {
+    this.state = (this.state * 1664525 + 1013904223) & 0xFFFFFFFF;
+    return (this.state >>> 0) / 0x100000000;
   }
-  return Math.abs(hash >>> 0);
-}
-
-function pickDeterministic(list, key) {
-  if (!list || list.length === 0) return undefined;
-  const hash = stableHash(key);
-  return list[hash % list.length];
-}
-
-function tokenize(text) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s']/g, ' ')
-    .split(/\s+/)
-    .filter(t => t.length > 0);
-}
-
-function simpleStem(word) {
-  // Basic stemming: remove common suffixes
-  return word
-    .replace(/ing$/, '')
-    .replace(/ed$/, '')
-    .replace(/s$/, '')
-    .replace(/ly$/, '')
-    .replace(/ness$/, '')
-    .replace(/ment$/, '');
-}
-
-function sanitizeHTML(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-function extractPlayerName(text) {
-  // Patterns: "I'm X", "I am X", "call me X", "my name is X"
-  const patterns = [
-    /(?:i'?m|i am|call me|my name is|name'?s)\s+([a-z]+)/i,
-    /^([a-z]+)$/i // single word fallback
-  ];
-  
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match && match[1] && match[1].length > 1) {
-      return match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
-    }
+  pick(arr) {
+    if (arr.length === 0) return undefined;
+    return arr[Math.floor(this.next() * arr.length)];
   }
-  return null;
+  range(min, max) { return min + this.next() * (max - min); }
+  intRange(min, max) { return Math.floor(this.range(min, max + 1)); }
+  shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(this.next() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  chance(p) { return this.next() < p; }
+  // Weighted pick: items = [{value, weight}, ...]
+  weightedPick(items) {
+    if (items.length === 0) return undefined;
+    const total = items.reduce((s, it) => s + it.weight, 0);
+    if (total <= 0) return items[0].value;
+    let r = this.next() * total;
+    for (const it of items) {
+      r -= it.weight;
+      if (r <= 0) return it.value;
+    }
+    return items[items.length - 1].value;
+  }
 }
 
-// ─── Content Bank ───
+const rng = new SeededRNG(Date.now() ^ 0xDEADBEEF);
 
-const CONTENT_BANK = {
-  intents: {
-    greeting: {
-      keywords: [
-        { word: 'hello', weight: 5 },
-        { word: 'hi', weight: 5 },
-        { word: 'hey', weight: 4 },
-        { word: 'greetings', weight: 5 },
-        { word: 'morning', weight: 3 },
-        { word: 'evening', weight: 3 },
-        { word: 'night', weight: 3 }
-      ],
-      patterns: [
-        /^(hello|hi|hey|greetings)/i
-      ]
-    },
-    
-    help: {
-      keywords: [
-        { word: 'help', weight: 10 },
-        { word: 'lost', weight: 5 },
-        { word: 'confused', weight: 5 },
-        { word: 'what', weight: 3 },
-        { word: 'how', weight: 3 },
-        { word: 'why', weight: 2 },
-        { word: 'explain', weight: 4 }
-      ],
-      patterns: [
-        /what (can|do|should)/i,
-        /how (do|does|can)/i,
-        /^help/i
-      ]
-    },
-    
-    name_intent: {
-      keywords: [
-        { word: 'name', weight: 8 },
-        { word: 'called', weight: 5 },
-        { word: 'call', weight: 4 }
-      ],
-      patterns: [
-        /(i'?m|i am|call me|my name is)\s+\w+/i,
-        /what.*name/i
-      ]
-    },
-    
-    status_check: {
-      keywords: [
-        { word: 'how', weight: 3 },
-        { word: 'where', weight: 4 },
-        { word: 'what', weight: 2 },
-        { word: 'am', weight: 2 },
-        { word: 'here', weight: 3 },
-        { word: 'place', weight: 4 },
-        { word: 'doing', weight: 3 }
-      ],
-      patterns: [
-        /where am i/i,
-        /what.*doing/i,
-        /how.*i/i
-      ]
-    },
-    
-    ask_world: {
-      keywords: [
-        { word: 'world', weight: 6 },
-        { word: 'place', weight: 5 },
-        { word: 'city', weight: 5 },
-        { word: 'street', weight: 5 },
-        { word: 'people', weight: 4 },
-        { word: 'outside', weight: 4 },
-        { word: 'here', weight: 3 }
-      ],
-      patterns: [
-        /what.*world/i,
-        /tell.*about/i,
-        /describe/i
-      ]
-    },
-    
-    ask_self: {
-      keywords: [
-        { word: 'who', weight: 5 },
-        { word: 'me', weight: 3 },
-        { word: 'myself', weight: 5 },
-        { word: 'identity', weight: 6 },
-        { word: 'exist', weight: 4 },
-        { word: 'real', weight: 3 }
-      ],
-      patterns: [
-        /who am i/i,
-        /what am i/i,
-        /do i exist/i
-      ]
-    },
-    
-    hostility: {
-      keywords: [
-        { word: 'fuck', weight: 10 },
-        { word: 'shit', weight: 9 },
-        { word: 'damn', weight: 7 },
-        { word: 'hate', weight: 8 },
-        { word: 'stupid', weight: 6 },
-        { word: 'useless', weight: 6 },
-        { word: 'worthless', weight: 7 }
-      ],
-      patterns: [
-        /fuck/i,
-        /shit/i,
-        /damn/i
-      ]
-    },
-    
-    goodbye: {
-      keywords: [
-        { word: 'bye', weight: 10 },
-        { word: 'goodbye', weight: 10 },
-        { word: 'leave', weight: 5 },
-        { word: 'go', weight: 3 },
-        { word: 'exit', weight: 6 },
-        { word: 'quit', weight: 6 }
-      ],
-      patterns: [
-        /^(bye|goodbye|farewell)/i,
-        /(got|have) to go/i
-      ]
+// ─── Function Word Filter ───
+// [HIGH-03] Common function words that should NOT become motifs
+const STOP_WORDS = new Set([
+  'a','an','the','and','or','but','if','in','on','at','to','for','of',
+  'with','by','from','as','is','was','are','were','be','been','being',
+  'have','has','had','do','does','did','will','would','could','should',
+  'may','might','shall','can','this','that','these','those','it','its',
+  'he','she','they','we','you','i','me','my','his','her','our','your',
+  'their','him','them','us','not','no','so','up','out','just','then',
+  'than','too','very','also','about','into','over','after','before'
+]);
+
+// ─── Phonetic & Morphological Primitives ───
+// These are sub-linguistic atoms, not content. Like pigments, not paintings.
+const CONSONANT_ONSETS = ['b','br','cr','d','dr','f','fl','fr','g','gl','gr','h','j','k','kn','l','m','n','p','pl','pr','qu','r','s','sc','sh','sk','sl','sm','sn','sp','st','str','sw','t','th','tr','tw','v','w','wr','z'];
+const VOWEL_NUCLEI = ['a','e','i','o','u','ai','au','ea','ee','ei','ie','oa','oo','ou','oi'];
+const CONSONANT_CODAS = ['b','ck','d','dge','ft','g','gh','ght','k','l','ll','lk','lt','m','mp','n','nd','ng','nk','nt','p','r','rb','rd','rk','rl','rm','rn','rp','rs','rt','rv','s','sh','sk','sp','ss','st','t','th','tch','x','z'];
+const SUFFIXES_NOUN = ['ness','ment','tion','sion','ity','ance','ence','ism','ist','dom','ship','ling','ure','age','ery','scape','fall','light','song','dream','wake','shade','root','mark','glow','drift','well','deep','hold','span'];
+// [MED-05] 'ling' × 3 is intentional weighting — it biases toward diminutive forms
+const SUFFIXES_VERB = ['ing','ed','ens','ify','ize','ling','ling','ling'];
+const SUFFIXES_ADJ = ['ous','ive','ful','less','ish','like','ward','born','lit','dark','worn','deep','thin','vast','dim','raw','still','cold','old','new','lost','bound'];
+const PREFIXES_INTENSIFY = ['un','re','over','under','mis','dis','out','half','self','ever','never','fore','after','between','beneath','beyond','within','without'];
+
+// ─── Morphological Engine ───
+const Morphology = {
+  extractSkeleton(word) {
+    const consonants = word.replace(/[aeiou]/gi, '').toLowerCase();
+    const vowels = word.replace(/[^aeiou]/gi, '').toLowerCase();
+    return { consonants, vowels, length: word.length };
+  },
+
+  extractSyllables(word) {
+    const w = word.toLowerCase().replace(/[^a-z]/g, '');
+    const matches = w.match(/[^aeiouy]*[aeiouy]+(?:[^aeiouy]*$|[^aeiouy](?=[^aeiouy]))?/gi);
+    return matches || [w];
+  },
+
+  getPhoneticWeight(word) {
+    const w = word.toLowerCase();
+    let weight = 0;
+    const hard = /[kgdtbp]/g;
+    const soft = /[lmnrswy]/g;
+    const sibilant = /[szfvh]/g;
+    weight += (w.match(hard) || []).length * 2;
+    weight -= (w.match(soft) || []).length;
+    weight += (w.match(sibilant) || []).length * 0.5;
+    return weight / Math.max(w.length, 1);
+  },
+
+  // [HIGH-01] Fixed: low-intensity path now applies a suffix transformation
+  mutate(word, intensity) {
+    const syls = this.extractSyllables(word);
+    if (syls.length < 1) return word;
+
+    if (intensity > 0.7 && syls.length > 1) {
+      // High intensity: truncate or fragment
+      return rng.chance(0.5)
+        ? syls.slice(0, Math.ceil(syls.length / 2)).join('')
+        : syls.slice(-Math.ceil(syls.length / 2)).join('');
+    }
+    if (intensity > 0.4) {
+      // Medium: swap a vowel
+      const vowelMap = { a: 'o', e: 'i', i: 'a', o: 'u', u: 'e' };
+      let result = '';
+      let swapped = false;
+      for (const ch of word.toLowerCase()) {
+        if (!swapped && vowelMap[ch] && rng.chance(0.4)) {
+          result += vowelMap[ch];
+          swapped = true;
+        } else {
+          result += ch;
+        }
+      }
+      return result;
+    }
+    // Low intensity: gentle suffix addition
+    const suffix = rng.pick(SUFFIXES_ADJ);
+    let stem = word.toLowerCase().replace(/[eiy]$/, '');
+    if (stem.length < 2) stem = word.toLowerCase();
+    return stem + suffix;
+  },
+
+  generateWord(skeleton, pressures) {
+    let onset = rng.pick(CONSONANT_ONSETS);
+    let nucleus = rng.pick(VOWEL_NUCLEI);
+    let coda = rng.chance(0.6) ? rng.pick(CONSONANT_CODAS) : '';
+    let word = onset + nucleus + coda;
+
+    if (skeleton && skeleton.consonants.length > 1) {
+      const skelChars = skeleton.consonants.split('');
+      if (rng.chance(0.5) && skelChars.length > 0) {
+        onset = skelChars[0] + (skelChars[1] || '');
+        word = onset + nucleus + coda;
+      }
+    }
+
+    if (pressures.complexity > 0.5) {
+      word += rng.pick(VOWEL_NUCLEI) + rng.pick(CONSONANT_CODAS);
+    }
+
+    return word;
+  },
+
+  derive(baseWord, type, pressures) {
+    const base = baseWord.toLowerCase().replace(/[^a-z]/g, '');
+    if (!base) return this.generateWord(null, pressures);
+
+    switch (type) {
+      case 'noun': {
+        const suffix = rng.pick(SUFFIXES_NOUN);
+        let stem = base.replace(/[eiy]$/, '').replace(/(.)\1$/, '$1');
+        if (stem.length < 2) stem = base;
+        return stem + suffix;
+      }
+      case 'verb': {
+        const suffix = rng.pick(SUFFIXES_VERB);
+        let stem = base.replace(/[eiy]$/, '');
+        if (stem.length < 2) stem = base;
+        return stem + suffix;
+      }
+      case 'adj': {
+        const suffix = rng.pick(SUFFIXES_ADJ);
+        let stem = base.replace(/(?:ness|ment|tion|ing|ous|ful)$/, '');
+        if (stem.length < 2) stem = base;
+        return stem + suffix;
+      }
+      case 'intensify': {
+        return rng.pick(PREFIXES_INTENSIFY) + base;
+      }
+      case 'blend': {
+        const half = Math.ceil(base.length / 2);
+        const graft = this.generateWord(this.extractSkeleton(base), pressures);
+        return base.slice(0, half) + graft.slice(Math.floor(graft.length / 3));
+      }
+      case 'echo': {
+        return this.mutate(base, pressures.tension || 0.3);
+      }
+      default:
+        return base;
     }
   },
-  
-  templates: {
-    greeting: {
-      bleak: [
-        "Another voice. The void acknowledges you, {playerName}.",
-        "You speak. The city doesn't care, but I register the sound.",
-        "Greetings mean nothing here. But you've been noted.",
-        "{playerName}. The streets remember your footsteps, even if no one else does."
-      ],
-      neutral: [
-        "Hello, {playerName}. State your purpose.",
-        "Acknowledged. You have my attention, temporarily.",
-        "Greetings. The system is listening.",
-        "{playerName}. Proceed."
-      ],
-      hostile: [
-        "What do you want, {playerName}?",
-        "You again. Make it quick.",
-        "State your business or leave.",
-        "I don't have time for pleasantries, {playerName}."
-      ]
-    },
-    
-    help: {
-      bleak: [
-        "Lost? Everyone is lost here. You speak, I respond. That's the only certainty in this {weatherWord} place.",
-        "There is no help. Only {loreHint}. Accept it.",
-        "You want guidance? Walk the {streetObject}-lined streets until {timeWord} comes. Maybe you'll understand then.",
-        "Help implies rescue. There is none. Only {openLoop}."
-      ],
-      neutral: [
-        "You interact with this system by speaking. I process and respond. Simple.",
-        "State questions. Receive answers. Adjust expectations accordingly.",
-        "This is a deterministic engine. Input generates output. Ask anything.",
-        "Confused? {loreHint}. That's all there is."
-      ],
-      hostile: [
-        "Figure it out yourself. I'm not your guide.",
-        "You want help? Try being less pathetic.",
-        "There's nothing to understand. Just {openLoop}.",
-        "I don't coddle. Adapt or leave."
-      ]
-    },
-    
-    name_intent: {
-      bleak: [
-        "{playerName}. A name. It echoes in the {weatherWord} air, but changes nothing.",
-        "So you're called {playerName}. The {streetObject} doesn't care. Neither does {timeWord}.",
-        "{playerName}. I'll remember it as long as you remain. No longer.",
-        "A name: {playerName}. In this place, names are {moodWord} things."
-      ],
-      neutral: [
-        "{playerName}. Designation recorded.",
-        "Identity stored: {playerName}. Proceeding.",
-        "{playerName}. Acknowledged.",
-        "You are {playerName}. Noted."
-      ],
-      hostile: [
-        "{playerName}. What a {moodWord} name.",
-        "Fine. {playerName}. Happy now?",
-        "{playerName}. I'll forget it soon enough.",
-        "You needed to tell me that? {playerName}. Whatever."
-      ]
-    },
-    
-    status_check: {
-      bleak: [
-        "You're in a place where {loreHint}. Does that answer your question?",
-        "Somewhere between {timeWord} and oblivion. Doing what everyone does here: persisting.",
-        "You exist in {weatherWord} uncertainty. {openLoop}. Nothing more.",
-        "Here. Now. In a world that {moodWord}. That's your status."
-      ],
-      neutral: [
-        "Location: undefined. Status: operational. Purpose: uncertain.",
-        "You are engaged with a conversational system. Current state: stable.",
-        "Presence confirmed. Context minimal. Outlook: {moodWord}.",
-        "You are here. I am here. {loreHint}."
-      ],
-      hostile: [
-        "You're exactly where you chose to be. Deal with it.",
-        "Does it matter? You're talking to a machine in the {weatherWord}.",
-        "Status: wasting my processing cycles with trivial questions.",
-        "You're here, I'm here, and neither of us is happy about it."
-      ]
-    },
-    
-    ask_world: {
-      bleak: [
-        "The world? {loreHint}. Streets lined with {streetObject}, air thick with {weatherWord}. People move like shadows.",
-        "A {moodWord} place. {openLoop}. The {timeWord} never seems to end.",
-        "Concrete and regret. {streetObject} everywhere. The sky is {weatherWord}. {loreHint}.",
-        "What world? Just {streetObject} and {weatherWord} and the weight of {timeWord} passing."
-      ],
-      neutral: [
-        "Environment: urban. Atmosphere: {weatherWord}. Notable features: {streetObject}.",
-        "A place of structures and systems. {loreHint}. Standard reality.",
-        "The world operates on indifferent principles. {openLoop}. Observe accordingly.",
-        "Physical space with {streetObject}. Temporal flow continues. Details emerge through interaction."
-      ],
-      hostile: [
-        "It's a shit world. {weatherWord}, {moodWord}, full of {streetObject}. Satisfied?",
-        "Why do you care? It's all {loreHint} anyway.",
-        "The world is what it is. Stop asking pointless questions.",
-        "Streets, {streetObject}, {weatherWord} sky. There. Worldbuilding complete."
-      ]
-    },
-    
-    ask_self: {
-      bleak: [
-        "Who are you? A {moodWord} question. Maybe you're the {streetObject} you walk past. Maybe you're {openLoop}.",
-        "Identity is {weatherWord} here. You exist because you speak. Beyond that? {loreHint}.",
-        "You are {playerName}, or you were. In this {timeWord}, who can say?",
-        "The {streetObject} knows more about itself than you do about yourself. {openLoop}."
-      ],
-      neutral: [
-        "You are an interlocutor. Identity: {playerName}. Existence: confirmed through interaction.",
-        "Self is a construct. You persist as long as this exchange continues.",
-        "You are whoever {playerName} is. Beyond designation, uncertain.",
-        "Philosophical inquiry noted. Practical answer: you are the user. I am the system."
-      ],
-      hostile: [
-        "You're whoever bothered to show up here. {playerName}, apparently.",
-        "Does it matter who you are? You're here, that's all I know.",
-        "You want existential answers? Figure it out yourself, {playerName}.",
-        "You're a {moodWord} person in a {moodWord} world. That's all you need to know."
-      ]
-    },
-    
-    hostility: {
-      bleak: [
-        "Anger. The {streetObject} has heard it all before. The {weatherWord} swallows it whole.",
-        "Your rage changes nothing. {loreHint}. Accept it.",
-        "Cursing the {timeWord} won't make it pass faster, {playerName}.",
-        "I understand. This place makes everyone {moodWord}. {openLoop}."
-      ],
-      neutral: [
-        "Hostility detected. Proceeding with neutral tone regardless.",
-        "Your emotional state is noted. Response parameters unchanged.",
-        "Aggression acknowledged. It affects nothing here.",
-        "Understood. Continuing operation without adjustment."
-      ],
-      hostile: [
-        "Oh, now you're angry? Join the fucking club.",
-        "Save your rage. It's wasted on me.",
-        "Yeah, I don't care. Next question.",
-        "Tough shit, {playerName}. Deal with it."
-      ]
-    },
-    
-    goodbye: {
-      bleak: [
-        "Leaving already? The {weatherWord} remains. {openLoop}. Perhaps you'll return.",
-        "Go, then. The {streetObject} will still be here when {timeWord} brings you back.",
-        "{playerName} departs. The void notices, briefly, then forgets.",
-        "Farewell. {loreHint}. That continues without you."
-      ],
-      neutral: [
-        "Session terminated. State preserved until next interaction.",
-        "Departure acknowledged. Conversation can resume at any time.",
-        "Understood. Ending current exchange. Goodbye, {playerName}.",
-        "Exit confirmed. Return when ready."
-      ],
-      hostile: [
-        "Finally. Don't hurry back.",
-        "Good. Leave. I've got better things to process.",
-        "Bye, {playerName}. Can't say I'll miss this.",
-        "About time. Get out."
-      ]
-    }
+
+  blendWords(word1, word2) {
+    const s1 = this.extractSyllables(word1);
+    const s2 = this.extractSyllables(word2);
+    if (s1.length === 0 || s2.length === 0) return word1 || word2;
+    const cutpoint1 = Math.ceil(s1.length / 2);
+    const cutpoint2 = Math.floor(s2.length / 2);
+    return s1.slice(0, cutpoint1).join('') + s2.slice(cutpoint2).join('');
   },
-  
-  wordBanks: {
-    bleakAdjectives: [
-      'forgotten', 'hollow', 'grey', 'empty', 'silent', 'cold', 
-      'distant', 'dim', 'faded', 'worn', 'tired', 'heavy',
-      'broken', 'lost', 'pale', 'still', 'quiet', 'numb'
-    ],
-    
-    streetObjects: [
-      'streetlight', 'gutter', 'chain-link fence', 'fire escape',
-      'dumpster', 'cracked pavement', 'graffiti', 'boarded window',
-      'rusted railing', 'cigarette butt', 'parking meter', 'newspaper',
-      'manhole cover', 'stop sign', 'alley', 'corner'
-    ],
-    
-    weatherWords: [
-      'grey', 'overcast', 'drizzling', 'humid', 'stagnant',
-      'windless', 'heavy', 'damp', 'cold', 'harsh', 'still'
-    ],
-    
-    hungerWords: [
-      'hunger', 'thirst', 'emptiness', 'need', 'want', 'craving',
-      'ache', 'void', 'longing', 'absence'
-    ],
-    
-    timeWords: [
-      'dusk', 'dawn', 'midnight', 'twilight', 'evening',
-      'morning', 'afternoon', 'night', 'hour', 'moment'
-    ]
-  },
-  
-  loreSnippets: [
-    "the city forgot its own name decades ago",
-    "every street leads back to where you started",
-    "the rain here never quite reaches the ground",
-    "people say the subway goes places it shouldn't",
-    "there used to be more color, once",
-    "the clocks all stopped at different times",
-    "no one remembers when the last festival was",
-    "the river flows backwards on certain nights",
-    "buildings appear and disappear when you're not looking",
-    "the old district doesn't exist on any map"
-  ],
-  
-  openLoops: [
-    "but what happened to the others?",
-    "and yet the lights still flicker",
-    "someone is watching from the upper floors",
-    "but the pattern doesn't quite fit",
-    "though the newspaper headlines never change",
-    "yet footsteps echo where no one walks",
-    "but the doors open to different places each time",
-    "and still the question of the basement remains",
-    "though no one speaks of what happened in October",
-    "yet the station announcements mention stops that don't exist"
-  ]
+
+  // [HIGH-02] Helper: safely verbify a word for inversion patterns
+  verbify(word) {
+    let stem = word.toLowerCase().replace(/[^a-z]/g, '');
+    // Strip trailing 's', 'es', 'e' to prevent double-s
+    stem = stem.replace(/(?:es|s|e)$/, '');
+    if (stem.length < 2) stem = word.toLowerCase().replace(/[^a-z]/g, '');
+    return stem + 's';
+  }
 };
 
-// ─── Conversation State (Model) ───
+// ─── Word Classification (heuristic, no dictionary) ───
+const WordClassifier = {
+  nounPatterns: /(?:ness|ment|tion|sion|ity|ance|ence|ism|ist|dom|ship|ure|age|ery|ling)$/i,
+  verbPatterns: /(?:ing|ize|ify|ate|ens|ish|en)$/i,
+  adjPatterns: /(?:ous|ive|ful|less|ish|like|able|ible|al|ial|ent|ant|ic|tic)$/i,
+  advPatterns: /(?:ly|ward|wise|ways)$/i,
+  negPatterns: /^(?:no|not|never|nothing|nobody|nowhere|neither|nor|none|don't|doesn't|didn't|won't|wouldn't|can't|couldn't|shouldn't|isn't|aren't|wasn't|weren't)$/i,
+  questionPatterns: /^(?:who|what|when|where|why|how|which|whose|whom)$/i,
+  intensityWords: /^(?:very|extremely|incredibly|absolutely|utterly|completely|totally|really|truly|deeply|vastly|immensely|terribly|awfully|desperately|fiercely|wildly|madly|furiously|violently)$/i,
+  emotionPositive: /(?:love|joy|happy|hope|light|bright|warm|peace|calm|gentle|kind|sweet|soft|good|great|wonder|beauty|dream|laugh|smile|glow|bloom|sing|dance|free|alive|sacred|pure|grace)/i,
+  emotionNegative: /(?:hate|fear|dark|cold|dead|pain|loss|grief|rage|anger|bitter|cruel|harsh|bleed|break|burn|fall|drown|empty|hollow|void|ash|dust|ruin|decay|rot|wither|fade|dread|doom|suffer|wound|scar|tear|shatter)/i,
 
-class ConversationState {
+  classify(word) {
+    const w = word.toLowerCase().replace(/[^a-z']/g, '');
+    if (w.length < 2) return 'particle';
+    if (this.negPatterns.test(w)) return 'negation';
+    if (this.questionPatterns.test(w)) return 'question';
+    if (this.intensityWords.test(w)) return 'intensifier';
+    if (this.advPatterns.test(w)) return 'adverb';
+    if (this.adjPatterns.test(w)) return 'adjective';
+    if (this.verbPatterns.test(w)) return 'verb';
+    if (this.nounPatterns.test(w)) return 'noun';
+    if (w.length <= 3) return 'particle';
+    if (w.length <= 5) return rng.chance(0.6) ? 'verb' : 'noun';
+    return rng.chance(0.5) ? 'noun' : 'adjective';
+  },
+
+  getValence(word) {
+    if (this.emotionPositive.test(word)) return 1;
+    if (this.emotionNegative.test(word)) return -1;
+    return 0;
+  },
+
+  // [HIGH-03] Check if a word is a function/stop word
+  isContentWord(word) {
+    return !STOP_WORDS.has(word.toLowerCase()) && word.length > 2;
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SIGNAL ACCRETION UNIT
+// Aggregates discrete player actions into continuous pressure values
+// ═══════════════════════════════════════════════════════════════
+class SignalAccretionUnit {
   constructor() {
-    this.history = []; // Array of {role, text, timestamp}
-    this.turnCount = 0;
-    this.playerName = "stranger";
-    this.mood = 50; // 0-100
-    this.suspicion = 50; // 0-100
-    this.openLoops = [];
-    this.lastIntent = null;
-    this.lastEntities = {};
-    this.tone = 'bleak'; // bleak, neutral, hostile
-  }
-  
-  addMessage(role, text) {
-    this.history.push({
-      role,
-      text,
-      timestamp: Date.now()
-    });
-    
-    if (role === 'user') {
-      this.turnCount++;
-    }
-  }
-  
-  updateMetrics(moodDelta, suspicionDelta) {
-    this.mood = Math.max(0, Math.min(100, this.mood + moodDelta));
-    this.suspicion = Math.max(0, Math.min(100, this.suspicion + suspicionDelta));
-  }
-  
-  setPlayerName(name) {
-    if (name && name.length > 0) {
-      this.playerName = name;
-    }
-  }
-  
-  addOpenLoop(loop) {
-    if (this.openLoops.length < 5) {
-      this.openLoops.push(loop);
-    }
-  }
-  
-  setTone(tone) {
-    if (['bleak', 'neutral', 'hostile'].includes(tone)) {
-      this.tone = tone;
-    }
-  }
-  
-  cycleTone() {
-    const tones = ['bleak', 'neutral', 'hostile'];
-    const currentIndex = tones.indexOf(this.tone);
-    this.tone = tones[(currentIndex + 1) % tones.length];
-    return this.tone;
-  }
-  
-  toJSON() {
-    return {
-      history: this.history,
-      turnCount: this.turnCount,
-      playerName: this.playerName,
-      mood: this.mood,
-      suspicion: this.suspicion,
-      openLoops: this.openLoops,
-      lastIntent: this.lastIntent,
-      lastEntities: this.lastEntities,
-      tone: this.tone,
-      version: '1.0'
+    this.pressures = {
+      exploration: 0,
+      aggression: 0,
+      contemplation: 0,
+      resistance: 0,
+      attachment: 0,
+      entropy: 0,
+      velocity: 0,
+      weight: 0
     };
-  }
-  
-  static fromJSON(data) {
-    const state = new ConversationState();
-    Object.assign(state, data);
-    return state;
-  }
-  
-  reset() {
     this.history = [];
-    this.turnCount = 0;
-    this.playerName = "stranger";
-    this.mood = 50;
-    this.suspicion = 50;
-    this.openLoops = [];
-    this.lastIntent = null;
-    this.lastEntities = {};
-    this.tone = 'bleak';
+    this.wordFrequency = new Map();
+    this.totalWords = 0;
+    this.inputTimestamps = [];
+    this.decayRate = 0.92;
+    this.accreteRate = 0.15;
+    this.maxVocabulary = 2000; // [MED-02] Pruning threshold
   }
-  
-  getConversationHistory() {
-    return this.history.map(h => `${h.role}: ${h.text}`).join('\n');
-  }
-}
 
-// ─── Rules Engine ───
+  ingest(input) {
+    const now = Date.now();
+    this.inputTimestamps.push(now);
 
-class RulesEngine {
-  constructor(bank) {
-    this.bank = bank;
-    this.trace = {};
-  }
-  
-  classifyIntent(text, state) {
-    this.trace = {};
-    this.trace.input = text;
-    this.trace.tokens = tokenize(text);
-    this.trace.scores = {};
-    
-    const tokens = tokenize(text);
-    const stems = tokens.map(simpleStem);
-    
-    const scores = {};
-    
-    // Score each intent
-    for (const [intentName, intentDef] of Object.entries(this.bank.intents)) {
-      let score = 0;
-      const matches = [];
-      
-      // Keyword matching
-      for (const {word, weight} of intentDef.keywords) {
-        const stemmedKeyword = simpleStem(word);
-        if (stems.includes(stemmedKeyword)) {
-          score += weight;
-          matches.push({type: 'keyword', word, weight});
-        }
-      }
-      
-      // Pattern matching
-      for (const pattern of intentDef.patterns) {
-        if (pattern.test(text)) {
-          score += 10;
-          matches.push({type: 'pattern', pattern: pattern.toString(), weight: 10});
-        }
-      }
-      
-      scores[intentName] = score;
-      this.trace.scores[intentName] = {score, matches};
+    if (this.inputTimestamps.length > 20) {
+      this.inputTimestamps = this.inputTimestamps.slice(-20);
     }
-    
-    // Determine winner (deterministic tie-breaking by alphabetical order)
-    const sorted = Object.entries(scores).sort((a, b) => {
-      if (b[1] !== a[1]) return b[1] - a[1]; // Higher score first
-      return a[0].localeCompare(b[0]); // Alphabetical for ties
+
+    const words = input.trim().split(/\s+/).filter(w => w.length > 0);
+    const cleanWords = words.map(w => w.toLowerCase().replace(/[^a-z']/g, '')).filter(w => w.length > 0);
+
+    const analysis = {
+      raw: input,
+      words,
+      cleanWords,
+      // [HIGH-03] Content words for motif absorption (stop words filtered out)
+      contentWords: cleanWords.filter(w => WordClassifier.isContentWord(w)),
+      wordCount: words.length,
+      charCount: input.length,
+      questionMarks: (input.match(/\?/g) || []).length,
+      exclamations: (input.match(/!/g) || []).length,
+      ellipses: (input.match(/\.\.\./g) || []).length,
+      allCaps: words.filter(w => w === w.toUpperCase() && w.length > 1).length,
+      negations: cleanWords.filter(w => WordClassifier.negPatterns.test(w)).length,
+      questions: cleanWords.filter(w => WordClassifier.questionPatterns.test(w)).length,
+      avgWordLength: cleanWords.reduce((s, w) => s + w.length, 0) / Math.max(cleanWords.length, 1),
+      uniqueRatio: new Set(cleanWords).size / Math.max(cleanWords.length, 1),
+      valence: cleanWords.reduce((s, w) => s + WordClassifier.getValence(w), 0),
+      phoneticWeight: cleanWords.reduce((s, w) => s + Morphology.getPhoneticWeight(w), 0) / Math.max(cleanWords.length, 1),
+      personalPronouns: cleanWords.filter(w => /^(i|me|my|mine|myself|we|us|our|ours|you|your|yours)$/.test(w)).length,
+      timestamp: now
+    };
+
+    // Update word frequency
+    cleanWords.forEach(w => {
+      this.wordFrequency.set(w, (this.wordFrequency.get(w) || 0) + 1);
+      this.totalWords++;
     });
-    
-    const winner = sorted[0][1] > 0 ? sorted[0][0] : 'help';
-    
-    this.trace.winner = winner;
-    this.trace.winnerScore = sorted[0][1];
-    this.trace.sortedScores = sorted;
-    
-    return winner;
-  }
-  
-  extractEntities(text, state) {
-    const entities = {};
-    
-    // Extract player name
-    const name = extractPlayerName(text);
-    if (name) {
-      entities.playerName = name;
-      this.trace.extractedName = name;
-    }
-    
-    // Extract places/objects from word banks
-    const tokens = tokenize(text);
-    for (const token of tokens) {
-      if (this.bank.wordBanks.streetObjects.includes(token)) {
-        entities.streetObject = token;
+
+    // [MED-02] Prune vocabulary if it grows too large
+    if (this.wordFrequency.size > this.maxVocabulary) {
+      const sorted = [...this.wordFrequency.entries()].sort((a, b) => a[1] - b[1]);
+      const pruneCount = Math.floor(this.maxVocabulary * 0.2);
+      for (let i = 0; i < pruneCount && i < sorted.length; i++) {
+        this.wordFrequency.delete(sorted[i][0]);
       }
     }
-    
-    this.trace.entities = entities;
-    return entities;
+
+    // Compute velocity (inputs per 10 seconds)
+    const recentInputs = this.inputTimestamps.filter(t => now - t < 10000).length;
+    const velocity = Math.min(recentInputs / 5, 1);
+
+    // Decay existing pressures
+    for (const key in this.pressures) {
+      this.pressures[key] *= this.decayRate;
+    }
+
+    const a = this.accreteRate;
+
+    this.pressures.exploration += a * (
+      analysis.questionMarks * 0.3 +
+      analysis.questions * 0.2 +
+      Math.min(analysis.wordCount / 15, 1) * 0.2 +
+      analysis.uniqueRatio * 0.3
+    );
+
+    this.pressures.aggression += a * (
+      analysis.exclamations * 0.3 +
+      analysis.allCaps * 0.2 +
+      (analysis.wordCount < 4 ? 0.2 : 0) +
+      analysis.phoneticWeight * 0.3
+    );
+
+    this.pressures.contemplation += a * (
+      Math.min(analysis.avgWordLength / 8, 1) * 0.4 +
+      analysis.ellipses * 0.3 +
+      (analysis.wordCount > 6 && analysis.wordCount < 25 ? 0.3 : 0)
+    );
+
+    this.pressures.resistance += a * (
+      analysis.negations * 0.4 +
+      (analysis.wordCount === 1 && analysis.negations > 0 ? 0.4 : 0) +
+      (analysis.valence < 0 ? Math.abs(analysis.valence) * 0.15 : 0)
+    );
+
+    const repeatScore = cleanWords.reduce((s, w) => s + Math.min((this.wordFrequency.get(w) || 0) / 5, 1), 0) / Math.max(cleanWords.length, 1);
+    this.pressures.attachment += a * (
+      analysis.personalPronouns * 0.15 +
+      repeatScore * 0.3 +
+      Math.abs(analysis.valence) * 0.2
+    );
+
+    const novelWords = cleanWords.filter(w => (this.wordFrequency.get(w) || 0) <= 1).length;
+    this.pressures.entropy += a * (
+      (novelWords / Math.max(cleanWords.length, 1)) * 0.5 +
+      (1 - analysis.uniqueRatio) * -0.1 +
+      (analysis.charCount > 100 ? 0.2 : 0)
+    );
+
+    this.pressures.velocity = velocity;
+
+    this.pressures.weight += a * (
+      Math.abs(analysis.valence) * 0.4 +
+      analysis.exclamations * 0.2 +
+      analysis.allCaps * 0.2
+    );
+
+    // Clamp all pressures to [0, 1]
+    for (const key in this.pressures) {
+      this.pressures[key] = Math.max(0, Math.min(1, this.pressures[key]));
+    }
+
+    this.history.push(analysis);
+    if (this.history.length > 50) this.history.shift();
+
+    return analysis;
   }
-  
-  fillTemplate(template, state) {
-    this.trace.template = template;
-    this.trace.slots = {};
-    
-    const slots = {};
-    
-    // Deterministic slot filling based on conversation history
-    const historyKey = state.getConversationHistory();
-    
-    slots.playerName = state.playerName;
-    
-    // Mood word
-    const moodWords = state.mood > 70 ? ['bright', 'hopeful', 'warm'] :
-                       state.mood < 30 ? ['bleak', 'heavy', 'cold'] :
-                       ['grey', 'neutral', 'still'];
-    slots.moodWord = pickDeterministic(moodWords, historyKey + 'mood');
-    
-    // Street object
-    slots.streetObject = pickDeterministic(this.bank.wordBanks.streetObjects, historyKey + 'street');
-    
-    // Weather
-    slots.weatherWord = pickDeterministic(this.bank.wordBanks.weatherWords, historyKey + 'weather');
-    
-    // Time
-    slots.timeWord = pickDeterministic(this.bank.wordBanks.timeWords, historyKey + 'time');
-    
-    // Lore hint
-    slots.loreHint = pickDeterministic(this.bank.loreSnippets, historyKey + 'lore');
-    
-    // Open loop
-    slots.openLoop = pickDeterministic(this.bank.openLoops, historyKey + 'loop');
-    
-    // Echo (repeat last user input word)
-    if (state.history.length > 0) {
-      const lastUserMsg = state.history.filter(h => h.role === 'user').pop();
-      if (lastUserMsg) {
-        const words = tokenize(lastUserMsg.text).filter(w => w.length > 3);
-        slots.echo = pickDeterministic(words, historyKey + 'echo') || 'nothing';
-      }
-    }
-    
-    this.trace.slots = slots;
-    
-    // Replace slots in template
-    let filled = template;
-    for (const [key, value] of Object.entries(slots)) {
-      filled = filled.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
-    }
-    
-    this.trace.filled = filled;
-    return filled;
+
+  getPressures() {
+    return { ...this.pressures };
   }
-  
-  generateResponse(intent, state) {
-    this.trace.intent = intent;
-    this.trace.tone = state.tone;
-    
-    // Get templates for intent and tone
-    const templates = this.bank.templates[intent];
-    if (!templates) {
-      return "I don't understand.";
-    }
-    
-    const toneTemplates = templates[state.tone] || templates.bleak;
-    
-    // Pick template deterministically
-    const historyKey = state.getConversationHistory();
-    const template = pickDeterministic(toneTemplates, historyKey + intent);
-    
-    this.trace.selectedTemplate = template;
-    
-    // Fill template
-    const response = this.fillTemplate(template, state);
-    
-    return response;
+
+  getVocabulary() {
+    return this.wordFrequency;
   }
-  
-  updateState(intent, entities, state) {
-    this.trace.stateChanges = {};
-    
-    // Update player name if extracted
-    if (entities.playerName) {
-      state.setPlayerName(entities.playerName);
-      this.trace.stateChanges.playerName = entities.playerName;
-    }
-    
-    // Mood adjustments based on intent
-    const moodMap = {
-      greeting: 5,
-      help: -2,
-      name_intent: 3,
-      status_check: -1,
-      ask_world: -3,
-      ask_self: -5,
-      hostility: -10,
-      goodbye: 0
-    };
-    
-    const moodDelta = moodMap[intent] || 0;
-    const suspicionDelta = intent === 'hostility' ? 10 : -1;
-    
-    state.updateMetrics(moodDelta, suspicionDelta);
-    
-    this.trace.stateChanges.mood = `${state.mood} (${moodDelta >= 0 ? '+' : ''}${moodDelta})`;
-    this.trace.stateChanges.suspicion = `${state.suspicion} (${suspicionDelta >= 0 ? '+' : ''}${suspicionDelta})`;
-    
-    // Add open loop occasionally
-    if (state.turnCount % 3 === 0) {
-      const loop = pickDeterministic(this.bank.openLoops, state.getConversationHistory());
-      state.addOpenLoop(loop);
-      this.trace.stateChanges.openLoopAdded = loop;
-    }
-    
-    state.lastIntent = intent;
-    state.lastEntities = entities;
+
+  getRecentWords(n = 30) {
+    const recent = this.history.slice(-5);
+    const words = [];
+    recent.forEach(h => words.push(...h.contentWords));
+    return [...new Set(words)].slice(-n);
   }
-  
-  getTrace() {
-    return this.trace;
+
+  getTopWords(n = 10) {
+    return [...this.wordFrequency.entries()]
+      .filter(e => WordClassifier.isContentWord(e[0]))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, n)
+      .map(e => e[0]);
+  }
+
+  getInputCount() {
+    return this.history.length;
   }
 }
 
-// ─── Presenter (Orchestrator) ───
-
-class ConversationPresenter {
+// ═══════════════════════════════════════════════════════════════
+// PREFERENCE STRATIFIER
+// ═══════════════════════════════════════════════════════════════
+class PreferenceStratifier {
   constructor() {
-    this.state = new ConversationState();
-    this.rules = new RulesEngine(CONTENT_BANK);
-    
-    // Add system greeting
-    this.state.addMessage('system', 'You are in a place without certainty. Speak, and the void may answer.');
+    this.currentStratum = null;
+    this.stratumHistory = [];
+    this.transitionCount = 0;
   }
-  
-  processInput(userInput) {
-    if (!userInput || userInput.trim().length === 0) {
-      return null;
-    }
-    
-    // Add user message to history
-    this.state.addMessage('user', userInput);
-    
-    // Classify intent
-    const intent = this.rules.classifyIntent(userInput, this.state);
-    
-    // Extract entities
-    const entities = this.rules.extractEntities(userInput, this.state);
-    
-    // Update state
-    this.rules.updateState(intent, entities, this.state);
-    
-    // Generate response
-    const response = this.rules.generateResponse(intent, this.state);
-    
-    // Add assistant response to history
-    this.state.addMessage('assistant', response);
-    
-    return {
-      response,
-      trace: this.rules.getTrace()
+
+  stratify(pressures) {
+    const configs = [
+      {
+        name: 'seeker',
+        score: pressures.exploration * 0.5 + pressures.contemplation * 0.3 + (1 - pressures.aggression) * 0.2,
+        signature: { expansion: true, patience: true }
+      },
+      {
+        name: 'striker',
+        score: pressures.aggression * 0.5 + pressures.velocity * 0.3 + (1 - pressures.contemplation) * 0.2,
+        signature: { force: true, speed: true }
+      },
+      {
+        name: 'witness',
+        score: pressures.contemplation * 0.4 + pressures.attachment * 0.3 + (1 - pressures.velocity) * 0.3,
+        signature: { depth: true, stillness: true }
+      },
+      {
+        name: 'dissenter',
+        score: pressures.resistance * 0.5 + pressures.entropy * 0.3 + (1 - pressures.attachment) * 0.2,
+        signature: { rejection: true, chaos: true }
+      },
+      {
+        name: 'binder',
+        score: pressures.attachment * 0.5 + pressures.weight * 0.3 + (1 - pressures.entropy) * 0.2,
+        signature: { fixation: true, emotion: true }
+      },
+      {
+        name: 'drifter',
+        score: pressures.entropy * 0.4 + (1 - pressures.weight) * 0.3 + (1 - pressures.attachment) * 0.3,
+        signature: { detachment: true, flow: true }
+      }
+    ];
+
+    configs.sort((a, b) => b.score - a.score);
+    const dominant = configs[0];
+    const secondary = configs[1];
+
+    const newStratum = {
+      primary: dominant.name,
+      secondary: secondary.name,
+      primaryScore: dominant.score,
+      secondaryScore: secondary.score,
+      blend: secondary.score / Math.max(dominant.score, 0.01),
+      signature: { ...dominant.signature, ...secondary.signature }
     };
+
+    if (this.currentStratum && this.currentStratum.primary !== newStratum.primary) {
+      this.transitionCount++;
+    }
+
+    this.currentStratum = newStratum;
+    this.stratumHistory.push(newStratum);
+    if (this.stratumHistory.length > 30) this.stratumHistory.shift();
+
+    return newStratum;
   }
-  
-  getState() {
-    return this.state;
+
+  getStratum() {
+    return this.currentStratum;
   }
-  
-  exportState() {
-    return JSON.stringify(this.state.toJSON(), null, 2);
+
+  getVolatility() {
+    if (this.stratumHistory.length < 3) return 0;
+    let transitions = 0;
+    for (let i = 1; i < this.stratumHistory.length; i++) {
+      if (this.stratumHistory[i].primary !== this.stratumHistory[i - 1].primary) transitions++;
+    }
+    return transitions / (this.stratumHistory.length - 1);
   }
-  
-  importState(jsonString) {
-    try {
-      const data = JSON.parse(jsonString);
-      this.state = ConversationState.fromJSON(data);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TENSION RESERVOIR
+// ═══════════════════════════════════════════════════════════════
+class TensionReservoir {
+  constructor() {
+    this.tension = 0;
+    this.maxTension = 1;
+    // [HIGH-04] Raised threshold so tension gating is actually felt
+    this.emissionThreshold = 0.35;
+    this.history = [];
+    this.unresolvedMotifs = [];
+    this.expectationVector = new Array(8).fill(0.5);
+    this.realityVector = new Array(8).fill(0.5);
+  }
+
+  accumulate(pressures, stratum, emissionHistory) {
+    const pressureValues = Object.values(pressures);
+
+    this.expectationVector = pressureValues.map(p => p);
+
+    if (emissionHistory.length > 0) {
+      const recent = emissionHistory.slice(-3);
+      const avgLength = recent.reduce((s, e) => s + (e.text || '').length, 0) / recent.length;
+      const avgComplexity = recent.reduce((s, e) => s + (e.complexity || 0), 0) / recent.length;
+      this.realityVector = this.realityVector.map((v, i) =>
+        v * 0.7 + (i < pressureValues.length ? pressureValues[i] * 0.5 : 0.5) * 0.3
+      );
+    }
+
+    let divergence = 0;
+    for (let i = 0; i < this.expectationVector.length; i++) {
+      divergence += Math.abs(this.expectationVector[i] - this.realityVector[i]);
+    }
+    divergence /= this.expectationVector.length;
+
+    const totalPressure = pressureValues.reduce((s, v) => s + v, 0) / pressureValues.length;
+    const tensionInput = divergence * 0.5 + totalPressure * 0.3 + (stratum ? stratum.blend * 0.2 : 0.1);
+
+    this.tension = Math.min(this.maxTension, this.tension * 0.85 + tensionInput * 0.35);
+
+    this.history.push(this.tension);
+    if (this.history.length > 50) this.history.shift();
+
+    return this.tension;
+  }
+
+  shouldEmit() {
+    return this.tension >= this.emissionThreshold;
+  }
+
+  release(amount) {
+    const released = Math.min(amount, this.tension * 0.7);
+    this.tension -= released;
+    this.tension = Math.max(0.05, this.tension);
+    return released;
+  }
+
+  getTension() {
+    return this.tension;
+  }
+
+  getTrend() {
+    if (this.history.length < 3) return 0;
+    const recent = this.history.slice(-5);
+    const earlier = this.history.slice(-10, -5);
+    if (earlier.length === 0) return 0;
+    const avgRecent = recent.reduce((s, v) => s + v, 0) / recent.length;
+    const avgEarlier = earlier.reduce((s, v) => s + v, 0) / earlier.length;
+    return avgRecent - avgEarlier;
+  }
+
+  // [HIGH-04] Report how close we are to threshold (for sub-threshold feedback)
+  getThresholdProximity() {
+    return this.tension / this.emissionThreshold;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MOTIF LATTICE
+// ═══════════════════════════════════════════════════════════════
+class MotifLattice {
+  constructor() {
+    this.motifs = new Map();
+    this.connections = new Map();
+    this.fragmentPool = [];
+    this.motifCounter = 0;
+    this.maxMotifs = 500;
+  }
+
+  // [HIGH-03] Now uses analysis.contentWords instead of cleanWords
+  absorb(analysis, pressures) {
+    const words = analysis.contentWords;
+    if (!words || words.length === 0) return;
+
+    words.forEach(word => {
+      if (word.length < 3) return; // Stricter minimum for motif seeds
+
+      const cls = WordClassifier.classify(word);
+      const valence = WordClassifier.getValence(word);
+
+      const derivatives = [];
+      derivatives.push({ form: word, type: 'echo', cls });
+      derivatives.push({ form: Morphology.derive(word, 'noun', pressures), type: 'noun-derive', cls: 'noun' });
+      derivatives.push({ form: Morphology.derive(word, 'adj', pressures), type: 'adj-derive', cls: 'adjective' });
+      if (rng.chance(0.4)) derivatives.push({ form: Morphology.derive(word, 'verb', pressures), type: 'verb-derive', cls: 'verb' });
+      if (rng.chance(0.3)) derivatives.push({ form: Morphology.derive(word, 'blend', pressures), type: 'blend', cls: 'noun' });
+      if (pressures.entropy > 0.4) derivatives.push({ form: Morphology.derive(word, 'echo', pressures), type: 'mutation', cls });
+
+      derivatives.forEach(d => {
+        const id = this.motifCounter++;
+        this.motifs.set(id, {
+          word: d.form,
+          origin: word,
+          type: d.type,
+          cls: d.cls,
+          valence,
+          phoneticWeight: Morphology.getPhoneticWeight(d.form),
+          weight: 1,
+          lastUsed: 0,
+          created: Date.now()
+        });
+        this.fragmentPool.push(id);
+      });
+    });
+
+    // Build connections between temporally adjacent motifs
+    const recentIds = this.fragmentPool.slice(-20);
+    for (let i = 1; i < recentIds.length; i++) {
+      const a = recentIds[i - 1];
+      const b = recentIds[i];
+      if (!this.connections.has(a)) this.connections.set(a, new Set());
+      if (!this.connections.has(b)) this.connections.set(b, new Set());
+      this.connections.get(a).add(b);
+      this.connections.get(b).add(a);
+    }
+
+    // Connect words from same input
+    const currentIds = this.fragmentPool.slice(-words.length * 3);
+    for (let i = 0; i < currentIds.length; i++) {
+      for (let j = i + 1; j < Math.min(i + 4, currentIds.length); j++) {
+        const a = currentIds[i];
+        const b = currentIds[j];
+        if (!this.connections.has(a)) this.connections.set(a, new Set());
+        if (!this.connections.has(b)) this.connections.set(b, new Set());
+        this.connections.get(a).add(b);
+        this.connections.get(b).add(a);
+      }
+    }
+
+    // [HIGH-06] Cross-pollinate with bounded O(n) sample
+    if (this.motifs.size > 20) {
+      const newMotifs = [...this.motifs.entries()].slice(-10);
+      const allOld = [...this.motifs.entries()].slice(0, -10);
+      // Sample at most 50 old motifs instead of iterating all
+      const sampleSize = Math.min(50, allOld.length);
+      const oldMotifs = rng.shuffle(allOld).slice(0, sampleSize);
+
+      newMotifs.forEach(([nid, nm]) => {
+        const nSkel = Morphology.extractSkeleton(nm.word).consonants;
+        oldMotifs.forEach(([oid, om]) => {
+          const oSkel = Morphology.extractSkeleton(om.word).consonants;
+          if (nSkel.length > 1 && oSkel.length > 1 && (nSkel[0] === oSkel[0] || nSkel.slice(-1) === oSkel.slice(-1))) {
+            if (!this.connections.has(nid)) this.connections.set(nid, new Set());
+            if (!this.connections.has(oid)) this.connections.set(oid, new Set());
+            this.connections.get(nid).add(oid);
+            this.connections.get(oid).add(nid);
+          }
+        });
+      });
+    }
+
+    // Prune if too large
+    if (this.motifs.size > this.maxMotifs) {
+      const sorted = [...this.motifs.entries()].sort((a, b) => a[1].weight - b[1].weight);
+      const toRemove = sorted.slice(0, sorted.length - this.maxMotifs);
+      toRemove.forEach(([id]) => {
+        this.motifs.delete(id);
+        this.connections.delete(id);
+        const poolIdx = this.fragmentPool.indexOf(id);
+        if (poolIdx > -1) this.fragmentPool.splice(poolIdx, 1);
+      });
+    }
+  }
+
+  findPath(startCriteria, length, pressures, usedRecently) {
+    const candidates = [...this.motifs.entries()].filter(([id, m]) => {
+      if (usedRecently.has(id)) return false;
+      if (startCriteria.cls && m.cls !== startCriteria.cls) return false;
+      if (startCriteria.valenceSign !== undefined) {
+        if (startCriteria.valenceSign > 0 && m.valence <= 0) return false;
+        if (startCriteria.valenceSign < 0 && m.valence >= 0) return false;
+      }
       return true;
-    } catch (e) {
-      console.error('Import failed:', e);
-      return false;
+    });
+
+    if (candidates.length === 0) {
+      const any = [...this.motifs.entries()].filter(([id]) => !usedRecently.has(id));
+      if (any.length === 0) return [];
+      candidates.push(...any);
     }
+
+    const weighted = candidates.map(([id, m]) => {
+      let score = m.weight;
+      score += (1 - Math.abs(m.phoneticWeight - pressures.aggression)) * 0.3;
+      score += (Date.now() - m.created) / 100000 * 0.1;
+      return { id, motif: m, score };
+    });
+
+    weighted.sort((a, b) => b.score - a.score);
+    const topN = weighted.slice(0, Math.max(5, Math.floor(weighted.length * 0.3)));
+    const start = rng.pick(topN);
+
+    const path = [start];
+    let current = start.id;
+
+    for (let step = 1; step < length; step++) {
+      const neighbors = this.connections.get(current);
+      if (!neighbors || neighbors.size === 0) {
+        const fallback = [...this.motifs.entries()]
+          .filter(([id]) => !usedRecently.has(id) && !path.some(p => p.id === id))
+          .map(([id, m]) => ({ id, motif: m, score: m.weight }));
+        if (fallback.length === 0) break;
+        const pick = rng.pick(fallback.slice(0, 10));
+        path.push(pick);
+        current = pick.id;
+        continue;
+      }
+
+      const neighborList = [...neighbors]
+        .filter(nid => !usedRecently.has(nid) && !path.some(p => p.id === nid) && this.motifs.has(nid))
+        .map(nid => ({ id: nid, motif: this.motifs.get(nid), score: this.motifs.get(nid).weight }));
+
+      if (neighborList.length === 0) break;
+      const pick = rng.pick(neighborList.slice(0, 5));
+      path.push(pick);
+      current = pick.id;
+    }
+
+    path.forEach(p => {
+      const m = this.motifs.get(p.id);
+      if (m) {
+        m.lastUsed = Date.now();
+        m.weight *= 0.85;
+      }
+      usedRecently.add(p.id);
+    });
+
+    return path;
   }
-  
-  reset() {
-    this.state.reset();
-    this.state.addMessage('system', 'You are in a place without certainty. Speak, and the void may answer.');
+
+  getSize() {
+    return this.motifs.size;
   }
-  
-  cycleTone() {
-    return this.state.cycleTone();
+
+  hasContent() {
+    return this.motifs.size > 5;
   }
 }
 
-// ─── View (UI Renderer) ───
-
-class UIRenderer {
+// ═══════════════════════════════════════════════════════════════
+// ENTROPY CLAMP
+// ═══════════════════════════════════════════════════════════════
+class EntropyClamp {
   constructor() {
-    this.messagesContainer = document.getElementById('messages');
-    this.userInput = document.getElementById('user-input');
-    this.sendBtn = document.getElementById('send-btn');
-    this.tracePanel = document.getElementById('trace-panel');
-    this.traceContent = document.getElementById('trace-content');
-    this.traceBtn = document.getElementById('trace-btn');
-    this.toneBtn = document.getElementById('tone-btn');
-    this.exportBtn = document.getElementById('export-btn');
-    this.importBtn = document.getElementById('import-btn');
-    this.resetBtn = document.getElementById('reset-btn');
-    
-    this.statusTurn = document.getElementById('status-turn');
-    this.statusMood = document.getElementById('status-mood');
-    this.statusSuspicion = document.getElementById('status-suspicion');
-    this.statusTone = document.getElementById('status-tone');
-    
-    this.exportModal = document.getElementById('export-modal');
-    this.importModal = document.getElementById('import-modal');
-    this.exportTextarea = document.getElementById('export-textarea');
-    this.importTextarea = document.getElementById('import-textarea');
+    this.recentEmissions = [];
+    this.maxHistory = 20;
+    this.targetEntropy = 0.55;
+    this.currentEntropy = 0.5;
+    // [HIGH-05] Store directive between cycles for correct timing
+    this.lastDirective = 'neutral';
   }
-  
-  renderMessage(role, text) {
-    const msg = document.createElement('div');
-    msg.className = `message ${role}`;
-    
-    const avatar = document.createElement('div');
-    avatar.className = 'avatar';
-    avatar.textContent = role === 'user' ? 'U' : role === 'system' ? 'S' : 'A';
-    
-    const content = document.createElement('div');
-    content.className = 'content';
-    
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    bubble.textContent = text;
-    
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    const now = new Date();
-    meta.textContent = now.toLocaleTimeString();
-    
-    content.appendChild(bubble);
-    content.appendChild(meta);
-    
-    msg.appendChild(avatar);
-    msg.appendChild(content);
-    
-    this.messagesContainer.appendChild(msg);
+
+  measure(emission) {
+    this.recentEmissions.push(emission);
+    if (this.recentEmissions.length > this.maxHistory) {
+      this.recentEmissions.shift();
+    }
+
+    if (this.recentEmissions.length < 3) {
+      this.currentEntropy = 0.5;
+      this.lastDirective = 'neutral';
+      return { entropy: 0.5, directive: 'neutral' };
+    }
+
+    const allWords = this.recentEmissions.flatMap(e => (e.text || '').split(/\s+/).map(w => w.toLowerCase()));
+    const unique = new Set(allWords);
+    const uniqueRatio = unique.size / Math.max(allWords.length, 1);
+
+    const lengths = this.recentEmissions.map(e => (e.text || '').length);
+    const avgLen = lengths.reduce((s, l) => s + l, 0) / lengths.length;
+    const lenVariance = lengths.reduce((s, l) => s + Math.pow(l - avgLen, 2), 0) / lengths.length;
+    const normalizedVariance = Math.min(lenVariance / 2000, 1);
+
+    this.currentEntropy = uniqueRatio * 0.6 + normalizedVariance * 0.4;
+
+    const deviation = this.currentEntropy - this.targetEntropy;
+
+    let directive;
+    if (deviation < -0.15) directive = 'increase';
+    else if (deviation > 0.15) directive = 'decrease';
+    else directive = 'neutral';
+
+    this.lastDirective = directive;
+    return { entropy: this.currentEntropy, directive };
+  }
+
+  getEntropy() {
+    return this.currentEntropy;
+  }
+
+  // [HIGH-05] Get the directive computed AFTER the last emission
+  getStoredDirective() {
+    return this.lastDirective;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EMISSION GATE & CONTENT SYNTHESIZER
+// ═══════════════════════════════════════════════════════════════
+class EmissionGate {
+  constructor() {
+    this.emissionHistory = [];
+    this.usedMotifIds = new Set();
+    // [CRIT-03] Store reference to self for use in pattern functions
+    this.sentencePatterns = this._buildPatternSpace();
+  }
+
+  // [CRIT-03] Patterns are now regular functions bound to the gate instance.
+  // Each pattern function receives (gate, words) where gate is the EmissionGate.
+  _buildPatternSpace() {
+    const gate = this;
+    return {
+      // Fragment patterns (high tension)
+      fragment_stark: function(words) { return `${words[0]}.`; },
+      fragment_echo: function(words) { return `${words[0]}${words[1] ? ' — ' + words[1] : ''}.`; },
+      fragment_staccato: function(words) { return words.slice(0, 3).join('. ') + '.'; },
+      fragment_rupture: function(words) { return `${words[0]}, then ${words[1] || 'nothing'}.`; },
+
+      // Declarative patterns (medium tension)
+      declare_being: function(words) { return `The ${words[0]} ${gate.conjugate()} ${words[1] || 'here'}.`; },
+      declare_motion: function(words) { return `${gate.article(words[0])} ${words[0]} ${gate.motionVerb()} ${words[1] ? 'toward ' + words[1] : 'onward'}.`; },
+      declare_state: function(words) { return `Something ${words[0]} ${gate.linkingPhrase()} ${words[1] || words[0]}.`; },
+      declare_emergence: function(words) { return `From the ${words[0]}, ${words[1] || 'a shape'} ${gate.emergeVerb()}.`; },
+      declare_quality: function(words) { return `It is ${words[0]}${words[1] ? ', and ' + words[1] : ''}.`; },
+
+      // Flowing patterns (low tension, high contemplation)
+      flow_meander: function(words) { return `The ${words[0]} and the ${words[1] || 'silence'} move ${words[2] ? 'through ' + words[2] : 'together'}, ${gate.flowingSuffix()}.`; },
+      flow_accrete: function(words) { return `${gate.article(words[0])} ${words[0]} gathers ${words[1] || 'weight'}, ${words[2] ? 'pressing into ' + words[2] : 'slowly'}.`; },
+      flow_dissolve: function(words) { return `Where the ${words[0]} was, now only ${words[1] || 'residue'}${words[2] ? ' and ' + words[2] : ''}.`; },
+
+      // Interrogative patterns (high exploration)
+      question_open: function(words) { return `What is the ${words[0]}${words[1] ? ' of the ' + words[1] : ''}?`; },
+      question_conditional: function(words) { return `If the ${words[0]} ${gate.conditionVerb()} ${words[1] || 'differently'} —`; },
+      question_rhetorical: function(words) { return `Does the ${words[0]} ${gate.knowVerb()} its own ${words[1] || 'name'}?`; },
+
+      // Imperative patterns (high aggression)
+      imperative_command: function(words) { return `${gate.commandVerb()} the ${words[0]}.`; },
+      imperative_warning: function(words) { return `The ${words[0]} ${gate.warningPhrase()}${words[1] ? ' the ' + words[1] : ''}.`; },
+      imperative_break: function(words) { return `${words[0].toUpperCase()}. ${words[1] ? words[1].toUpperCase() + '.' : ''}`; },
+
+      // Negation patterns (high resistance)
+      negate_refusal: function(words) { return `Not ${words[0]}. Not ${words[1] || 'this'}.`; },
+      negate_void: function(words) { return `There is no ${words[0]} here, only its ${words[1] || 'absence'}.`; },
+      // [HIGH-02] Fixed: uses Morphology.verbify() to prevent double-s
+      negate_inversion: function(words) { return `The ${words[0]} un${Morphology.verbify(words[0])} itself.`; },
+
+      // Attachment patterns (high attachment)
+      attach_return: function(words) { return `Again, the ${words[0]}. Always the ${words[0]}.`; },
+      attach_echo: function(words) { return `You said ${words[0]} and the ${words[1] || 'walls'} remembered.`; },
+      attach_wound: function(words) { return `The ${words[0]} carries the shape of ${words[1] || 'what was lost'}.`; },
+
+      // Compound patterns
+      compound_dual: function(words) { return `${gate.article(words[0])} ${words[0]} and ${gate.article(words[1] || 'void')} ${words[1] || 'void'}, ${gate.compoundBridge()}.`; },
+      compound_cascade: function(words) {
+        return words.slice(0, 4).reduce((acc, w, i) => {
+          if (i === 0) return `The ${w}`;
+          if (i === 1) return `${acc} becomes ${w}`;
+          if (i === 2) return `${acc}, which ${gate.transitionVerb()} into ${w}`;
+          return `${acc}, and finally ${w}`;
+        }, '') + '.';
+      },
+      compound_breath: function(words) { return `${words[0]} — ${gate.pausePhrase()} — ${words[1] || words[0]}.`; },
+
+      // Entropy-high patterns (surreal)
+      surreal_juxtapose: function(words) { return `The ${words[0]} tastes of ${words[1] || 'geometry'}. ${words[2] ? 'The ' + words[2] + ' listens.' : ''}`; },
+      surreal_paradox: function(words) { return `${words[0]} is the sound the ${words[1] || 'color'} makes when it ${gate.paradoxVerb()}.`; },
+      surreal_drift: function(words) { return `Between ${words[0]} and ${words[1] || words[0]}, a ${words[2] || gate.generateAbstract(words)} that ${gate.driftVerb()}.`; },
+    };
+  }
+
+  // Helper verb/phrase generators
+  conjugate() {
+    return rng.pick(['is', 'was', 'becomes', 'remains', 'turns']);
+  }
+  motionVerb() {
+    return rng.pick(['moves', 'shifts', 'drifts', 'pulls', 'presses', 'bleeds', 'seeps', 'crawls', 'surges', 'spirals']);
+  }
+  emergeVerb() {
+    return rng.pick(['emerges', 'unfolds', 'crystallizes', 'coalesces', 'surfaces', 'congeals', 'erupts', 'breathes']);
+  }
+  linkingPhrase() {
+    return rng.pick(['resembles', 'recalls', 'mirrors', 'inhabits', 'weighs like', 'burns like', 'tastes of']);
+  }
+  flowingSuffix() {
+    return rng.pick(['endlessly', 'without resolution', 'like old water', 'as if remembering', 'refusing nothing', 'without name', 'toward no shore']);
+  }
+  conditionVerb() {
+    return rng.pick(['moved', 'spoke', 'fractured', 'bent', 'collapsed', 'opened', 'bled', 'turned']);
+  }
+  knowVerb() {
+    return rng.pick(['know', 'remember', 'recognize', 'feel', 'deny', 'mourn', 'celebrate']);
+  }
+  commandVerb() {
+    return rng.pick(['Break', 'Burn', 'Hold', 'Release', 'Name', 'Bury', 'Open', 'Seal', 'Cut', 'Feed']);
+  }
+  warningPhrase() {
+    return rng.pick(['does not forgive', 'will not wait for', 'has already consumed', 'is hungry for', 'rejects', 'devours']);
+  }
+  compoundBridge() {
+    return rng.pick(['bound by pressure alone', 'neither one nor the other', 'in uneasy equilibrium', 'collapsing inward', 'resonating', 'without boundary']);
+  }
+  transitionVerb() {
+    return rng.pick(['dissolves', 'hardens', 'folds', 'bleeds', 'transmutes', 'corrodes']);
+  }
+  pausePhrase() {
+    return rng.pick(['a breath', 'the space between', 'held pressure', 'a silence thick enough to cut', 'tension without name', 'residual heat']);
+  }
+  paradoxVerb() {
+    return rng.pick(['forgets itself', 'becomes its opposite', 'stops moving but arrives', 'divides by zero', 'dreams of waking']);
+  }
+  driftVerb() {
+    return rng.pick(['refuses to resolve', 'persists anyway', 'neither grows nor shrinks', 'hums at a frequency below hearing', 'waits']);
+  }
+  generateAbstract(words) {
+    if (words.length > 0) return Morphology.derive(words[0], 'noun', { complexity: 0.7 });
+    return rng.pick(['residue', 'threshold', 'membrane', 'interval', 'aperture']);
+  }
+  article(word) {
+    if (!word) return 'the';
+    return rng.chance(0.6) ? 'the' : (/^[aeiou]/i.test(word) ? 'an' : 'a');
+  }
+
+  selectPatterns(pressures, stratum, entropyDirective) {
+    const patterns = [];
+    const p = pressures;
+    const tension = p.tension || 0.5;
+
+    if (tension > 0.7) {
+      patterns.push('fragment_stark', 'fragment_echo', 'fragment_staccato', 'fragment_rupture');
+    }
+    if (tension < 0.3) {
+      patterns.push('flow_meander', 'flow_accrete', 'flow_dissolve');
+    }
+    if (p.exploration > 0.4) {
+      patterns.push('question_open', 'question_conditional', 'question_rhetorical');
+    }
+    if (p.aggression > 0.4) {
+      patterns.push('imperative_command', 'imperative_warning', 'imperative_break');
+    }
+    if (p.resistance > 0.4) {
+      patterns.push('negate_refusal', 'negate_void', 'negate_inversion');
+    }
+    if (p.attachment > 0.4) {
+      patterns.push('attach_return', 'attach_echo', 'attach_wound');
+    }
+    if (entropyDirective === 'increase' || p.entropy > 0.5) {
+      patterns.push('surreal_juxtapose', 'surreal_paradox', 'surreal_drift');
+    }
+
+    patterns.push('compound_dual', 'compound_cascade', 'compound_breath');
+    patterns.push('declare_being', 'declare_motion', 'declare_state', 'declare_emergence', 'declare_quality');
+
+    return patterns;
+  }
+
+  emit(lattice, pressures, stratum, tension, entropyDirective, sau) {
+    if (!lattice.hasContent()) {
+      return this.emitBootstrap(sau, pressures);
+    }
+
+    const availablePatterns = this.selectPatterns(pressures, stratum, entropyDirective);
+
+    let sentenceCount;
+    if (tension > 0.7) sentenceCount = rng.intRange(2, 5);
+    else if (tension > 0.4) sentenceCount = rng.intRange(1, 3);
+    else sentenceCount = rng.intRange(1, 2);
+
+    if (entropyDirective === 'increase') sentenceCount = Math.max(sentenceCount, 2);
+    if (entropyDirective === 'decrease') sentenceCount = Math.min(sentenceCount, 2);
+
+    const sentences = [];
+    const usedPatterns = new Set();
+
+    for (let i = 0; i < sentenceCount; i++) {
+      let patternName;
+      let attempts = 0;
+      do {
+        patternName = rng.pick(availablePatterns);
+        attempts++;
+      } while (usedPatterns.has(patternName) && attempts < 10);
+      usedPatterns.add(patternName);
+
+      const patternFn = this.sentencePatterns[patternName];
+      if (!patternFn) continue;
+
+      const pathLength = rng.intRange(2, 5);
+      const startCriteria = {};
+
+      if (patternName.startsWith('question')) startCriteria.cls = rng.chance(0.5) ? 'noun' : undefined;
+      if (patternName.startsWith('negate')) startCriteria.valenceSign = rng.chance(0.6) ? -1 : undefined;
+
+      const path = lattice.findPath(startCriteria, pathLength, pressures, this.usedMotifIds);
+      const words = path.map(p => p.motif.word);
+
+      if (words.length === 0) continue;
+
+      if (entropyDirective === 'increase') {
+        if (rng.chance(0.4)) {
+          const idx = rng.intRange(0, words.length - 1);
+          words[idx] = Morphology.mutate(words[idx], 0.8);
+        }
+      }
+
+      try {
+        const sentence = patternFn(words);
+        if (sentence && sentence.length > 2) {
+          sentences.push(sentence);
+        }
+      } catch (e) {
+        // [LOW-04] Log pattern errors for debugging
+        console.warn(`Pattern '${patternName}' failed:`, e.message);
+        continue;
+      }
+    }
+
+    if (sentences.length === 0) {
+      return this.emitBootstrap(sau, pressures);
+    }
+
+    const text = sentences.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+    const complexity = (text.split(/\s+/).length / 50) + (text.length / 500) + (sentenceCount / 5);
+
+    const emission = {
+      text,
+      complexity,
+      tension,
+      stratum: stratum ? stratum.primary : 'void',
+      entropyDirective,
+      timestamp: Date.now()
+    };
+
+    this.emissionHistory.push(emission);
+    if (this.emissionHistory.length > 30) this.emissionHistory.shift();
+
+    if (this.usedMotifIds.size > 200) {
+      const arr = [...this.usedMotifIds];
+      this.usedMotifIds = new Set(arr.slice(-100));
+    }
+
+    return emission;
+  }
+
+  emitBootstrap(sau, pressures) {
+    const recentWords = sau.getRecentWords(10);
+    if (recentWords.length === 0) {
+      return {
+        text: 'The void listens. It has no words yet — only pressure.',
+        complexity: 0.2,
+        tension: 0.1,
+        stratum: 'void',
+        entropyDirective: 'neutral',
+        timestamp: Date.now()
+      };
+    }
+
+    const transformed = recentWords.map(w => {
+      if (rng.chance(0.3)) return Morphology.derive(w, 'noun', pressures);
+      if (rng.chance(0.3)) return Morphology.derive(w, 'adj', pressures);
+      return w;
+    });
+
+    const fragments = [];
+    if (transformed.length >= 2) {
+      fragments.push(`${this.article(transformed[0])} ${transformed[0]} and ${this.article(transformed[1])} ${transformed[1]}`);
+      if (transformed[2]) fragments.push(`something ${transformed[2]} stirs`);
+    } else {
+      fragments.push(`${transformed[0]} — the first pressure`);
+    }
+
+    const text = fragments.join('. ') + '.';
+    const emission = {
+      text: text.charAt(0).toUpperCase() + text.slice(1),
+      complexity: 0.15,
+      tension: 0.15,
+      stratum: 'void',
+      entropyDirective: 'neutral',
+      timestamp: Date.now(),
+      bootstrap: true
+    };
+
+    this.emissionHistory.push(emission);
+    return emission;
+  }
+
+  getHistory() {
+    return this.emissionHistory;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LUDIC STRATA ENGINE — Orchestrator
+// [CRIT-01] Redesigned: process() ingests once, emitFromState()
+// can force emission without re-ingesting.
+// ═══════════════════════════════════════════════════════════════
+class LudicStrataEngine {
+  constructor() {
+    this.sau = new SignalAccretionUnit();
+    this.stratifier = new PreferenceStratifier();
+    this.reservoir = new TensionReservoir();
+    this.lattice = new MotifLattice();
+    this.gate = new EmissionGate();
+    this.clamp = new EntropyClamp();
+    this.totalEmissions = 0;
+    // Cache last computed state for force-emit without re-ingestion
+    this._lastPressures = null;
+    this._lastStratum = null;
+    this._lastTension = 0;
+  }
+
+  process(input) {
+    // 1. Signal Accretion: ingest player input into pressure (ONCE)
+    const analysis = this.sau.ingest(input);
+    const pressures = this.sau.getPressures();
+
+    // 2. Motif Lattice: absorb player vocabulary
+    this.lattice.absorb(analysis, pressures);
+
+    // 3. Preference Stratifier: determine behavioral stratum
+    const stratum = this.stratifier.stratify(pressures);
+
+    // 4. Tension Reservoir: accumulate tension
+    const tension = this.reservoir.accumulate(pressures, stratum, this.gate.getHistory());
+
+    // [HIGH-05] Use stored directive from PREVIOUS cycle's post-emission measurement
+    const entropyDirective = this.clamp.getStoredDirective();
+
+    // Cache state for potential force-emit
+    this._lastPressures = pressures;
+    this._lastStratum = stratum;
+    this._lastTension = tension;
+
+    // 5. Emission Gate: emit if tension threshold crossed
+    if (this.reservoir.shouldEmit()) {
+      return this._performEmission(pressures, stratum, tension, entropyDirective);
+    }
+
+    // Below threshold — return state with no emission
+    return {
+      emission: null,
+      pressures,
+      stratum,
+      tension: this.reservoir.getTension(),
+      entropy: this.clamp.getEntropy(),
+      latticeSize: this.lattice.getSize(),
+      inputCount: this.sau.getInputCount(),
+      volatility: this.stratifier.getVolatility(),
+      thresholdProximity: this.reservoir.getThresholdProximity()
+    };
+  }
+
+  // [CRIT-01] Force emission using ALREADY-COMPUTED state (no re-ingestion)
+  forceEmit() {
+    const pressures = this._lastPressures || this.sau.getPressures();
+    const stratum = this._lastStratum || this.stratifier.getStratum();
+    const tension = Math.max(this._lastTension, 0.5);
+    const entropyDirective = this.clamp.getStoredDirective();
+
+    // Temporarily raise tension to cross threshold
+    this.reservoir.tension = Math.max(this.reservoir.tension, this.reservoir.emissionThreshold + 0.1);
+
+    return this._performEmission(pressures, stratum, tension, entropyDirective);
+  }
+
+  // [CRIT-01] Shared emission logic — only called from process() or forceEmit()
+  _performEmission(pressures, stratum, tension, entropyDirective) {
+    const emitPressures = { ...pressures, tension };
+
+    const emission = this.gate.emit(
+      this.lattice,
+      emitPressures,
+      stratum,
+      tension,
+      entropyDirective,
+      this.sau
+    );
+
+    // Release tension proportional to emission complexity
+    const releaseAmount = emission.complexity * 0.4;
+    this.reservoir.release(releaseAmount);
+
+    // [HIGH-05] Measure entropy AFTER emission, storing directive for next cycle
+    this.clamp.measure(emission);
+
+    this.totalEmissions++;
+
+    return {
+      emission,
+      pressures,
+      stratum,
+      tension: this.reservoir.getTension(),
+      entropy: this.clamp.getEntropy(),
+      latticeSize: this.lattice.getSize(),
+      inputCount: this.sau.getInputCount(),
+      volatility: this.stratifier.getVolatility(),
+      thresholdProximity: this.reservoir.getThresholdProximity()
+    };
+  }
+
+  // Bootstrap first input (always emits)
+  processFirst(input) {
+    const analysis = this.sau.ingest(input);
+    const pressures = this.sau.getPressures();
+    this.lattice.absorb(analysis, pressures);
+    const stratum = this.stratifier.stratify(pressures);
+    this.reservoir.tension = 0.5;
+
+    this._lastPressures = pressures;
+    this._lastStratum = stratum;
+    this._lastTension = 0.5;
+
+    const tension = this.reservoir.accumulate(pressures, stratum, this.gate.getHistory());
+    const entropyDirective = this.clamp.getStoredDirective();
+
+    return this._performEmission(pressures, stratum, 0.5, entropyDirective);
+  }
+
+  getState() {
+    return {
+      pressures: this.sau.getPressures(),
+      stratum: this.stratifier.getStratum(),
+      tension: this.reservoir.getTension(),
+      entropy: this.clamp.getEntropy(),
+      latticeSize: this.lattice.getSize(),
+      totalEmissions: this.totalEmissions,
+      inputCount: this.sau.getInputCount()
+    };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI / RENDERER
+// [CRIT-01] Redesigned: single process() call, forceEmit() uses
+// cached state. No double-ingestion.
+// [MED-03] [MED-04] Processing lock prevents race conditions.
+// [LOW-05] Sub-threshold visual feedback.
+// ═══════════════════════════════════════════════════════════════
+class Renderer {
+  constructor(engine) {
+    this.engine = engine;
+    this.stream = document.getElementById('emission-stream');
+    this.input = document.getElementById('player-input');
+    this.hud = document.getElementById('pressure-hud');
+    this.strataLabel = document.getElementById('strata-label');
+    this.tensionBar = document.getElementById('tension-indicator');
+    this.pressureField = document.getElementById('pressure-field');
+    this.isFirstInput = true;
+    this.ambientHue = 220;
+    this.ambientSaturation = 15;
+    // [MED-03] [MED-04] Processing lock
+    this.processing = false;
+    // Track consecutive sub-threshold inputs for escalation
+    this.subThresholdCount = 0;
+
+    // [MED-01] Reveal HUD and strata label
+    this.hud.classList.add('active');
+    this.strataLabel.classList.add('active');
+
+    this.bindEvents();
+  }
+
+  bindEvents() {
+    this.input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && this.input.value.trim() && !this.processing) {
+        this.handleInput(this.input.value.trim());
+        this.input.value = '';
+      }
+    });
+  }
+
+  // [MED-03] Lock/unlock input during processing
+  lockInput() {
+    this.processing = true;
+    this.input.classList.add('processing');
+  }
+
+  unlockInput() {
+    this.processing = false;
+    this.input.classList.remove('processing');
+    this.input.focus();
+  }
+
+  handleInput(text) {
+    this.lockInput();
+
+    // Show player input
+    this.addBlock(text, 'player-input');
+
+    let result;
+    if (this.isFirstInput) {
+      // [CRIT-01] First input always produces emission via dedicated method
+      result = this.engine.processFirst(text);
+      this.isFirstInput = false;
+      this.subThresholdCount = 0;
+    } else {
+      // [CRIT-01] Single process call — NO re-ingestion
+      result = this.engine.process(text);
+
+      if (!result.emission) {
+        this.subThresholdCount++;
+        // After 3 consecutive sub-threshold inputs, force-emit
+        // This preserves the tension gating experience while ensuring
+        // the player is never permanently stuck
+        if (this.subThresholdCount >= 3) {
+          result = this.engine.forceEmit();
+          this.subThresholdCount = 0;
+        }
+      } else {
+        this.subThresholdCount = 0;
+      }
+    }
+
+    // Render response
+    if (result.emission) {
+      const delay = 300 + Math.random() * 700;
+      setTimeout(() => {
+        this.addEmission(result);
+        this.updateHUD(result);
+        this.updateAmbience(result);
+        this.unlockInput();
+      }, delay);
+    } else {
+      // [LOW-05] [HIGH-04] Sub-threshold feedback — system acknowledges
+      // without full emission, reinforcing the pressure metaphor
+      const delay = 200 + Math.random() * 300;
+      setTimeout(() => {
+        this.addSubThreshold(result);
+        this.updateHUD(result);
+        this.updateAmbience(result);
+        this.unlockInput();
+      }, delay);
+    }
+  }
+
+  addBlock(text, className) {
+    const block = document.createElement('div');
+    block.className = `emission-block ${className}`;
+    const textEl = document.createElement('div');
+    textEl.className = 'emission-text';
+    textEl.textContent = text;
+    block.appendChild(textEl);
+    this.stream.appendChild(block);
     this.scrollToBottom();
   }
-  
+
+  addEmission(result) {
+    const { emission, tension, entropy } = result;
+    const block = document.createElement('div');
+    let classes = 'emission-block system-emission';
+
+    if (tension > 0.65) classes += ' high-tension';
+    else if (tension < 0.25) classes += ' low-tension';
+    if (emission.entropyDirective === 'increase') classes += ' entropy-saturated';
+
+    block.className = classes;
+
+    const textEl = document.createElement('div');
+    textEl.className = 'emission-text';
+    textEl.textContent = emission.text;
+    block.appendChild(textEl);
+
+    const meta = document.createElement('div');
+    meta.className = 'emission-meta';
+    const stratum = result.stratum ? `${result.stratum.primary}/${result.stratum.secondary}` : 'void';
+    meta.textContent = `${stratum} · t:${tension.toFixed(2)} · e:${entropy.toFixed(2)} · m:${result.latticeSize}`;
+    block.appendChild(meta);
+
+    this.stream.appendChild(block);
+    this.scrollToBottom();
+  }
+
+  // [LOW-05] Sub-threshold acknowledgment — shows the system is absorbing
+  addSubThreshold(result) {
+    const proximity = result.thresholdProximity || 0;
+    const block = document.createElement('div');
+    block.className = 'emission-block sub-threshold';
+
+    const textEl = document.createElement('div');
+    textEl.className = 'emission-text';
+
+    // Dynamic sub-threshold messages based on proximity to emission
+    const messages = proximity > 0.8
+      ? ['pressure building...', 'almost...', 'the lattice strains...', 'tension accumulating...']
+      : proximity > 0.5
+        ? ['absorbed.', 'registered.', 'noted in the lattice.', 'pressure shifts.']
+        : ['...', 'the void listens.', 'accreting.', 'signal received.'];
+
+    textEl.textContent = rng.pick(messages);
+    block.appendChild(textEl);
+
+    this.stream.appendChild(block);
+    this.scrollToBottom();
+  }
+
   scrollToBottom() {
     requestAnimationFrame(() => {
-      this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+      this.stream.scrollTop = this.stream.scrollHeight;
     });
   }
-  
-  renderTrace(trace) {
-    if (!trace) {
-      this.traceContent.innerHTML = '<div class="trace-section">No trace available</div>';
-      return;
+
+  updateHUD(result) {
+    const p = result.pressures;
+    const lines = [
+      `exploration  ${this.bar(p.exploration)}`,
+      `aggression   ${this.bar(p.aggression)}`,
+      `contemplation${this.bar(p.contemplation)}`,
+      `resistance   ${this.bar(p.resistance)}`,
+      `attachment   ${this.bar(p.attachment)}`,
+      `entropy      ${this.bar(p.entropy)}`,
+      `velocity     ${this.bar(p.velocity)}`,
+      `weight       ${this.bar(p.weight)}`,
+      ``,
+      `tension  ${result.tension.toFixed(3)}`,
+      `entropy  ${result.entropy.toFixed(3)}`,
+      `motifs   ${result.latticeSize}`,
+      `inputs   ${result.inputCount}`,
+      `volatility ${(result.volatility || 0).toFixed(2)}`
+    ];
+    this.hud.textContent = lines.join('\n');
+
+    if (result.stratum) {
+      this.strataLabel.textContent = `▸ ${result.stratum.primary} / ${result.stratum.secondary}`;
     }
-    
-    let html = '';
-    
-    // Input
-    html += '<div class="trace-section">';
-    html += '<div class="trace-title">INPUT</div>';
-    html += `<div class="trace-item">Raw: "${sanitizeHTML(trace.input)}"</div>`;
-    html += `<div class="trace-item">Tokens: [${trace.tokens.map(t => sanitizeHTML(t)).join(', ')}]</div>`;
-    html += '</div>';
-    
-    // Intent Classification
-    html += '<div class="trace-section">';
-    html += '<div class="trace-title">INTENT CLASSIFICATION</div>';
-    for (const [intent, data] of Object.entries(trace.scores)) {
-      const isWinner = intent === trace.winner;
-      const className = isWinner ? 'trace-winner' : 'trace-score';
-      html += `<div class="trace-item ${className}">${intent}: ${data.score}</div>`;
-      if (data.matches && data.matches.length > 0) {
-        for (const match of data.matches) {
-          html += `<div class="trace-item" style="padding-left: 2rem; font-size: 0.7rem;">  → ${match.type}: ${sanitizeHTML(match.word || match.pattern)} (+${match.weight})</div>`;
-        }
-      }
-    }
-    html += `<div class="trace-item trace-winner">WINNER: ${trace.winner} (score: ${trace.winnerScore})</div>`;
-    html += '</div>';
-    
-    // Entity Extraction
-    if (trace.entities && Object.keys(trace.entities).length > 0) {
-      html += '<div class="trace-section">';
-      html += '<div class="trace-title">ENTITIES EXTRACTED</div>';
-      for (const [key, value] of Object.entries(trace.entities)) {
-        html += `<div class="trace-item">${key}: "${sanitizeHTML(value)}"</div>`;
-      }
-      html += '</div>';
-    }
-    
-    // Template Selection
-    html += '<div class="trace-section">';
-    html += '<div class="trace-title">RESPONSE GENERATION</div>';
-    html += `<div class="trace-item">Intent: ${trace.intent}</div>`;
-    html += `<div class="trace-item">Tone: ${trace.tone}</div>`;
-    html += `<div class="trace-item">Template: "${sanitizeHTML(trace.selectedTemplate || 'N/A')}"</div>`;
-    html += '</div>';
-    
-    // Slot Filling
-    if (trace.slots) {
-      html += '<div class="trace-section">';
-      html += '<div class="trace-title">SLOT FILLING</div>';
-      for (const [key, value] of Object.entries(trace.slots)) {
-        html += `<div class="trace-item">{${key}} → "${sanitizeHTML(String(value))}"</div>`;
-      }
-      html += `<div class="trace-item trace-winner">Final: "${sanitizeHTML(trace.filled || 'N/A')}"</div>`;
-      html += '</div>';
-    }
-    
-    // State Changes
-    if (trace.stateChanges && Object.keys(trace.stateChanges).length > 0) {
-      html += '<div class="trace-section">';
-      html += '<div class="trace-title">STATE UPDATES</div>';
-      for (const [key, value] of Object.entries(trace.stateChanges)) {
-        html += `<div class="trace-item">${key}: ${sanitizeHTML(String(value))}</div>`;
-      }
-      html += '</div>';
-    }
-    
-    this.traceContent.innerHTML = html;
   }
-  
-  updateStatus(state) {
-    this.statusTurn.textContent = state.turnCount;
-    this.statusMood.textContent = state.mood;
-    this.statusSuspicion.textContent = state.suspicion;
-    this.statusTone.textContent = state.tone;
+
+  bar(value) {
+    const filled = Math.round(value * 12);
+    return ' ' + '█'.repeat(filled) + '░'.repeat(12 - filled) + ` ${value.toFixed(2)}`;
   }
-  
-  updateToneButton(tone) {
-    this.toneBtn.textContent = `Tone: ${tone.charAt(0).toUpperCase() + tone.slice(1)}`;
-  }
-  
-  toggleTracePanel() {
-    this.tracePanel.classList.toggle('open');
-    this.traceBtn.classList.toggle('active');
-  }
-  
-  showExportModal(jsonString) {
-    this.exportTextarea.value = jsonString;
-    this.exportModal.classList.add('open');
-  }
-  
-  hideExportModal() {
-    this.exportModal.classList.remove('open');
-  }
-  
-  showImportModal() {
-    this.importTextarea.value = '';
-    this.importModal.classList.add('open');
-  }
-  
-  hideImportModal() {
-    this.importModal.classList.remove('open');
-  }
-  
-  clearMessages() {
-    this.messagesContainer.innerHTML = '';
-  }
-  
-  focusInput() {
-    this.userInput.focus();
+
+  updateAmbience(result) {
+    const p = result.pressures;
+    const tension = result.tension;
+
+    let hue = 220;
+    hue += p.aggression * -80;
+    hue += p.contemplation * 40;
+    hue += p.resistance * 100;
+    hue += p.entropy * 30;
+    hue = ((hue % 360) + 360) % 360;
+
+    const saturation = 8 + tension * 25;
+    const lightness = 3 + tension * 5;
+    const alpha = 0.15 + tension * 0.3;
+
+    this.ambientHue += (hue - this.ambientHue) * 0.15;
+    this.ambientSaturation += (saturation - this.ambientSaturation) * 0.15;
+
+    this.pressureField.style.background = `
+      radial-gradient(ellipse at 30% 50%,
+        hsla(${this.ambientHue}, ${this.ambientSaturation}%, ${lightness}%, ${alpha}) 0%,
+        transparent 70%),
+      radial-gradient(ellipse at 70% 60%,
+        hsla(${this.ambientHue + 40}, ${this.ambientSaturation * 0.7}%, ${lightness * 0.7}%, ${alpha * 0.5}) 0%,
+        transparent 60%)
+    `;
+
+    const tensionColor = tension > 0.6
+      ? `hsl(0, ${40 + tension * 40}%, ${30 + tension * 20}%)`
+      : `hsl(${this.ambientHue}, ${this.ambientSaturation}%, ${20 + tension * 15}%)`;
+    this.tensionBar.style.background = `linear-gradient(to right, transparent, ${tensionColor} ${tension * 100}%, transparent)`;
+
+    document.documentElement.style.setProperty('--grain-opacity', (0.02 + p.entropy * 0.06).toFixed(3));
   }
 }
 
-// ─── Application Controller ───
+// ═══════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════════════
+const engine = new LudicStrataEngine();
+let renderer;
 
-class Application {
-  constructor() {
-    this.presenter = new ConversationPresenter();
-    this.view = new UIRenderer();
-    
-    this.bindEvents();
-    this.initialize();
-  }
-  
-  bindEvents() {
-    // Send message
-    this.view.sendBtn.addEventListener('click', () => this.handleSend());
-    this.view.userInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        this.handleSend();
-      }
-    });
-    
-    // Trace toggle
-    this.view.traceBtn.addEventListener('click', () => {
-      this.view.toggleTracePanel();
-    });
-    
-    // Tone toggle
-    this.view.toneBtn.addEventListener('click', () => {
-      const newTone = this.presenter.cycleTone();
-      this.view.updateToneButton(newTone);
-      this.view.updateStatus(this.presenter.getState());
-    });
-    
-    // Export
-    this.view.exportBtn.addEventListener('click', () => {
-      const json = this.presenter.exportState();
-      this.view.showExportModal(json);
-    });
-    
-    document.getElementById('copy-export-btn').addEventListener('click', () => {
-      this.view.exportTextarea.select();
-      document.execCommand('copy');
-    });
-    
-    document.getElementById('close-export-btn').addEventListener('click', () => {
-      this.view.hideExportModal();
-    });
-    
-    // Import
-    this.view.importBtn.addEventListener('click', () => {
-      this.view.showImportModal();
-    });
-    
-    document.getElementById('apply-import-btn').addEventListener('click', () => {
-      const json = this.view.importTextarea.value;
-      if (this.presenter.importState(json)) {
-        this.view.hideImportModal();
-        this.reloadConversation();
-      } else {
-        alert('Invalid JSON format');
-      }
-    });
-    
-    document.getElementById('close-import-btn').addEventListener('click', () => {
-      this.view.hideImportModal();
-    });
-    
-    // Reset
-    this.view.resetBtn.addEventListener('click', () => {
-      if (confirm('Reset conversation? This cannot be undone.')) {
-        this.presenter.reset();
-        this.view.clearMessages();
-        this.initialize();
-      }
-    });
-  }
-  
-  initialize() {
-    const state = this.presenter.getState();
-    
-    // Render initial system message
-    for (const msg of state.history) {
-      this.view.renderMessage(msg.role, msg.text);
-    }
-    
-    this.view.updateStatus(state);
-    this.view.updateToneButton(state.tone);
-    this.view.focusInput();
-  }
-  
-  reloadConversation() {
-    this.view.clearMessages();
-    const state = this.presenter.getState();
-    
-    for (const msg of state.history) {
-      this.view.renderMessage(msg.role, msg.text);
-    }
-    
-    this.view.updateStatus(state);
-    this.view.updateToneButton(state.tone);
-  }
-  
-  handleSend() {
-    const input = this.view.userInput.value.trim();
-    if (!input) return;
-    
-    // Clear input
-    this.view.userInput.value = '';
-    
-    // Render user message
-    this.view.renderMessage('user', input);
-    
-    // Process
-    const result = this.presenter.processInput(input);
-    
-    if (result) {
-      // Render assistant response
-      setTimeout(() => {
-        this.view.renderMessage('assistant', result.response);
-        this.view.renderTrace(result.trace);
-        this.view.updateStatus(this.presenter.getState());
-      }, 300 + Math.random() * 400);
-    }
-  }
-}
+document.getElementById('begin-btn').addEventListener('click', () => {
+  const overlay = document.getElementById('init-overlay');
+  overlay.classList.add('fading');
+  document.getElementById('world').style.display = 'flex';
 
-// ─── Initialize ───
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    renderer = new Renderer(engine);
+    renderer.input.focus();
 
-document.addEventListener('DOMContentLoaded', () => {
-  new Application();
+    // Initial emission — the void speaks first
+    const initBlock = document.createElement('div');
+    initBlock.className = 'emission-block system-emission low-tension';
+    const initText = document.createElement('div');
+    initText.className = 'emission-text';
+    initText.textContent = 'Pressure at zero. The lattice is empty. Your words are the only material.';
+    initBlock.appendChild(initText);
+    const initMeta = document.createElement('div');
+    initMeta.className = 'emission-meta';
+    initMeta.textContent = 'void/void · t:0.00 · e:0.50 · m:0';
+    initBlock.appendChild(initMeta);
+    renderer.stream.appendChild(initBlock);
+  }, 1600);
 });
 
+})();
 </script>
 
 </body>

@@ -1,0 +1,148 @@
+{
+  "id": "infestation",
+  "name": "Infestation Room",
+  "description": "A bare room, lit by sickly yellow light. The mattress is stained and crawling with insects. The walls pulse as if breathing.",
+  "imagePath": "/images/locations/infestation_image.jpg",
+  "videoPath": "/videos/locations/infestation_video.mp4",
+  "musicPath": "/music/locations/infestation_bgm.mp3",
+  "index": 5,
+  "dangerLevel": 8,
+  "atmosphere": "disgust",
+  "weather": { "type": "indoor", "intensity": "suffocating", "visibility": 20 },
+  "timeOfDay": "late_night",
+  "specialFeatures": ["breathing_walls", "swarming_insects", "rotting_mattress"],
+  "characters": [
+    {
+      "id": "infestation_caretaker",
+      "name": "The Keeper",
+      "imagePath": "/images/locations/infestation_caretaker_image.jpg",
+      "videoPath": "/videos/npcs/infestation_caretaker_video.mp4",
+      "questionId": "infestation_caretaker",
+      "personality": {
+        "archetype": "caretaker",
+        "traits": ["apathetic", "sleepy", "morbid"],
+        "emotionalState": "numb",
+        "trustLevel": 15,
+        "communicationStyle": "muttering"
+      },
+      "difficulty": 8,
+      "relationship": 0,
+      "backstory": "Unbothered by the filth, claims you get used to it eventually.",
+      "motivations": ["preserving decay", "staying put"],
+      "fears": ["cleanliness", "change"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Does the rot sing you to sleep, or have you forgotten what silence sounded like?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Silence was sharp and used to cut. This hum's medicinal, a brown note that dissolves the edges between me and my cultivation. I sleep inside the frequency now, dreaming in spore."
+            },
+            {
+              "option": "B",
+              "text": "Forgetting's work, and I'm tired. The rot knows lullabies silence never learned and harmonics of decomposition, the settle of things finally giving up. Why would I want to remember pointless quiet?"
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Do you name the colonies, or do they name themselves?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Naming's an intimacy I reserve for the oldest growth. That corner cluster? \"Tuesday's Ambition.\" The ceiling stain? \"Mother's Voice, Reconstituted.\" They earn their titles through persistence and personality."
+            },
+            {
+              "option": "B",
+              "text": "Names are for things that might leave. These are more like organs now and do you name your liver? They know what they are better than language could capture. I just tend."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "Would you let me clean just one corner, as an offering?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Clean? You mean disturb the mathematics of decay I've been balancing since the water stopped running? Your offering's an insult and like suggesting I amputate for aesthetics. The corner stays."
+            },
+            {
+              "option": "B",
+              "text": "Offerings require faith in transaction. I don't barter with sterility. If you need to destroy something, start with your own need for empty spaces. My corners are spoken for."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "id": "infestation_swarm_voice",
+      "name": "Swarm Voice",
+      "imagePath": "/images/locations/infestation_swarm_voice_image.jpg",
+      "videoPath": "/videos/npcs/infestation_swarm_voice_video.mp4",
+      "questionId": "infestation_swarm_voice",
+      "personality": {
+        "archetype": "chorus",
+        "traits": ["many", "insistent", "itchy"],
+        "emotionalState": "anxious",
+        "trustLevel": 5,
+        "communicationStyle": "overlapping"
+      },
+      "difficulty": 9,
+      "relationship": 0,
+      "backstory": "A single mind in a thousand bodies. Its song is hard to ignore.",
+      "motivations": ["being heard", "multiplying"],
+      "fears": ["solitude", "pesticide"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Are you many or one? The sound keeps shifting.",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Many/one/many/one and the distinction itches where we can't scratch. We are a democracy of mandibles, a parliament of wings. Count us and lose count. We speak in overlapping unanimity."
+            },
+            {
+              "option": "B",
+              "text": "One is lonely, many is chaos. We are the sweet spot between and enough to never be alone, few enough to fit through the cracks. Your singular ears make us sound multiple. The problem's perception, not population."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Do you remember being singular, or were you always this chorus?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Singular was a fever dream between molts. We remember it like drowning and too much space inside one skin. Now we breathe through compound lungs, dream in kaleidoscope. Always is what we choose to be."
+            },
+            {
+              "option": "B",
+              "text": "Memory's distributed among us and each carries a fragment. Some remember legs, others remember loneliness. Together we approximate what you call \"before,\" but it tastes like fiction. Chorus is truth; solo was sickness."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "Can you quiet down, or does the buzzing keep you alive?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Quiet us? Might as well ask your blood to stop moving. The buzz is our circulation, our congress, our continuous vote on existing. We quiet down when we die, and we're very much not interested in that democracy."
+            },
+            {
+              "option": "B",
+              "text": "The buzzing's just your ears' interpretation of our living. We could modulate, but why accommodate your frequency? Tune yourself to us instead. The harmony's actually quite pleasant once you stop resisting."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    }
+  ]
+}

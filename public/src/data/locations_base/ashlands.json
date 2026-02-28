@@ -1,0 +1,148 @@
+{
+  "id": "ashlands",
+  "name": "The Ashlands",
+  "description": "Charred ground stretches to the horizon. Trees are skeletal hands. The air is thick with the memory of fire, and your footprints glow faintly in the embers.",
+  "imagePath": "/images/locations/ashlands_image.jpg",
+  "videoPath": "/videos/locations/ashlands_video.mp4",
+  "musicPath": "/music/locations/ashlands_bgm.mp3",
+  "index": 7,
+  "dangerLevel": 8,
+  "atmosphere": "burnt",
+  "weather": { "type": "smoke", "intensity": "ashfall", "visibility": 30 },
+  "timeOfDay": "dusk",
+  "specialFeatures": ["glowing_embers", "burnt_forest", "shifting_wind"],
+  "characters": [
+    {
+      "id": "ashlands_witness",
+      "name": "The Witness",
+      "imagePath": "/images/locations/ashlands_witness_image.jpg",
+      "videoPath": "/videos/npcs/ashlands_witness_video.mp4",
+      "questionId": "ashlands_witness",
+      "personality": {
+        "archetype": "survivor",
+        "traits": ["scarred", "quiet", "vigilant"],
+        "emotionalState": "resigned",
+        "trustLevel": 20,
+        "communicationStyle": "gravelly"
+      },
+      "difficulty": 8,
+      "relationship": 0,
+      "backstory": "Remembers the fire that ended everything but refuses to describe it.",
+      "motivations": ["enduring", "watching"],
+      "fears": ["another spark", "hope"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Do you trust the silence more than you trusted the sirens?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Sirens lied and promised rescue while the world carbonized. This silence at least admits what it is: aftermath wearing an honest face. I catalog its weight in lung tissue and unblinking hours."
+            },
+            {
+              "option": "B",
+              "text": "Trust is for people who still flinch. I just document and the decibel level of nothing, the way quiet grows tumors in your ears. Sirens, silence, they're both just different frequencies of abandonment."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Should I disturb the ash patterns, or do they spell something necessary?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Every grain fell with purpose and barometric pressure of ending, wind-speed of forgetting. Disturb nothing. I've spent years learning to read catastrophe's handwriting in the dust. Your footprints are already blasphemy enough."
+            },
+            {
+              "option": "B",
+              "text": "Patterns are pareidolia for the traumatized. Step where you want and the ash reconstitutes nightly anyway, democracy of dispersal. Nothing stays spelled for long."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "Will you share what you saw, or is witnessing a terminal condition?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Terminal, yes and but contagious too. I could pour it into your ear like molten glass, let you carry the weight of seeing everything unmake itself. But then you'd understand why I stopped blinking."
+            },
+            {
+              "option": "B",
+              "text": "Witnessing ends when you speak it. Keep your ignorance; it's the only clean thing left. What I saw lives in my peripheral vision now, a permanent sunspot that outlines everything I'll never unsee."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    },
+    {
+      "id": "ashlands_cinder_child",
+      "name": "Cinder Child",
+      "imagePath": "/images/locations/ashlands_cinder_child_image.jpg",
+      "videoPath": "/videos/npcs/ashlands_cinder_child_video.mp4",
+      "questionId": "ashlands_cinder_child",
+      "personality": {
+        "archetype": "fragment",
+        "traits": ["innocent", "lost", "ashen"],
+        "emotionalState": "empty",
+        "trustLevel": 5,
+        "communicationStyle": "soft"
+      },
+      "difficulty": 9,
+      "relationship": 0,
+      "backstory": "Plays in the ashes, drawing patterns only they understand.",
+      "motivations": ["remembering", "forgetting"],
+      "fears": ["rain", "being alone"],
+      "encounters": [
+        {
+          "encounter": 1,
+          "question": "Are you building something in the soot, or just teaching it to remember?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Teaching, building and same game when your materials know their own names. Watch: this pile was a kitchen table, that streak was someone's cat. I'm making memory maps for when the wind comes asking."
+            },
+            {
+              "option": "B",
+              "text": "Building's for people who believe in tomorrow. I just arrange what's already decided, give the ashes little jobs to keep them from blowing away all at once. It's kindness, really."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 2,
+          "question": "Do you ever find things that didn't burn?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "Everything burned, just at different speeds. This button's still burning if you listen close and hear that? Even metal screams eventually. The trick is knowing which things are still dying and which finally stopped."
+            },
+            {
+              "option": "B",
+              "text": "\"Didn't burn\" is relative. I found a wedding ring once that remembered being round, a photograph that held its shape but forgot its faces. Survival's just burning slower than everything else."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "encounter": 3,
+          "question": "Can you show me how to play your game?",
+          "responses": [
+            {
+              "option": "A",
+              "text": "First, forget that ash is dirty and it's just very tired snow. Then pick a handful that feels like Tuesday (you'll know). Make circles until something inside you recognizes the shape. When you cry, use the tears for mortar. Easy."
+            },
+            {
+              "option": "B",
+              "text": "Games need rules and winners. This is more like...breathing, but with your hands. You can watch, but watching changes the patterns. Some things you have to burn first to understand."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ]
+    }
+  ]
+}
