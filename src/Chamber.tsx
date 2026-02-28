@@ -21,15 +21,23 @@ type LogEntry = {
 interface ChamberProps {
   app: AppEntry;
   onBack: () => void;
+  /**
+   * Starts the Chamber pre-initialized in error state.
+   * Used in integration tests to reach the iframeError branch without
+   * relying on iframe DOM events (which JSDOM does not fire for <iframe>).
+   * Never set in production code.
+   */
+  initialError?: string | null;
 }
 
-export function Chamber({ app, onBack }: ChamberProps) {
-  const [isInitialized, setIsInitialized] = useState(false);
+export function Chamber({ app, onBack, initialError }: ChamberProps) {
+  // Chain 7 (IframeError): initialError allows tests to start in error state
+  const [isInitialized, setIsInitialized] = useState(initialError != null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeLoading, setIframeLoading] = useState(true);
-  const [iframeError, setIframeError] = useState(false);
+  const [iframeError, setIframeError] = useState(initialError != null);
   const [iframeErrorDetails, setIframeErrorDetails] = useState<string | null>(
-    null,
+    initialError ?? null,
   );
   const [showLogs, setShowLogs] = useState(true);
   const [noiseEnabled, setNoiseEnabled] = useState(true);
@@ -359,6 +367,19 @@ export function Chamber({ app, onBack }: ChamberProps) {
                     >
                       View Debugging Guide
                     </a>
+                    {/* Chain 7 (IframeError): Re-Initialize resets to clean standby so the user
+                        can retry without navigating away. Invariant: all three error-state fields
+                        must be cleared atomically; isInitialized=false returns to STANDBY. */}
+                    <button
+                      onClick={() => {
+                        setIsInitialized(false);
+                        setIframeError(false);
+                        setIframeErrorDetails(null);
+                      }}
+                      className="mt-2 px-8 py-3 bg-white/5 border border-white/10 text-white/70 hover:bg-white hover:text-black transition-all duration-300 uppercase text-[10px] font-light tracking-widest cursor-pointer rounded-full"
+                    >
+                      Re-Initialize
+                    </button>
                   </div>
                 ) : (
                   <>

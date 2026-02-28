@@ -299,14 +299,65 @@ describe('Chain 5 — ChamberInit', () => {
 
 // ---------------------------------------------------------------------------
 // Chain 7 (IframeError) — Chamber.tsx
-// Invariant: initial logs are present; debug guide logs warning not promise
+// Invariants:
+//   1. iframeError=true → FATAL ERROR UI renders (no loading spinner)
+//   2. iframeErrorDetails displayed in ERR_DETAILS box when present
+//   3. "View Debugging Guide" appends a warning log (never navigates away)
+//   4. Re-Initialize resets ALL error state → STANDBY (Initialize button reappears)
+//   5. After Re-Initialize → Initialize, loading state is fresh (no residual error)
+//   6. initial atmospheric logs are always present (regression guard)
+//
+// Note: <iframe onError> is not a React synthetic event in JSDOM — fireEvent.error
+// does not reach handleIframeError. Tests use the `initialError` prop to enter
+// error state without relying on iframe DOM events, per the contract spec.
 // ---------------------------------------------------------------------------
 describe('Chain 7 — IframeError', () => {
-  it('shows three initial atmospheric log entries', () => {
+  it('shows three initial atmospheric log entries (regression guard)', () => {
     render(<Chamber app={makeApp()} onBack={vi.fn()} />);
     expect(screen.getByText(/Connection established/i)).toBeTruthy();
     expect(screen.getByText(/It sees you/i)).toBeTruthy();
     expect(screen.getByText(/Packet loss detected/i)).toBeTruthy();
+  });
+
+  it('renders FATAL ERROR UI when iframeError=true; loading spinner is absent', () => {
+    render(<Chamber app={makeApp()} onBack={vi.fn()} initialError="load failed" />);
+    expect(screen.getByText(/FATAL ERROR/i)).toBeTruthy();
+    expect(screen.getByText(/Failed to load simulation data/i)).toBeTruthy();
+    // Invariant: loading spinner must not be shown alongside error UI
+    expect(screen.queryByText(/Loading Assets/i)).toBeNull();
+  });
+
+  it('displays ERR_DETAILS box when iframeErrorDetails is non-null', () => {
+    render(<Chamber app={makeApp()} onBack={vi.fn()} initialError="ERR_NET_CHANGED" />);
+    expect(screen.getByText(/ERR_DETAILS/i)).toBeTruthy();
+    expect(screen.getByText(/ERR_NET_CHANGED/i)).toBeTruthy();
+  });
+
+  it('"View Debugging Guide" appends a warning log and does not navigate away', () => {
+    render(<Chamber app={makeApp()} onBack={vi.fn()} initialError="load failed" />);
+    fireEvent.click(screen.getByText(/View Debugging Guide/i));
+    expect(screen.getByText(/Debugging guide is currently unavailable/i)).toBeTruthy();
+    // Error UI must still be showing — no navigation occurred
+    expect(screen.getByText(/FATAL ERROR/i)).toBeTruthy();
+  });
+
+  it('Re-Initialize resets ALL error state: Initialize button reappears (STANDBY)', () => {
+    render(<Chamber app={makeApp()} onBack={vi.fn()} initialError="load failed" />);
+    expect(screen.getByText(/FATAL ERROR/i)).toBeTruthy();
+    // Chain 7 invariant: Re-Initialize must clear isInitialized, iframeError, iframeErrorDetails
+    fireEvent.click(screen.getByText('Re-Initialize'));
+    expect(screen.queryByText(/FATAL ERROR/i)).toBeNull();
+    expect(screen.getByText('Initialize')).toBeTruthy();
+    expect(screen.getByText(/Standby/i)).toBeTruthy();
+  });
+
+  it('after Re-Initialize → Initialize, state is fresh with no residual error', () => {
+    render(<Chamber app={makeApp()} onBack={vi.fn()} initialError="load failed" />);
+    fireEvent.click(screen.getByText('Re-Initialize'));
+    // Second Initialize from clean standby: must reach loading state, not error
+    fireEvent.click(screen.getByText('Initialize'));
+    expect(screen.queryByText(/FATAL ERROR/i)).toBeNull();
+    expect(screen.getByText(/Loading Assets/i)).toBeTruthy();
   });
 });
 
