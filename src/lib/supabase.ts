@@ -14,12 +14,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-// Fall back to placeholder values so createClient never throws on init.
-// Auth operations will fail gracefully via network errors instead.
-export const supabase = createClient(
-  supabaseUrl || "https://placeholder.supabase.co",
-  supabaseAnonKey || "placeholder-anon-key",
-);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface Profile {
   id: string;
