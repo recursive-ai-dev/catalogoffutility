@@ -42,18 +42,16 @@ function AppInner() {
     setView("product");
   };
 
-  // If a logged-out user somehow reaches a product or chamber view for an
-  // auth-gated entry, quietly return them to the catalog.
-  if (!user && selectedApp?.requiresAuth && view !== "catalog") {
-    setView("catalog");
-    setSelectedApp(null);
-  }
+  // Derive the effective view synchronously during render so auth-gated entries
+  // never paint before a redirect occurs (prevents the one-frame protected-page flash).
+  const isUnauthorized = !user && !!selectedApp?.requiresAuth;
+  const effectiveView: View = isUnauthorized ? "catalog" : view;
 
-  if (view === "chamber" && selectedApp) {
+  if (effectiveView === "chamber" && selectedApp) {
     return <Chamber app={selectedApp} onBack={handleBackToProduct} />;
   }
 
-  if (view === "product" && selectedApp) {
+  if (effectiveView === "product" && selectedApp) {
     return (
       <ProductPage
         app={selectedApp}
