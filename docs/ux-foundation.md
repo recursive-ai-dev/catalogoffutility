@@ -140,32 +140,6 @@ Every data point shown to the user (`size`, `version`, `tech`, `tags`) is accura
 
 ### Hierarchy
 
-```
-Root (AuthProvider + view router)
-│
-├── Catalog                    [Browse layer — L1]
-│   ├── SidebarNav             (filter tags, user identity, nav actions)
-│   ├── SearchBar              (free-text, debounced, trims whitespace)
-│   ├── CatalogGrid            (responsive card layout)
-│   │   ├── CatalogCard        (hover parallax, locked state, tag badges)
-│   │   └── ...
-│   ├── AuthModal              (overlay, conditional)
-│   └── PrivacyBanner          (persistent, dismissible)
-│
-├── ProductPage                [Inspect layer — L2]
-│   ├── HeroImage
-│   ├── MetaPanel              (version, size, tags, tech stack)
-│   ├── DescriptionBlock       (short + long description, paragraph split)
-│   ├── EnterChamberCTA        (primary action)
-│   └── BackButton
-│
-└── Chamber                    [Execute layer — L3]
-    ├── ControlBar             (back, fullscreen, noise toggle)
-    ├── IframeSandbox          (sandboxed execution environment)
-    ├── VoidLogsSidebar        (atmospheric system log, max 100 entries)
-    ├── ImageHotlinkModal      (postMessage-triggered image overlay)
-    └── ErrorState             (IframeError recovery)
-```
 
 ### IA Principles
 
