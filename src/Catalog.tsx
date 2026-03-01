@@ -161,10 +161,28 @@ function Card({
     imgRef.current.style.transform = "scale(1) translate(0px, 0px)";
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (!isDisabled) onSelect();
+    }
+  };
+
+  const ariaLabel = entry.missing
+    ? `${entry.title} — unavailable`
+    : isAuthLocked
+      ? `${entry.title} — authentication required`
+      : `Open ${entry.title}`;
+
   return (
     <div
       ref={cardRef}
+      role="button"
+      tabIndex={entry.missing ? -1 : 0}
+      aria-disabled={isDisabled}
+      aria-label={ariaLabel}
       onClick={onSelect}
+      onKeyDown={handleKeyDown}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm ${
@@ -288,19 +306,20 @@ function Card({
                           ? `QUEUE: ${entry.queue}`
                           : ""}
           </span>
-          <button
+          <span
+            aria-hidden="true"
             className={
               entry.missing
-                ? "text-white/20 cursor-not-allowed"
+                ? "text-white/20"
                 : isAuthLocked
                   ? "text-white/15 group-hover:text-white/30 transition-colors"
-                  : "text-white/50 hover:text-white transition-colors"
+                  : "text-white/50 group-hover:text-white transition-colors"
             }
           >
             <span className="material-symbols-outlined font-light">
               {entry.missing ? "visibility_off" : isAuthLocked ? "lock" : "arrow_forward"}
             </span>
-          </button>
+          </span>
         </div>
       </div>
     </div>
@@ -363,13 +382,16 @@ export function Catalog({ onSelectApp }: CatalogProps) {
       <div className="absolute inset-0 z-0 pointer-events-none atmosphere"></div>
 
       {/* Chain 14 (NavButtonActions): non-blocking notification banner */}
-      {notification && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-black/80 border border-white/15 backdrop-blur-xl rounded-full pointer-events-none">
-          <span className="text-white/70 font-mono text-[11px] tracking-widest uppercase">
-            {notification}
-          </span>
-        </div>
-      )}
+      {/* aria-live container is always mounted so screen readers pick up dynamic content */}
+      <div aria-live="polite" aria-atomic="true" className="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+        {notification && (
+          <div className="px-6 py-3 bg-black/80 border border-white/15 backdrop-blur-xl rounded-full">
+            <span className="text-white/70 font-mono text-[11px] tracking-widest uppercase">
+              {notification}
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Side Navigation */}
       <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
@@ -486,6 +508,7 @@ export function Catalog({ onSelectApp }: CatalogProps) {
               </span>
               <input
                 type="text"
+                aria-label="Search catalog entries"
                 placeholder="Search the void..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -501,6 +524,7 @@ export function Catalog({ onSelectApp }: CatalogProps) {
             <button
               key={tag}
               onClick={() => setSelectedTag(tag)}
+              aria-pressed={selectedTag === tag}
               className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer ${
                 selectedTag === tag
                   ? "bg-white/10 border-white/20 text-white"

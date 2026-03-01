@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 
 const MAX_LOGS = 100;
@@ -66,6 +66,19 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
   // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
   const iframeDocRef = useRef<Document | null>(null);
   const iframeClickHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
+  const modalCloseRef = useRef<HTMLButtonElement>(null);
+
+  // Focus the close button when the hotlinked image modal opens
+  useEffect(() => {
+    if (hotlinkedImage) {
+      modalCloseRef.current?.focus();
+    }
+  }, [hotlinkedImage]);
+
+  // Close modal on Escape key
+  const handleModalKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "Escape") setHotlinkedImage(null);
+  }, []);
 
   // Cleanup injected iframe listener on Chamber unmount
   useEffect(() => {
@@ -216,19 +229,20 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
 
       {/* Top Navigation */}
       <header className="relative z-30 flex items-center justify-between whitespace-nowrap border-b border-white/10 bg-black/40 backdrop-blur-xl px-10 py-6">
-        <div
+        <button
           className="flex items-center gap-6 text-white/70 hover:text-white cursor-pointer transition-colors group"
           onClick={onBack}
+          aria-label="Back to product page"
         >
           <div className="size-6 transition-transform group-hover:-translate-x-1">
-            <span className="material-symbols-outlined !text-2xl font-light">
+            <span className="material-symbols-outlined !text-2xl font-light" aria-hidden="true">
               arrow_back
             </span>
           </div>
           <h2 className="text-white/90 text-2xl font-light tracking-widest uppercase font-display">
             The Chamber
           </h2>
-        </div>
+        </button>
 
         <div className="flex items-center gap-8">
           <button
@@ -250,12 +264,13 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
               Subject 892
             </span>
             <div
-              className="bg-center bg-no-repeat bg-cover rounded border border-[#233f48] size-8 grayscale opacity-70"
-              style={{
-                backgroundImage:
-                  'url("https://images.unsplash.com/photo-1535713875002-d1d0cf925346?w=64&h=64&fit=crop&auto=format")',
-              }}
-            ></div>
+              className="rounded border border-[#233f48] size-8 opacity-70 flex items-center justify-center bg-white/5"
+              aria-hidden="true"
+            >
+              <span className="material-symbols-outlined text-white/40 font-light text-sm">
+                person
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -307,7 +322,7 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
               <div className="w-full h-full bg-black relative flex items-center justify-center overflow-hidden">
                 {!isInitialized ? (
                   <>
-                    <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop')] bg-cover bg-center mix-blend-luminosity"></div>
+                    <div className="absolute inset-0 opacity-20 mix-blend-luminosity" style={{background: "radial-gradient(ellipse at 60% 40%, #1a1a2e 0%, #0a0a0f 60%, #000 100%)"}}></div>
                     <div className="text-center z-10 space-y-6">
                       <span className="material-symbols-outlined text-6xl text-white/20 animate-pulse font-light">
                         visibility_off
@@ -400,7 +415,7 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
                       srcDoc={app.url ? undefined : htmlContentWithScript}
                       className="w-full h-full border-none bg-black"
                       title={app.title}
-                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                      sandbox={app.url ? "allow-scripts allow-forms" : "allow-scripts"}
                       onLoad={handleIframeLoad}
                       onError={handleIframeError}
                     />
@@ -568,8 +583,12 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
       {/* Hotlinked Image Modal */}
       {hotlinkedImage && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Asset viewer"
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-10"
           onClick={() => setHotlinkedImage(null)}
+          onKeyDown={handleModalKeyDown}
         >
           <div
             className="relative max-w-5xl max-h-full border border-white/10 bg-black/60 p-4 shadow-2xl rounded-2xl backdrop-blur-xl"
@@ -580,15 +599,17 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
                 Asset_Viewer // Extracted
               </span>
               <button
+                ref={modalCloseRef}
                 onClick={() => setHotlinkedImage(null)}
                 className="text-white/40 hover:text-white transition-colors cursor-pointer"
+                aria-label="Close image viewer"
               >
-                <span className="material-symbols-outlined text-sm font-light">close</span>
+                <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">close</span>
               </button>
             </div>
             <img
               src={hotlinkedImage}
-              alt="Hotlinked asset"
+              alt="Intercepted asset from the void"
               className="max-w-full max-h-[75vh] object-contain rounded-lg"
             />
           </div>
