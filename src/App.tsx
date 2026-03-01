@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Catalog } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
@@ -44,10 +44,12 @@ function AppInner() {
 
   // If a logged-out user somehow reaches a product or chamber view for an
   // auth-gated entry, quietly return them to the catalog.
-  if (!user && selectedApp?.requiresAuth && view !== "catalog") {
-    setView("catalog");
-    setSelectedApp(null);
-  }
+  useEffect(() => {
+    if (!user && selectedApp?.requiresAuth && view !== "catalog") {
+      setView("catalog");
+      setSelectedApp(null);
+    }
+  }, [user, selectedApp, view]);
 
   if (view === "chamber" && selectedApp) {
     return <Chamber app={selectedApp} onBack={handleBackToProduct} />;
