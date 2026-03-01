@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
+import { useAuth } from "./lib/auth";
 
 interface CatalogProps {
   onSelectApp: (app: AppEntry) => void;
@@ -18,6 +19,114 @@ const FILTER_TAGS = [
   "Horror",
 ];
 
+// Generates a deterministic two-letter avatar from a username/email
+function initials(name: string): string {
+  const parts = name.replace(/@.*/, "").split(/[._\-\s]+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+function UserSection() {
+  const { user, profile, loading, showAuthModal, signOut } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    await signOut();
+    setSigningOut(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="px-4 py-4 border-t border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-full bg-white/5 animate-pulse" />
+          <div className="flex-1 h-2 bg-white/5 rounded animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="px-4 py-4 border-t border-white/5">
+        <p className="text-[9px] font-mono text-white/20 tracking-widest uppercase mb-3">
+          Identity
+        </p>
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-white/20 font-light text-sm">
+              person
+            </span>
+          </div>
+          <div>
+            <p className="text-white/25 font-mono text-[10px] tracking-widest uppercase">
+              Anonymous Entity
+            </p>
+            <p className="text-white/15 font-mono text-[8px] tracking-widest">
+              Unverified · Restricted access
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={showAuthModal}
+          className="w-full flex items-center justify-center gap-2 py-2 border border-white/10 hover:border-white/25 text-white/30 hover:text-white/60 text-[9px] font-mono tracking-widest uppercase rounded-lg transition-all cursor-pointer"
+        >
+          <span className="material-symbols-outlined font-light text-sm">
+            fingerprint
+          </span>
+          Identify Yourself
+        </button>
+      </div>
+    );
+  }
+
+  const displayName =
+    profile?.username ?? user.email?.split("@")[0] ?? "entity";
+  const joined = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+      })
+    : null;
+
+  return (
+    <div className="px-4 py-4 border-t border-white/5">
+      <p className="text-[9px] font-mono text-white/20 tracking-widest uppercase mb-3">
+        Observer
+      </p>
+      <div className="flex items-center gap-3 mb-3">
+        {/* Avatar — initials in a dim circle */}
+        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/15 flex items-center justify-center shrink-0">
+          <span className="text-white/50 font-mono text-[10px] font-light tracking-wider select-none">
+            {initials(displayName)}
+          </span>
+        </div>
+        <div className="min-w-0">
+          <p className="text-white/70 font-mono text-[10px] tracking-widest uppercase truncate">
+            {displayName}
+          </p>
+          {joined && (
+            <p className="text-white/20 font-mono text-[8px] tracking-widest">
+              Inscribed {joined}
+            </p>
+          )}
+        </div>
+      </div>
+      <button
+        onClick={handleSignOut}
+        disabled={signingOut}
+        className="w-full flex items-center justify-center gap-2 py-2 border border-white/5 hover:border-white/15 text-white/15 hover:text-white/35 text-[9px] font-mono tracking-widest uppercase rounded-lg transition-all cursor-pointer disabled:opacity-40"
+      >
+        <span className="material-symbols-outlined font-light text-sm">
+          logout
+        </span>
+        {signingOut ? "Dissolving..." : "Cease Existence"}
+      </button>
+    </div>
+  );
+}
+
 function Card({
   entry,
   onSelect,
@@ -28,9 +137,13 @@ function Card({
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const { user } = useAuth();
+
+  const isAuthLocked = !!entry.requiresAuth && !user;
+  const isDisabled = !!entry.missing || isAuthLocked;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current || !imgRef.current || entry.missing) return;
+    if (!cardRef.current || !imgRef.current || isDisabled) return;
     const rect = cardRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -44,7 +157,7 @@ function Card({
   };
 
   const handleMouseLeave = () => {
-    if (!imgRef.current || entry.missing) return;
+    if (!imgRef.current || isDisabled) return;
     imgRef.current.style.transform = "scale(1) translate(0px, 0px)";
   };
 
@@ -54,9 +167,15 @@ function Card({
       onClick={onSelect}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm ${entry.missing ? "opacity-40 hover:opacity-60 cursor-not-allowed" : "hover:border-white/20 hover:bg-white/5 cursor-pointer"}`}
+      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm ${
+        entry.missing
+          ? "opacity-40 hover:opacity-60 cursor-not-allowed"
+          : isAuthLocked
+            ? "cursor-pointer hover:border-white/15 hover:bg-white/[0.02]"
+            : "hover:border-white/20 hover:bg-white/5 cursor-pointer"
+      }`}
     >
-      {entry.version && (
+      {entry.version && !isAuthLocked && (
         <div className="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur-md px-2 py-1 rounded-full border border-white/10">
           <span className="text-[9px] text-white/70 font-mono uppercase tracking-widest">
             {entry.version}
@@ -76,22 +195,50 @@ function Card({
           <img
             ref={imgRef}
             alt={entry.title}
-            className={`w-full h-full object-cover transition-transform duration-700 ease-out opacity-60 group-hover:opacity-100 mix-blend-luminosity group-hover:mix-blend-normal`}
+            className={`w-full h-full object-cover transition-transform duration-700 ease-out mix-blend-luminosity ${
+              isAuthLocked
+                ? "opacity-15 group-hover:opacity-20"
+                : "opacity-60 group-hover:opacity-100 group-hover:mix-blend-normal"
+            }`}
             src={entry.image}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none"></div>
+
+        {/* Auth-lock overlay */}
+        {isAuthLocked && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
+            <span className="material-symbols-outlined text-2xl text-white/25 font-light">
+              lock
+            </span>
+            <p className="text-[8px] font-mono text-white/20 tracking-widest uppercase text-center px-4">
+              Authentication Required
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="p-6 flex flex-col gap-4 flex-1">
         <div>
           <h3
-            className={`text-2xl font-light leading-tight font-display tracking-wide ${entry.missing ? "text-white/30" : "text-white/90 group-hover:text-white transition-colors"}`}
+            className={`text-2xl font-light leading-tight font-display tracking-wide ${
+              entry.missing
+                ? "text-white/30"
+                : isAuthLocked
+                  ? "text-white/25"
+                  : "text-white/90 group-hover:text-white transition-colors"
+            }`}
           >
             {entry.title}
           </h3>
           <div
-            className={`h-px w-12 mt-4 mb-2 ${entry.missing ? "bg-white/10" : "bg-white/20 group-hover:bg-white/50 transition-colors"}`}
+            className={`h-px w-12 mt-4 mb-2 ${
+              entry.missing
+                ? "bg-white/10"
+                : isAuthLocked
+                  ? "bg-white/8"
+                  : "bg-white/20 group-hover:bg-white/50 transition-colors"
+            }`}
           ></div>
         </div>
 
@@ -110,30 +257,48 @@ function Card({
         )}
 
         <p
-          className={`text-sm leading-relaxed line-clamp-3 font-light ${entry.missing ? "text-white/30" : "text-white/60"}`}
+          className={`text-sm leading-relaxed line-clamp-3 font-light ${
+            entry.missing || isAuthLocked ? "text-white/20" : "text-white/60"
+          }`}
         >
-          {entry.description}
+          {isAuthLocked
+            ? "Access to this entry requires identity verification. The archive does not share its depths with strangers."
+            : entry.description}
         </p>
+
         <div className="mt-auto pt-4 flex items-center justify-between">
           <span
-            className={`text-[10px] font-mono tracking-widest uppercase ${entry.missing ? "text-white/20" : "text-white/40"}`}
+            className={`text-[10px] font-mono tracking-widest uppercase ${
+              entry.missing || isAuthLocked ? "text-white/15" : "text-white/40"
+            }`}
           >
-            {entry.size && `SIZE: ${entry.size}`}
-            {entry.temp && `TEMP: ${entry.temp}`}
-            {entry.users && `USERS: ${entry.users}`}
-            {entry.err && `ERR: ${entry.err}`}
-            {entry.missing && `MISSING`}
-            {entry.queue && `QUEUE: ${entry.queue}`}
+            {isAuthLocked
+              ? "LOCKED"
+              : entry.size
+                ? `SIZE: ${entry.size}`
+                : entry.temp
+                  ? `TEMP: ${entry.temp}`
+                  : entry.users
+                    ? `USERS: ${entry.users}`
+                    : entry.err
+                      ? `ERR: ${entry.err}`
+                      : entry.missing
+                        ? "MISSING"
+                        : entry.queue
+                          ? `QUEUE: ${entry.queue}`
+                          : ""}
           </span>
           <button
             className={
               entry.missing
                 ? "text-white/20 cursor-not-allowed"
-                : "text-white/50 hover:text-white transition-colors"
+                : isAuthLocked
+                  ? "text-white/15 group-hover:text-white/30 transition-colors"
+                  : "text-white/50 hover:text-white transition-colors"
             }
           >
             <span className="material-symbols-outlined font-light">
-              {entry.missing ? "lock" : "arrow_forward"}
+              {entry.missing ? "visibility_off" : isAuthLocked ? "lock" : "arrow_forward"}
             </span>
           </button>
         </div>
@@ -153,6 +318,7 @@ export function Catalog({ onSelectApp }: CatalogProps) {
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { user, showAuthModal } = useAuth();
 
   const showNotification = useCallback((msg: string) => {
     if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
@@ -175,6 +341,21 @@ export function Catalog({ onSelectApp }: CatalogProps) {
       (entry.tags && entry.tags.includes(selectedTag));
     return matchesSearch && matchesTag;
   });
+
+  const handleCardSelect = useCallback(
+    (entry: AppEntry) => {
+      if (entry.missing) return;
+      // Auth-gated entries open the auth modal for unauthenticated users
+      if (entry.requiresAuth && !user) {
+        showAuthModal();
+        return;
+      }
+      onSelectApp(entry);
+    },
+    [user, showAuthModal, onSelectApp],
+  );
+
+  const lockedCount = CATALOG_ENTRIES.filter((e) => e.requiresAuth).length;
 
   return (
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
@@ -260,6 +441,9 @@ export function Catalog({ onSelectApp }: CatalogProps) {
           </button>
         </nav>
 
+        {/* User identity section */}
+        <UserSection />
+
         <div className="p-6 border-t border-white/10 bg-black/40">
           <div className="flex flex-col gap-3">
             <div className="flex justify-between items-center text-[10px] text-white/40 font-mono tracking-widest">
@@ -273,6 +457,12 @@ export function Catalog({ onSelectApp }: CatalogProps) {
               <span>ENTRIES:</span>
               <span className="text-white/40">{CATALOG_ENTRIES.length}</span>
             </div>
+            {!user && (
+              <div className="flex justify-between items-center text-[10px] text-white/15 font-mono tracking-widest">
+                <span>LOCKED:</span>
+                <span className="text-white/25">{lockedCount}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -324,6 +514,30 @@ export function Catalog({ onSelectApp }: CatalogProps) {
 
         {/* Grid Content */}
         <main className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll">
+          {/* Anonymous access callout */}
+          {!user && (
+            <div className="mb-8 flex items-start gap-4 px-6 py-4 border border-white/5 rounded-xl bg-white/[0.01] group">
+              <span className="material-symbols-outlined text-white/15 font-light text-2xl mt-0.5 shrink-0">
+                lock
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-white/25 font-mono text-[10px] tracking-widest uppercase mb-1">
+                  Restricted Access
+                </p>
+                <p className="text-white/20 font-light text-xs leading-relaxed">
+                  {lockedCount} entries are sealed from unverified observers. The archive keeps its depths hidden from those who have not yet proven they exist.{" "}
+                  <button
+                    onClick={showAuthModal}
+                    className="text-white/35 hover:text-white/60 underline underline-offset-2 transition-colors cursor-pointer"
+                  >
+                    Identify yourself
+                  </button>{" "}
+                  to descend further.
+                </p>
+              </div>
+            </div>
+          )}
+
           {filteredEntries.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 gap-4">
               <span className="material-symbols-outlined text-5xl text-white/10 font-light">
@@ -339,7 +553,7 @@ export function Catalog({ onSelectApp }: CatalogProps) {
                 <Card
                   key={entry.id}
                   entry={entry}
-                  onSelect={() => !entry.missing && onSelectApp(entry)}
+                  onSelect={() => handleCardSelect(entry)}
                 />
               ))}
             </div>
@@ -361,8 +575,18 @@ export function Catalog({ onSelectApp }: CatalogProps) {
               </p>
               <p>
                 &gt; Loading memories...{" "}
-                <span className="text-white/30">FAILED (file missing)</span>
+                <span className="text-white/30">
+                  {user ? "RESTORED (partial)" : "FAILED (file missing)"}
+                </span>
               </p>
+              {user && (
+                <p>
+                  &gt; Identity confirmed:{" "}
+                  <span className="text-white/60">
+                    {user.email?.split("@")[0] ?? "entity"}
+                  </span>
+                </p>
+              )}
               <p className="animate-pulse">&gt; _</p>
             </div>
           </div>

@@ -3,12 +3,15 @@ import { Catalog } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
+import { AuthProvider, useAuth } from "./lib/auth";
+import { AuthModal } from "./AuthModal";
 
 type View = "catalog" | "product" | "chamber";
 
-export default function App() {
+function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
+  const { user, authModalVisible } = useAuth();
 
   const handleSelectApp = (app: AppEntry) => {
     // Chain 2 (AppSelection): single authoritative guard — missing entries are never navigated to
@@ -38,6 +41,13 @@ export default function App() {
     setView("product");
   };
 
+  // If a logged-out user somehow reaches a product or chamber view for an
+  // auth-gated entry, quietly return them to the catalog.
+  if (!user && selectedApp?.requiresAuth && view !== "catalog") {
+    setView("catalog");
+    setSelectedApp(null);
+  }
+
   if (view === "chamber" && selectedApp) {
     return <Chamber app={selectedApp} onBack={handleBackToProduct} />;
   }
@@ -52,5 +62,18 @@ export default function App() {
     );
   }
 
-  return <Catalog onSelectApp={handleSelectApp} />;
+  return (
+    <>
+      <Catalog onSelectApp={handleSelectApp} />
+      {authModalVisible && <AuthModal />}
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
+  );
 }

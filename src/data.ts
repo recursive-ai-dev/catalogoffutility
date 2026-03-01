@@ -15,6 +15,8 @@ export interface AppEntry {
   tech?: string[];
   htmlContent?: string;
   url?: string;
+  /** If true, the entry is only accessible to authenticated users */
+  requiresAuth?: boolean;
 }
 
 /**
@@ -43,6 +45,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "CSS", "JavaScript", "CRT Effects"],
     image: "/images/when-the-sun-died.svg",
     url: "/when-the-sun-died.html",
+    requiresAuth: true,
   },
   {
     id: "aria-terminal-v2",
@@ -56,6 +59,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "CSS", "JavaScript", "Canvas"],
     image: "/images/aria-terminal-v2.svg",
     url: "/aria-terminal-v2.html",
+    requiresAuth: true,
   },
   {
     id: "kira-v2",
@@ -69,6 +73,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "CSS", "JavaScript", "Animations"],
     image: "/images/kira-v2.svg",
     url: "/kira-v2.html",
+    requiresAuth: true,
   },
   {
     id: "narrative-beat-graph",
@@ -82,6 +87,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "SVG", "JavaScript", "Drag & Drop"],
     image: "/images/narrative-beat-graph.svg",
     url: "/narrative-beat-graph.html",
+    requiresAuth: true,
   },
   {
     id: "235am-v2",
@@ -95,6 +101,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "Three.js", "WebGL", "GLSL Shaders"],
     image: "/images/235am_v2.svg",
     url: "/235am_v2.html",
+    requiresAuth: true,
   },
   {
     id: "world-that-doesnt-care",
@@ -147,6 +154,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "CSS", "JavaScript"],
     image: "/images/genesis.svg",
     url: "/genesis.html",
+    requiresAuth: true,
   },
   {
     id: "ludic-strata",
@@ -160,6 +168,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "CSS", "JavaScript"],
     image: "/images/ludic-strata.svg",
     url: "/ludic-strata.html",
+    requiresAuth: true,
   },
   {
     id: "offensive-letters",
@@ -186,6 +195,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "Canvas", "WebGL"],
     image: "/images/space-time-curvature.svg",
     url: "/space-time-curvature.html",
+    requiresAuth: true,
   },
   {
     id: "spectral-loop",
@@ -199,6 +209,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "CSS", "JavaScript"],
     image: "/images/spectral-loop.svg",
     url: "/spectral_loop.html",
+    requiresAuth: true,
   },
   {
     id: "warren-invader",
@@ -225,6 +236,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "React", "JavaScript"],
     image: "/images/soul-mirror.svg",
     url: "/soul-mirror.html",
+    requiresAuth: true,
   },
   {
     id: "abm-generator",
@@ -238,6 +250,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "React", "Tone.js", "Web Audio"],
     image: "/images/abm-generator.svg",
     url: "/abm-generator.html",
+    requiresAuth: true,
   },
   {
     id: "nexus-war",
@@ -264,6 +277,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "Three.js", "WebGL"],
     image: "/images/quantum-ant.svg",
     url: "/quantum-ant.html",
+    requiresAuth: true,
   },
   {
     id: "ibt2",
@@ -277,6 +291,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "CSS", "JavaScript", "React"],
     image: "/images/ibt2.svg",
     url: "/ibt2/index.html",
+    requiresAuth: true,
   },
   {
     id: "coding-ants",
@@ -290,5 +305,6 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     tech: ["HTML", "CSS", "JavaScript", "Three.js", "React"],
     image: "/images/coding-ants.svg",
     url: "/coding-ants/index.html",
+    requiresAuth: true,
   }
 ];
