@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Catalog } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
@@ -9,6 +9,15 @@ import { PrivacyBanner } from "./PrivacyBanner";
 
 type View = "catalog" | "product" | "chamber";
 
+/**
+ * Manages in-app navigation and selected application state for the catalog, product, and chamber screens.
+ *
+ * Maintains the current view and selected AppEntry, exposes handlers for selecting an app, entering the chamber,
+ * and navigating back, and enforces authentication gating by returning to the catalog when a non-authenticated user
+ * attempts to view an auth-required entry.
+ *
+ * @returns The UI for the active view: Catalog (with optional AuthModal and PrivacyBanner), ProductPage, or Chamber.
+ */
 function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
@@ -44,10 +53,12 @@ function AppInner() {
 
   // If a logged-out user somehow reaches a product or chamber view for an
   // auth-gated entry, quietly return them to the catalog.
-  if (!user && selectedApp?.requiresAuth && view !== "catalog") {
-    setView("catalog");
-    setSelectedApp(null);
-  }
+  useEffect(() => {
+    if (!user && selectedApp?.requiresAuth && view !== "catalog") {
+      setView("catalog");
+      setSelectedApp(null);
+    }
+  }, [user, selectedApp, view]);
 
   if (view === "chamber" && selectedApp) {
     return <Chamber app={selectedApp} onBack={handleBackToProduct} />;
