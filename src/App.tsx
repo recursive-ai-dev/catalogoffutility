@@ -5,6 +5,7 @@ import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { AuthModal } from "./AuthModal";
+import { PrivacyBanner } from "./PrivacyBanner";
 
 type View = "catalog" | "product" | "chamber";
 
@@ -66,6 +67,7 @@ function AppInner() {
     <>
       <Catalog onSelectApp={handleSelectApp} />
       {authModalVisible && <AuthModal />}
+      <PrivacyBanner />
     </>
   );
 }

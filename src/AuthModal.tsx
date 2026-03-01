@@ -29,6 +29,12 @@ export function AuthModal() {
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the email input when the modal mounts
+  useEffect(() => {
+    emailInputRef.current?.focus();
+  }, []);
 
   // Reset state when toggling modes
   const switchMode = (next: Mode) => {
@@ -93,14 +99,19 @@ export function AuthModal() {
       <div className="absolute inset-0 crt-scanline pointer-events-none opacity-20" />
 
       {/* Modal panel */}
-      <div className="relative w-full max-w-md mx-4 glass-panel border border-white/8 rounded-2xl overflow-hidden">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+        className="relative w-full max-w-md mx-4 glass-panel border border-white/8 rounded-2xl overflow-hidden"
+      >
         {/* Header bar */}
         <div className="flex items-center justify-between px-8 pt-8 pb-0">
           <div>
             <p className="text-[9px] font-mono text-white/20 tracking-widest uppercase mb-1">
               ARCHIVE // IDENTITY_PROTOCOL
             </p>
-            <h2 className="text-2xl font-light text-white/90 tracking-widest uppercase font-display">
+            <h2 id="auth-modal-title" className="text-2xl font-light text-white/90 tracking-widest uppercase font-display">
               {mode === "signin" ? "Authenticate" : "Inscribe Yourself"}
             </h2>
           </div>
@@ -149,14 +160,16 @@ export function AuthModal() {
 
             {/* Email field */}
             <div className="flex flex-col gap-2">
-              <label className="text-[9px] font-mono text-white/30 tracking-widest uppercase">
+              <label htmlFor="auth-email" className="text-[9px] font-mono text-white/30 tracking-widest uppercase">
                 Designation
               </label>
               <div className="flex items-center gap-3 bg-black/50 border border-white/8 focus-within:border-white/20 rounded-lg px-4 py-3 transition-colors">
-                <span className="material-symbols-outlined text-white/20 font-light text-base">
+                <span className="material-symbols-outlined text-white/20 font-light text-base" aria-hidden="true">
                   alternate_email
                 </span>
                 <input
+                  ref={emailInputRef}
+                  id="auth-email"
                   type="email"
                   required
                   value={email}
@@ -170,14 +183,15 @@ export function AuthModal() {
 
             {/* Password field */}
             <div className="flex flex-col gap-2">
-              <label className="text-[9px] font-mono text-white/30 tracking-widest uppercase">
+              <label htmlFor="auth-password" className="text-[9px] font-mono text-white/30 tracking-widest uppercase">
                 Passphrase
               </label>
               <div className="flex items-center gap-3 bg-black/50 border border-white/8 focus-within:border-white/20 rounded-lg px-4 py-3 transition-colors">
-                <span className="material-symbols-outlined text-white/20 font-light text-base">
+                <span className="material-symbols-outlined text-white/20 font-light text-base" aria-hidden="true">
                   key
                 </span>
                 <input
+                  id="auth-password"
                   type="password"
                   required
                   minLength={6}
@@ -193,16 +207,18 @@ export function AuthModal() {
             </div>
 
             {/* Error */}
-            {error && (
-              <div className="flex items-start gap-3 px-4 py-3 bg-red-950/20 border border-red-900/30 rounded-lg">
-                <span className="material-symbols-outlined text-red-400/60 font-light text-sm mt-px shrink-0">
-                  error_outline
-                </span>
-                <p className="text-red-400/70 font-mono text-[10px] leading-relaxed tracking-wide">
-                  {error}
-                </p>
-              </div>
-            )}
+            <div role="alert" aria-live="assertive" aria-atomic="true">
+              {error && (
+                <div className="flex items-start gap-3 px-4 py-3 bg-red-950/20 border border-red-900/30 rounded-lg">
+                  <span className="material-symbols-outlined text-red-400/60 font-light text-sm mt-px shrink-0" aria-hidden="true">
+                    error_outline
+                  </span>
+                  <p className="text-red-400/70 font-mono text-[10px] leading-relaxed tracking-wide">
+                    {error}
+                  </p>
+                </div>
+              )}
+            </div>
 
             {/* Submit */}
             <button
