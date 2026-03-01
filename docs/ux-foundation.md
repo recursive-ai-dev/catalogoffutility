@@ -169,10 +169,6 @@ Every data point shown to the user (`size`, `version`, `tech`, `tags`) is accura
 
 ### Primary Navigation Model: Linear Progressive Flow
 
-```
-[Catalog] ──select──▶ [Product Page] ──enter──▶ [Chamber]
-    ◀────────back────────────────────────◀back────────────
-```
 
 - **Forward** is always triggered by an explicit user action (card click, "Enter Chamber" button).
 - **Back** is always triggered by "Back" / "Cease" button or equivalent affordance.
