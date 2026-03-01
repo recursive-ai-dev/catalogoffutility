@@ -60,11 +60,11 @@ function AppInner() {
     }
   }, [user, selectedApp, view]);
 
-  if (view === "chamber" && selectedApp) {
+  if (effectiveView === "chamber" && selectedApp) {
     return <Chamber app={selectedApp} onBack={handleBackToProduct} />;
   }
 
-  if (view === "product" && selectedApp) {
+  if (effectiveView === "product" && selectedApp) {
     return (
       <ProductPage
         app={selectedApp}
