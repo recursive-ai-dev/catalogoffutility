@@ -21,11 +21,17 @@ type View = "catalog" | "product" | "chamber";
 function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
-  const { user, authModalVisible } = useAuth();
+  const { user, authModalVisible, showAuthModal } = useAuth();
 
   const handleSelectApp = (app: AppEntry) => {
-    // Chain 2 (AppSelection): single authoritative guard — missing entries are never navigated to
+    // Chain 2 (AppSelection): single authoritative guard — missing entries are never navigated to.
+    // Auth-gated entries are also intercepted here so selectedApp never drifts to a value
+    // the current user is not permitted to hold (LC-N).
     if (app.missing) return;
+    if (app.requiresAuth && !user) {
+      showAuthModal();
+      return;
+    }
     setSelectedApp(app);
     setView("product");
   };

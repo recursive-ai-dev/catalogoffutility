@@ -37,8 +37,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authModalVisible, setAuthModalVisible] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string, email: string) => {
-    // Upsert profile — creates on first login, updates last_seen_at on subsequent logins
-    const { data } = await supabase
+    // Upsert profile — creates on first login, updates last_seen_at as a heartbeat.
+    const { data, error } = await supabase
       .from("profiles")
       .upsert(
         {
@@ -51,21 +51,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .select()
       .single();
 
+    if (error) {
+      // Profile sync failure is non-fatal: the user remains authenticated and
+      // retains full access. Degrade gracefully and surface to the console only.
+      console.warn("[void] Profile sync failed — continuing with degraded profile.", error.message);
+      return;
+    }
     if (data) setProfile(data as Profile);
   }, []);
 
   useEffect(() => {
-    // Retrieve existing session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id, session.user.email ?? "");
-      }
-      setLoading(false);
-    });
-
-    // Listen for auth state changes
+    // In Supabase v2, onAuthStateChange fires INITIAL_SESSION on subscribe,
+    // making a separate getSession() call redundant. Using both causes fetchProfile
+    // to be invoked twice concurrently on every session restore (LC-A). This single
+    // listener is the sole authoritative source for session and profile state.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
