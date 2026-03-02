@@ -96,6 +96,12 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     ];
   });
 
+  // Keep the latest clock in a ref so the long-lived handleMessage effect always
+  // reads the current clock without needing to re-register the listener when
+  // the clock prop changes (never happens in production; may occur in tests).
+  const clkRef = useRef(clk);
+  clkRef.current = clk;
+
   // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
   const iframeDocRef = useRef<Document | null>(null);
   const iframeClickHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
@@ -163,7 +169,9 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
         setLogs((prev) =>
           appendLog(prev, {
             sender: "SYSTEM_MSG",
-            time: clk.timeString(),
+            // Use clkRef.current so this effect never closes over a stale clock
+            // even if the clock prop changes after the initial mount.
+            time: clkRef.current.timeString(),
             msg: `Intercepted image hotlink: ${src}`,
             type: "warn",
           }),
