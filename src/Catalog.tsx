@@ -1,9 +1,16 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth } from "./lib/auth";
+import { Clock, realClock } from "./lib/clock";
 
 interface CatalogProps {
   onSelectApp: (app: AppEntry) => void;
+  /**
+   * Determinism provider. Pass `makeFakeClock(fixed)` in tests to freeze
+   * the mount-time log entry at a known instant.
+   * Defaults to the live wall-clock in production.
+   */
+  clock?: Clock;
 }
 
 const FILTER_TAGS = [
@@ -326,12 +333,12 @@ function Card({
   );
 }
 
-export function Catalog({ onSelectApp }: CatalogProps) {
+export function Catalog({ onSelectApp, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("All_Entries");
   // Capture the exact time the catalog first mounted — displayed in system logs
   const mountTime = useMemo(
-    () => new Date().toLocaleTimeString("en-US", { hour12: false }),
+    () => (clock ?? realClock).timeString(),
     [],
   );
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
