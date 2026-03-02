@@ -26,25 +26,9 @@ create policy "Users can insert own profile."
 create policy "Users can update own profile."
   on public.profiles for update using (auth.uid() = id);
 
--- Auto-create a profile whenever a new user signs up
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = public
-as $$
-begin
-  insert into public.profiles (id, username)
-  values (
-    new.id,
-    split_part(new.email, '@', 1)
-  );
-  return new;
-end;
-$$;
-
--- Drop trigger if it already exists (safe re-run)
+-- Profile creation is handled client-side via the fetchProfile upsert in
+-- src/lib/auth.tsx. The server-side trigger is redundant and was removed to
+-- prevent a race between the trigger INSERT and the client UPSERT on signup.
+-- These drops are safe no-ops if the trigger was never created.
 drop trigger if exists on_auth_user_created on auth.users;
-
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+drop function if exists public.handle_new_user();
