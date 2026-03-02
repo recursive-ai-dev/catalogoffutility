@@ -51,6 +51,11 @@ function AppInner() {
     setView("product");
   };
 
+  // Derive effective view at render time to prevent auth-gated pages from
+  // flashing before the useEffect runs.
+  const isUnauthorized = !user && selectedApp?.requiresAuth;
+  const effectiveView = isUnauthorized ? "catalog" : view;
+
   // If a logged-out user somehow reaches a product or chamber view for an
   // auth-gated entry, quietly return them to the catalog.
   useEffect(() => {
