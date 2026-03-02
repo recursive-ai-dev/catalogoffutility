@@ -6,7 +6,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 if (!supabaseUrl || !supabaseAnonKey) {
   if (import.meta.env.PROD) {
     throw new Error(
-      "[void] Supabase credentials missing in production. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+      "[void] Supabase credentials missing. The archive cannot initialize in production.",
     );
   }
   console.error(
@@ -14,7 +14,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(
+  supabaseUrl ?? "placeholder-supabase-url",
+  supabaseAnonKey ?? "placeholder-supabase-anon-key",
+);
 
 export interface Profile {
   id: string;
