@@ -13,6 +13,10 @@ interface CatalogProps {
   clock?: Clock;
 }
 
+// Pre-computed at module load — the registry is static, so no need to
+// re-filter on every Catalog render.
+const LOCKED_COUNT = CATALOG_ENTRIES.filter((e) => e.requiresAuth).length;
+
 const FILTER_TAGS = [
   "All_Entries",
   "Pointless",
@@ -336,11 +340,14 @@ function Card({
 export function Catalog({ onSelectApp, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("All_Entries");
-  // Capture the exact time the catalog first mounted — displayed in system logs
-  const mountTime = useMemo(
-    () => (clock ?? realClock).timeString(),
-    [],
-  );
+  // Capture the exact time the catalog first mounted — displayed in system logs.
+  // useRef lazy-init is the correct React idiom for "compute once at mount";
+  // it avoids the exhaustive-deps violation that useMemo([]) would produce.
+  const mountTimeRef = useRef<string | null>(null);
+  if (mountTimeRef.current === null) {
+    mountTimeRef.current = (clock ?? realClock).timeString();
+  }
+  const mountTime = mountTimeRef.current;
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -355,18 +362,24 @@ export function Catalog({ onSelectApp, clock }: CatalogProps) {
   // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
-  const filteredEntries = CATALOG_ENTRIES.filter((entry) => {
-    const matchesSearch =
-      normalizedQuery === "" ||
-      entry.title.toLowerCase().includes(normalizedQuery) ||
-      entry.description.toLowerCase().includes(normalizedQuery) ||
-      (entry.tags &&
-        entry.tags.some((t) => t.toLowerCase().includes(normalizedQuery)));
-    const matchesTag =
-      selectedTag === "All_Entries" ||
-      (entry.tags && entry.tags.includes(selectedTag));
-    return matchesSearch && matchesTag;
-  });
+  // Memoize so the O(n) filter only re-runs when the query or tag changes,
+  // not on every unrelated re-render (e.g. notification state updates).
+  const filteredEntries = useMemo(
+    () =>
+      CATALOG_ENTRIES.filter((entry) => {
+        const matchesSearch =
+          normalizedQuery === "" ||
+          entry.title.toLowerCase().includes(normalizedQuery) ||
+          entry.description.toLowerCase().includes(normalizedQuery) ||
+          (entry.tags &&
+            entry.tags.some((t) => t.toLowerCase().includes(normalizedQuery)));
+        const matchesTag =
+          selectedTag === "All_Entries" ||
+          (entry.tags && entry.tags.includes(selectedTag));
+        return matchesSearch && matchesTag;
+      }),
+    [normalizedQuery, selectedTag],
+  );
 
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
@@ -381,7 +394,8 @@ export function Catalog({ onSelectApp, clock }: CatalogProps) {
     [user, showAuthModal, onSelectApp],
   );
 
-  const lockedCount = CATALOG_ENTRIES.filter((e) => e.requiresAuth).length;
+  // Derived from the static registry — stable across all renders.
+  const lockedCount = LOCKED_COUNT;
 
   return (
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">

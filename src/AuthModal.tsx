@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "./lib/auth";
 
 type Mode = "signin" | "signup";
@@ -30,10 +30,39 @@ export function AuthModal() {
   const [confirmed, setConfirmed] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Focus the email input when the modal mounts
   useEffect(() => {
     emailInputRef.current?.focus();
+  }, []);
+
+  // WCAG 2.1 SC 2.1.2: Trap focus inside the modal while it is open.
+  // All Tab / Shift+Tab keypresses are constrained to focusable descendants
+  // of the modal panel so keyboard users cannot navigate behind the overlay.
+  const handleFocusTrap = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Tab") return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const focusable = Array.from(
+      panel.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((el) => el.offsetParent !== null); // visible elements only
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
   }, []);
 
   // Reset state when toggling modes
@@ -88,6 +117,7 @@ export function AuthModal() {
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
+      onKeyDown={handleFocusTrap}
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{
         background: "rgba(0,0,0,0.88)",
@@ -100,6 +130,7 @@ export function AuthModal() {
 
       {/* Modal panel */}
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-modal-title"
