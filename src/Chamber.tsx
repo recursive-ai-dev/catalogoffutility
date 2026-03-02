@@ -50,26 +50,31 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
   const [showLogs, setShowLogs] = useState(true);
   const [noiseEnabled, setNoiseEnabled] = useState(true);
   const [hotlinkedImage, setHotlinkedImage] = useState<string | null>(null);
-  const [logs, setLogs] = useState<LogEntry[]>([
-    {
-      sender: "SYSTEM_MSG",
-      time: "14:02:33",
-      msg: "Connection established with the external node. Do not trust the visuals.",
-      type: "msg",
-    },
-    {
-      sender: "UNKNOWN_SENDER",
-      time: "14:04:12",
-      msg: "It sees you. It has always seen you.",
-      type: "unknown",
-    },
-    {
-      sender: "SYSTEM_WARN",
-      time: "14:05:00",
-      msg: "Packet loss detected. Reality buffer is thinning.",
-      type: "warn",
-    },
-  ]);
+  const [logs, setLogs] = useState<LogEntry[]>(() => {
+    // Use clk so test runs with a fake clock produce deterministic timestamps
+    // and real timestamps are never mixed with decorative hard-coded strings.
+    const t = clk.timeString();
+    return [
+      {
+        sender: "SYSTEM_MSG",
+        time: t,
+        msg: "Connection established with the external node. Do not trust the visuals.",
+        type: "msg",
+      },
+      {
+        sender: "UNKNOWN_SENDER",
+        time: t,
+        msg: "It sees you. It has always seen you.",
+        type: "unknown",
+      },
+      {
+        sender: "SYSTEM_WARN",
+        time: t,
+        msg: "Packet loss detected. Reality buffer is thinning.",
+        type: "warn",
+      },
+    ];
+  });
 
   // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
   const iframeDocRef = useRef<Document | null>(null);
@@ -120,7 +125,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [isInitialized, app.title]);
+  }, [isInitialized, app.title, clk]);
 
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
@@ -193,15 +198,15 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     }
   };
 
-  const handleIframeError = (e: any) => {
-    console.error(`[Chamber] Failed to load ${app.title} iframe.`, e);
+  const handleIframeError = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+    // Browsers do not expose the actual load-failure reason for iframes via the
+    // onError event. Log a correlation ID so the console entry can be matched
+    // to the in-app error display without relying on unextractable browser details.
+    const correlationId = `${app.id}@${clk.timeString()}`;
+    console.error(`[Chamber:${correlationId}] iframe load failed.`, e.nativeEvent);
     setIframeLoading(false);
     setIframeError(true);
-    setIframeErrorDetails(
-      e?.message ||
-        e?.type ||
-        "Unknown rendering exception in the reality buffer.",
-    );
+    setIframeErrorDetails(`REF:${correlationId}`);
   };
 
   const toggleFullscreen = () => {
