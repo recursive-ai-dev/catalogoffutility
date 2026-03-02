@@ -37,21 +37,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authModalVisible, setAuthModalVisible] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string, email: string) => {
-    // Upsert profile — creates on first login, updates last_seen_at on subsequent logins
-    const { data } = await supabase
+    const now = new Date().toISOString();
+
+    // Attempt a targeted update of last_seen_at only.
+    // This preserves any server-side username customisation the user may have
+    // made; the upsert path that always overwrote `username` with the email
+    // prefix was a data-integrity hazard (BUG-03).
+    const { data: updated } = await supabase
       .from("profiles")
-      .upsert(
-        {
-          id: userId,
-          username: email.split("@")[0],
-          last_seen_at: new Date().toISOString(),
-        },
-        { onConflict: "id" },
-      )
+      .update({ last_seen_at: now })
+      .eq("id", userId)
       .select()
       .single();
 
-    if (data) setProfile(data as Profile);
+    if (updated) {
+      setProfile(updated as Profile);
+      return;
+    }
+
+    // Row does not exist yet — insert with email-derived initial username.
+    const { data: inserted } = await supabase
+      .from("profiles")
+      .insert({
+        id: userId,
+        username: email.split("@")[0],
+        last_seen_at: now,
+      })
+      .select()
+      .single();
+
+    if (inserted) setProfile(inserted as Profile);
   }, []);
 
   useEffect(() => {

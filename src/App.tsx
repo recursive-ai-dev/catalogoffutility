@@ -57,7 +57,8 @@ function AppInner() {
   const effectiveView = isUnauthorized ? "catalog" : view;
 
   // If a logged-out user somehow reaches a product or chamber view for an
-  // auth-gated entry, quietly return them to the catalog.
+  // auth-gated entry, synchronise the underlying view state so that logging
+  // back in does not silently teleport them back to the gated page.
   useEffect(() => {
     if (!user && selectedApp?.requiresAuth && view !== "catalog") {
       setView("catalog");
@@ -65,11 +66,13 @@ function AppInner() {
     }
   }, [user, selectedApp, view]);
 
-  if (view === "chamber" && selectedApp) {
+  // Use effectiveView in render (not raw `view`) so that auth-gated pages
+  // never flash for a frame before the useEffect above fires on logout.
+  if (effectiveView === "chamber" && selectedApp) {
     return <Chamber app={selectedApp} onBack={handleBackToProduct} />;
   }
 
-  if (view === "product" && selectedApp) {
+  if (effectiveView === "product" && selectedApp) {
     return (
       <ProductPage
         app={selectedApp}
