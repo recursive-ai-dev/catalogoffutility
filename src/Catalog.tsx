@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth } from "./lib/auth";
 import { Clock, realClock } from "./lib/clock";
@@ -343,6 +343,9 @@ export function Catalog({ onSelectApp, clock }: CatalogProps) {
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
   // it avoids the exhaustive-deps violation that useMemo([]) would produce.
+  // useRef (not useMemo with []) avoids the exhaustive-deps lint violation while
+  // preserving mount-only semantics: the value is sampled once and never updates
+  // even if the `clock` prop changes (BUG-07).
   const mountTimeRef = useRef<string | null>(null);
   if (mountTimeRef.current === null) {
     mountTimeRef.current = (clock ?? realClock).timeString();

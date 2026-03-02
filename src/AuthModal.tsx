@@ -92,25 +92,29 @@ export function AuthModal() {
     setError(null);
     setLoading(true);
 
-    if (mode === "signin") {
-      const { error } = await signIn(email, password);
-      if (error) {
-        setError(humanizeError(error));
+    try {
+      if (mode === "signin") {
+        const { error } = await signIn(email, password);
+        if (error) {
+          setError(humanizeError(error));
+        } else {
+          hideAuthModal();
+        }
       } else {
-        hideAuthModal();
+        const { error, needsConfirmation } = await signUp(email, password);
+        if (error) {
+          setError(humanizeError(error));
+        } else if (needsConfirmation) {
+          setConfirmed(true);
+        } else {
+          hideAuthModal();
+        }
       }
-    } else {
-      const { error, needsConfirmation } = await signUp(email, password);
-      if (error) {
-        setError(humanizeError(error));
-      } else if (needsConfirmation) {
-        setConfirmed(true);
-      } else {
-        hideAuthModal();
-      }
+    } finally {
+      // Always reset loading — even if signIn/signUp throws an unexpected
+      // exception — so the form is never permanently frozen.
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

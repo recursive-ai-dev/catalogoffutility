@@ -423,11 +423,17 @@ export function computeDifficultyScore(params: {
 }): { score: number; label: "easy" | "medium" | "hard" | "extreme" } {
   const perfMod =
     Math.floor(params.answeredNPCs / 3) - (params.sanity < 40 ? 2 : 0);
-  const score =
+
+  const rawScore =
     params.locationIndex +
     Math.floor(params.daysSurvived / 5) +
     params.dangerLevel +
     perfMod;
+
+  // Clamp to 0: a negative difficulty score is semantically undefined and
+  // arises when low sanity (< 40) suppresses perfMod to -2 with no NPC
+  // answers and a low-index location (BUG-04).
+  const score = Math.max(0, rawScore);
 
   let label: "easy" | "medium" | "hard" | "extreme";
   if (score <= 4) label = "easy";
