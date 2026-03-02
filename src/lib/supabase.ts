@@ -14,7 +14,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(
+  supabaseUrl ?? "http://localhost",
+  supabaseAnonKey ?? "test-placeholder",
+);
 
 export interface Profile {
   id: string;

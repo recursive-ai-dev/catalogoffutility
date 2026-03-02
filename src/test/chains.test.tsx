@@ -9,6 +9,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { makeFakeClock } from '../lib/clock';
 
 import App from '../App';
 import { Catalog } from '../Catalog';
@@ -31,6 +32,12 @@ const makeApp = (overrides: Partial<AppEntry> = {}): AppEntry => ({
   size: '10 KB',
   ...overrides,
 });
+
+// First catalog entry that is neither missing nor auth-gated — safe for
+// navigation tests without requiring an authenticated session.
+const firstNavigableEntry = CATALOG_ENTRIES.find(
+  (e) => !e.missing && !e.requiresAuth,
+)!;
 
 afterEach(() => cleanup());
 
@@ -96,7 +103,7 @@ describe('Chain 3 — ProductReveal', () => {
 describe('Chain 2 — AppSelection', () => {
   it('renders the catalog on initial load', () => {
     render(<App />);
-    expect(screen.getByText(/The Archive/i)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /The Archive/i })).toBeTruthy();
   });
 
   it('missing entry flag prevents navigation', () => {
@@ -110,7 +117,7 @@ describe('Chain 2 — AppSelection', () => {
 
   it('non-missing entry navigates to product page', () => {
     render(<App />);
-    fireEvent.click(screen.getByText(CATALOG_ENTRIES[0].title));
+    fireEvent.click(screen.getByText(firstNavigableEntry.title));
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
   });
 });
@@ -287,7 +294,7 @@ describe('Chain 14 — NavButtonActions', () => {
 describe('Chain 9 — EnterChamber', () => {
   it('navigates catalog → product → chamber', () => {
     render(<App />);
-    fireEvent.click(screen.getByText(CATALOG_ENTRIES[0].title));
+    fireEvent.click(screen.getByText(firstNavigableEntry.title));
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
     fireEvent.click(screen.getByText(/Enter Chamber/i));
     expect(screen.getByText('The Chamber')).toBeTruthy();
@@ -301,16 +308,16 @@ describe('Chain 9 — EnterChamber', () => {
 describe('Chain 12 — BackNavigation', () => {
   it('back from product returns to catalog and clears selected app', () => {
     render(<App />);
-    fireEvent.click(screen.getByText(CATALOG_ENTRIES[0].title));
+    fireEvent.click(screen.getByText(firstNavigableEntry.title));
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Archive/i }));
-    expect(screen.getByText(/The Archive/i)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /The Archive/i })).toBeTruthy();
     expect(screen.queryByText(/Enter Chamber/i)).toBeNull();
   });
 
   it('back from chamber returns to product page', () => {
     render(<App />);
-    fireEvent.click(screen.getByText(CATALOG_ENTRIES[0].title));
+    fireEvent.click(screen.getByText(firstNavigableEntry.title));
     fireEvent.click(screen.getByText(/Enter Chamber/i));
     expect(screen.getByText('The Chamber')).toBeTruthy();
     fireEvent.click(screen.getByText(/Cease/i));
@@ -637,5 +644,51 @@ describe('Model — CATALOG_ENTRIES integrity', () => {
         expect(hasUrl || hasHtml).toBe(true);
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Deterministic Replay — Clock Provider
+// Invariant: same inputs + same clock seed → identical log output across runs.
+// This guards against timestamp nondeterminism making logs irreproducible.
+// ---------------------------------------------------------------------------
+describe('Deterministic Replay — Clock Provider', () => {
+  it('same clock seed + same action sequence → bit-identical log panel output', () => {
+    // Freeze time at a known instant so every log entry gets the same timestamp.
+    const FIXED = new Date(2000, 0, 1, 12, 0, 0); // 2000-01-01 12:00:00 local
+    const fakeClock = makeFakeClock(FIXED);
+    const expectedTime = FIXED.toLocaleTimeString('en-US', { hour12: false });
+
+    // Perform the same action sequence and capture the log panel's text content.
+    function runOnce(): string {
+      const { container, unmount } = render(
+        <Chamber app={makeApp()} onBack={vi.fn()} clock={fakeClock} />,
+      );
+      // Two distinct log-appending actions.
+      fireEvent.click(screen.getByText('Inject Log'));
+      fireEvent.click(screen.getByText('Transmission Blocked'));
+      const logPanel = container.querySelector('.void-scroll');
+      const snapshot = logPanel?.textContent ?? '';
+      unmount();
+      return snapshot;
+    }
+
+    const snapshot1 = runOnce();
+    const snapshot2 = runOnce();
+
+    // Identical action sequences with the same frozen clock produce identical output.
+    expect(snapshot1).toBe(snapshot2);
+    // Both runs embed the seeded timestamp, not the real wall-clock time.
+    expect(snapshot1).toContain(expectedTime);
+  });
+
+  it('fake clock timeString is always the seeded value (not real wall-clock)', () => {
+    const FIXED = new Date(2000, 0, 1, 8, 30, 0); // 08:30:00
+    const fakeClock = makeFakeClock(FIXED);
+    const expected = FIXED.toLocaleTimeString('en-US', { hour12: false });
+    // Multiple calls must all return the same frozen string.
+    expect(fakeClock.timeString()).toBe(expected);
+    expect(fakeClock.timeString()).toBe(expected);
+    expect(fakeClock.now().getTime()).toBe(FIXED.getTime());
   });
 });

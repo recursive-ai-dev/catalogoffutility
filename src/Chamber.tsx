@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
+import { Clock, realClock } from "./lib/clock";
 
 const MAX_LOGS = 100;
 
@@ -28,9 +29,16 @@ interface ChamberProps {
    * Never set in production code.
    */
   initialError?: string | null;
+  /**
+   * Determinism provider. Pass `makeFakeClock(fixed)` in tests to freeze
+   * all log timestamps at a known instant, enabling seed-controlled replay.
+   * Defaults to the live wall-clock in production.
+   */
+  clock?: Clock;
 }
 
-export function Chamber({ app, onBack, initialError }: ChamberProps) {
+export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
+  const clk = clock ?? realClock;
   // Chain 7 (IframeError): initialError allows tests to start in error state
   const [isInitialized, setIsInitialized] = useState(initialError != null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -104,7 +112,7 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
         setLogs((prev) =>
           appendLog(prev, {
             sender: "SYSTEM_MSG",
-            time: new Date().toLocaleTimeString("en-US", { hour12: false }),
+            time: clk.timeString(),
             msg: "Rendering shadows...",
             type: "msg",
           }),
@@ -129,7 +137,7 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
         setLogs((prev) =>
           appendLog(prev, {
             sender: "SYSTEM_MSG",
-            time: new Date().toLocaleTimeString("en-US", { hour12: false }),
+            time: clk.timeString(),
             msg: `Intercepted image hotlink: ${src}`,
             type: "warn",
           }),
@@ -370,9 +378,7 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
                         setLogs((prev) =>
                           appendLog(prev, {
                             sender: "SYSTEM",
-                            time: new Date().toLocaleTimeString("en-US", {
-                              hour12: false,
-                            }),
+                            time: clk.timeString(),
                             msg: "Debugging guide is currently unavailable. Reality anchor is unstable.",
                             type: "warn",
                           }),
@@ -511,9 +517,7 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
                   setLogs((prev) =>
                     appendLog(prev, {
                       sender: "SYSTEM",
-                      time: new Date().toLocaleTimeString("en-US", {
-                        hour12: false,
-                      }),
+                      time: clk.timeString(),
                       msg: "Transmission blocked. You have no voice here.",
                       type: "warn",
                     }),
@@ -531,9 +535,7 @@ export function Chamber({ app, onBack, initialError }: ChamberProps) {
                   setLogs((prev) =>
                     appendLog(prev, {
                       sender: "MANUAL_OVR",
-                      time: new Date().toLocaleTimeString("en-US", {
-                        hour12: false,
-                      }),
+                      time: clk.timeString(),
                       msg: "Manual override initiated.",
                       type: "msg",
                     }),
