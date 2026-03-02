@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .update({ last_seen_at: now })
       .eq("id", userId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (updated) {
       setProfile(updated as Profile);
