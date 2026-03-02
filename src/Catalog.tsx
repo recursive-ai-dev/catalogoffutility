@@ -339,7 +339,7 @@ export function Catalog({ onSelectApp, clock }: CatalogProps) {
   // Capture the exact time the catalog first mounted — displayed in system logs
   const mountTime = useMemo(
     () => (clock ?? realClock).timeString(),
-    [clock],
+    [],
   );
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
