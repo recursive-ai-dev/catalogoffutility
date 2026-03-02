@@ -4,6 +4,26 @@ import { Clock, realClock } from "./lib/clock";
 
 const MAX_LOGS = 100;
 
+/**
+ * Returns true only for URL schemes that are safe to render in an <img> src.
+ * Blocks javascript:, vbscript:, blob:, and other non-media schemes that
+ * could be abused even though browsers already block JS execution via img src.
+ * data: is allowed only when the MIME type prefix is an image type (BUG-06).
+ */
+function isSafeImageSrc(src: string): boolean {
+  try {
+    const url = new URL(src);
+    if (url.protocol === "https:" || url.protocol === "http:") return true;
+    if (url.protocol === "data:") {
+      // data:[<mediatype>][;base64],<data>  — require image/* MIME prefix
+      return /^data:image\//i.test(src);
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 function appendLog(
   prev: LogEntry[],
   entry: LogEntry,
@@ -134,9 +154,10 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       if (!isSameOrigin) return;
 
       if (e.data && e.data.type === "IMAGE_CLICKED") {
-        // Validate src is a non-empty string before trusting it
+        // Validate src: non-empty string with a safe image URL scheme (BUG-06)
         const src: unknown = e.data.src;
         if (typeof src !== "string" || src.trim() === "") return;
+        if (!isSafeImageSrc(src)) return;
 
         setHotlinkedImage(src);
         setLogs((prev) =>

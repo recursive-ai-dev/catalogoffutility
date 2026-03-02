@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth } from "./lib/auth";
 import { Clock, realClock } from "./lib/clock";
@@ -336,11 +336,15 @@ function Card({
 export function Catalog({ onSelectApp, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("All_Entries");
-  // Capture the exact time the catalog first mounted — displayed in system logs
-  const mountTime = useMemo(
-    () => (clock ?? realClock).timeString(),
-    [],
-  );
+  // Capture the exact time the catalog first mounted — displayed in system logs.
+  // useRef (not useMemo with []) avoids the exhaustive-deps lint violation while
+  // preserving mount-only semantics: the value is sampled once and never updates
+  // even if the `clock` prop changes (BUG-07).
+  const mountTimeRef = useRef<string | null>(null);
+  if (mountTimeRef.current === null) {
+    mountTimeRef.current = (clock ?? realClock).timeString();
+  }
+  const mountTime = mountTimeRef.current;
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
