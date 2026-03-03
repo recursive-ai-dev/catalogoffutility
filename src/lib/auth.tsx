@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Row does not exist yet — insert with email-derived initial username.
-    const { data: inserted } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .insert({
         id: userId,
