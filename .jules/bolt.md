@@ -1,4 +1,3 @@
-# 2025-05-14 - Pre-computed Search Blobs and Layout Cache
-
+## 2025-05-14 - Pre-computed Search Blobs and Layout Cache
 **Learning:** For static data registries, pre-calculating a combined lowercase search string ("search blob") at module level significantly reduces main-thread work during filtering by eliminating redundant .toLowerCase() and .join() calls on every keystroke. Additionally, high-frequency mousemove events can trigger layout thrashing if they repeatedly call getBoundingClientRect(); caching this measurement on mouseenter makes interaction logic O(1).
 **Action:** Always check for static data registries and high-frequency event listeners for these specific optimization opportunities.

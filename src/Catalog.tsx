@@ -193,7 +193,7 @@ const Card = React.memo(function Card({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      if (!isDisabled) onSelect();
+      if (!isDisabled) onSelect(entry);
     }
   };
 
