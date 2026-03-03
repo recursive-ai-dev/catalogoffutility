@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Row does not exist yet — insert with email-derived initial username.
-    const { data: inserted } = await supabase
+    const { data: inserted, error } = await supabase
       .from("profiles")
       .insert({
         id: userId,
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.warn("[void] Profile sync failed — continuing with degraded profile.", error.message);
       return;
     }
-    if (data) setProfile(data as Profile);
+    if (inserted) setProfile(inserted as Profile);
   }, []);
 
   useEffect(() => {
