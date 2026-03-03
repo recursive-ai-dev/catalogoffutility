@@ -38,6 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = useCallback(async (userId: string, email: string) => {
     const now = new Date().toISOString();
+    const emailPrefix = email.split("@")[0];
+
+    // Observability: Chain start
+    console.debug("[AuthProfileSync] START", {
+      userId,
+      email_prefix: emailPrefix,
+      timestamp: now,
+    });
 
     // Attempt a targeted update of last_seen_at only.
     // This preserves any server-side username customisation the user may have
@@ -50,29 +58,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .select()
       .maybeSingle();
 
+    // Observability: Update result
+    console.debug("[AuthProfileSync] UPDATE_RESULT", {
+      userId,
+      updated: !!updated,
+      timestamp: new Date().toISOString(),
+    });
+
     if (updated) {
       setProfile(updated as Profile);
+      // Observability: Chain end (success via update)
+      console.debug("[AuthProfileSync] END", {
+        userId,
+        outcome: "success_update",
+        profile_set: true,
+        timestamp: new Date().toISOString(),
+      });
       return;
     }
 
     // Row does not exist yet — insert with email-derived initial username.
+    // Observability: Insert attempt
+    console.debug("[AuthProfileSync] INSERT_ATTEMPT", {
+      userId,
+      username: emailPrefix,
+      timestamp: new Date().toISOString(),
+    });
+
     const { data: inserted, error } = await supabase
       .from("profiles")
       .insert({
         id: userId,
-        username: email.split("@")[0],
+        username: emailPrefix,
         last_seen_at: now,
       })
       .select()
       .single();
 
+    // Observability: Insert result
+    console.debug("[AuthProfileSync] INSERT_RESULT", {
+      userId,
+      inserted: !!inserted,
+      error: error?.message || null,
+      timestamp: new Date().toISOString(),
+    });
+
     if (error) {
       // Profile sync failure is non-fatal: the user remains authenticated and
       // retains full access. Degrade gracefully and surface to the console only.
-      console.warn("[void] Profile sync failed — continuing with degraded profile.", error.message);
+      console.warn("[void] Profile sync failed — continuing with degraded profile.", {
+        userId,
+        error: error.message,
+        cause: error.code,
+        timestamp: new Date().toISOString(),
+      });
+      // Observability: Chain end (degraded failure)
+      console.debug("[AuthProfileSync] END", {
+        userId,
+        outcome: "degraded_failure",
+        profile_set: false,
+        timestamp: new Date().toISOString(),
+      });
       return;
     }
-    if (inserted) setProfile(inserted as Profile);
+    if (inserted) {
+      setProfile(inserted as Profile);
+      // Observability: Chain end (success via insert)
+      console.debug("[AuthProfileSync] END", {
+        userId,
+        outcome: "success_insert",
+        profile_set: true,
+        timestamp: new Date().toISOString(),
+      });
+    }
   }, []);
 
   useEffect(() => {
