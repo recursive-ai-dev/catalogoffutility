@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth } from "./lib/auth";
 import { Clock, realClock } from "./lib/clock";
