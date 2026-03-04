@@ -6,20 +6,28 @@ const MAX_LOGS = 100;
 
 /**
  * Returns true only for URL schemes that are safe to render in an <img> src.
- * Blocks javascript:, vbscript:, blob:, and other non-media schemes that
- * could be abused even though browsers already block JS execution via img src.
- * data: is allowed only when the MIME type prefix is an image type (BUG-06).
+ * Blocks javascript:, vbscript:, blob:, and other non-media schemes.
+ * Restricts data: URLs to safe raster formats (no SVG) to prevent potential XSS
+ * and enforces a length limit to guard against client-side DoS (BUG-06b).
  */
 function isSafeImageSrc(src: string): boolean {
+  // Enforce a reasonable length limit (2MB) to prevent DoS via massive payloads.
+  if (src.length > 2 * 1024 * 1024) return false;
+
   try {
     const url = new URL(src);
     if (url.protocol === "https:" || url.protocol === "http:") return true;
     if (url.protocol === "data:") {
-      // data:[<mediatype>][;base64],<data>  — require image/* MIME prefix
-      return /^data:image\//i.test(src);
+      // Allow only common raster image formats; explicitly block image/svg+xml
+      // to mitigate potential XSS risks in certain rendering contexts.
+      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
     }
     return false;
   } catch {
+    // If URL parsing fails, check if it's a valid data URL manually
+    if (src.startsWith("data:")) {
+      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
+    }
     return false;
   }
 }
