@@ -554,6 +554,17 @@ export function Catalog({ onSelectApp, clock }: CatalogProps) {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer"
+                  aria-label="Clear search"
+                >
+                  <span className="material-symbols-outlined text-base font-light">
+                    close
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </header>
