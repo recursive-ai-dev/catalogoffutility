@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Catalog } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
@@ -23,39 +23,43 @@ function AppInner() {
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
   const { user, authModalVisible, showAuthModal } = useAuth();
 
-  const handleSelectApp = (app: AppEntry) => {
-    // Chain 2 (AppSelection): single authoritative guard — missing entries are never navigated to.
-    // Auth-gated entries are also intercepted here so selectedApp never drifts to a value
-    // the current user is not permitted to hold (LC-N).
-    if (app.missing) return;
-    if (app.requiresAuth && !user) {
-      showAuthModal();
-      return;
-    }
-    setSelectedApp(app);
-    setView("product");
-  };
+  // Stabilize handlers to prevent unnecessary re-renders of memoized child components (e.g. Catalog).
+  const handleSelectApp = useCallback(
+    (app: AppEntry) => {
+      // Chain 2 (AppSelection): single authoritative guard — missing entries are never navigated to.
+      // Auth-gated entries are also intercepted here so selectedApp never drifts to a value
+      // the current user is not permitted to hold (LC-N).
+      if (app.missing) return;
+      if (app.requiresAuth && !user) {
+        showAuthModal();
+        return;
+      }
+      setSelectedApp(app);
+      setView("product");
+    },
+    [user, showAuthModal],
+  );
 
-  const handleEnterChamber = () => {
+  const handleEnterChamber = useCallback(() => {
     // Chain 9 (EnterChamber): invariant — can only enter chamber when an app is selected
     if (!selectedApp) return;
     setView("chamber");
-  };
+  }, [selectedApp]);
 
-  const handleBackToCatalog = () => {
+  const handleBackToCatalog = useCallback(() => {
     // Chain 12 (BackNavigation): atomically clear selection and return to catalog
     setView("catalog");
     setSelectedApp(null);
-  };
+  }, []);
 
-  const handleBackToProduct = () => {
+  const handleBackToProduct = useCallback(() => {
     // Chain 12 (BackNavigation): invariant — can only return to product when an app is selected
     if (!selectedApp) {
       setView("catalog");
       return;
     }
     setView("product");
-  };
+  }, [selectedApp]);
 
   // Derive effective view at render time to prevent auth-gated pages from
   // flashing before the useEffect runs.

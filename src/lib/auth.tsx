@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase, Profile } from "./supabase";
@@ -134,21 +135,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   }, []);
 
+  // Memoize the context value to prevent unnecessary re-renders of all consumers
+  // when state changes that may not be relevant to them (e.g., authModalVisible).
+  const value = useMemo(
+    () => ({
+      user,
+      session,
+      profile,
+      loading,
+      authModalVisible,
+      showAuthModal,
+      hideAuthModal,
+      signIn,
+      signUp,
+      signOut,
+    }),
+    [
+      user,
+      session,
+      profile,
+      loading,
+      authModalVisible,
+      showAuthModal,
+      hideAuthModal,
+      signIn,
+      signUp,
+      signOut,
+    ],
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        profile,
-        loading,
-        authModalVisible,
-        showAuthModal,
-        hideAuthModal,
-        signIn,
-        signUp,
-        signOut,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
