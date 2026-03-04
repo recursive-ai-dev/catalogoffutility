@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { AppEntry } from "./data";
 
 interface ProductPageProps {
@@ -15,9 +15,11 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  const paragraphs = app.longDescription
-    ? app.longDescription.split("\n\n").filter(Boolean)
-    : [];
+  // Memoize paragraph splitting to avoid redundant string operations on every render.
+  const paragraphs = useMemo(
+    () => (app.longDescription ? app.longDescription.split("\n\n").filter(Boolean) : []),
+    [app.longDescription],
+  );
 
   return (
     <div className="relative flex h-screen w-full bg-black font-sans text-white antialiased overflow-hidden">

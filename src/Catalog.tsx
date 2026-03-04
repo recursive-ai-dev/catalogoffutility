@@ -153,16 +153,17 @@ const UserSection = React.memo(function UserSection() {
 const Card = React.memo(function Card({
   entry,
   onSelect,
+  isUserLoggedIn,
 }: {
   entry: AppEntry;
   onSelect: (entry: AppEntry) => void;
+  isUserLoggedIn: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const rectRef = useRef<DOMRect | null>(null);
-  const { user } = useAuth();
 
-  const isAuthLocked = !!entry.requiresAuth && !user;
+  const isAuthLocked = !!entry.requiresAuth && !isUserLoggedIn;
   const isDisabled = !!entry.missing || isAuthLocked;
 
   const handleMouseEnter = () => {
@@ -244,6 +245,7 @@ const Card = React.memo(function Card({
           <img
             ref={imgRef}
             alt={entry.title}
+            loading="lazy"
             className={`w-full h-full object-cover transition-transform duration-700 ease-out mix-blend-luminosity ${
               isAuthLocked
                 ? "opacity-15 group-hover:opacity-20"
@@ -357,7 +359,7 @@ const Card = React.memo(function Card({
   );
 });
 
-export function Catalog({ onSelectApp, clock }: CatalogProps) {
+export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("All_Entries");
   // Capture the exact time the catalog first mounted — displayed in system logs.
@@ -645,6 +647,7 @@ export function Catalog({ onSelectApp, clock }: CatalogProps) {
                   key={entry.id}
                   entry={entry}
                   onSelect={handleCardSelect}
+                  isUserLoggedIn={!!user}
                 />
               ))}
             </div>
@@ -685,4 +688,4 @@ export function Catalog({ onSelectApp, clock }: CatalogProps) {
       </div>
     </div>
   );
-}
+});
