@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
+import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth } from "./lib/auth";
 import { Clock, realClock } from "./lib/clock";
@@ -552,11 +553,15 @@ export function Catalog({ onSelectApp, clock }: CatalogProps) {
                 placeholder="Search the void..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30"
+                className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                  className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer"
+                >
+                  <X className="size-4" />
                   className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer"
                   aria-label="Clear search"
                 >
@@ -621,6 +626,17 @@ export function Catalog({ onSelectApp, clock }: CatalogProps) {
               <p className="text-white/20 font-mono text-xs tracking-widest uppercase">
                 Nothing found. The void returns nothing.
               </p>
+              {(searchQuery !== "" || selectedTag !== "All_Entries") && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedTag("All_Entries");
+                  }}
+                  className="mt-2 px-6 py-2 border border-white/10 text-white/40 hover:text-white/70 hover:border-white/25 text-[10px] font-mono tracking-widest uppercase transition-colors rounded-full cursor-pointer"
+                >
+                  Clear all filters
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-16">
