@@ -387,7 +387,12 @@ function defaultArtifact() {
 function loadArtifact() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Guard against malformed artifacts: require interactions to be an array.
+      // Any other shape (missing key, null, wrong type) falls through to the default.
+      if (parsed && Array.isArray(parsed.interactions)) return parsed;
+    }
   } catch {}
   return defaultArtifact();
 }
