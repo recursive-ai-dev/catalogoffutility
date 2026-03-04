@@ -234,6 +234,35 @@ describe('Chain 1 — BrowseFilter', () => {
     expect(match).not.toBeNull();
     expect(match![1]).toMatch(/^\d{2}:\d{2}:\d{2}$/);
   });
+
+  it('clear search button resets the query and restores full list', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'aria');
+    expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
+
+    const clearBtn = screen.getByLabelText('Clear search');
+    fireEvent.click(clearBtn);
+
+    expect(input.getAttribute('value')).toBe('');
+    expect(screen.getByText('WHEN THE SUN DIED')).toBeTruthy();
+  });
+
+  it('"Clear all filters" button in empty state resets both search and tag', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'xyznotfound');
+    fireEvent.click(screen.getByRole('button', { name: 'Narrative' }));
+
+    expect(screen.getByText(/Nothing found/i)).toBeTruthy();
+
+    const clearAllBtn = screen.getByText('Clear all filters');
+    fireEvent.click(clearAllBtn);
+
+    expect(input.getAttribute('value')).toBe('');
+    // Verify one entry from a different tag is now visible
+    expect(screen.getByText('WARREN: INVASION PROTOCOL')).toBeTruthy();
+  });
 });
 
 // ---------------------------------------------------------------------------
