@@ -16,7 +16,9 @@ function humanizeError(raw: string): string {
     return "That designation is malformed. The archive expects a valid address.";
   if (lower.includes("rate limit"))
     return "Too many attempts. The archive is watching. It remembers.";
-  return raw;
+  // Default fallback: return a generic atmospheric message to prevent
+  // leaking internal system details in the raw error string.
+  return "The connection to the archive is unstable. The void does not respond.";
 }
 
 export function AuthModal() {
@@ -48,10 +50,10 @@ export function AuthModal() {
       panel.querySelectorAll<HTMLElement>(
         'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
       ),
-    ).filter((el) => el.offsetParent !== null); // visible elements only
+    ).filter((el) => (el as HTMLElement).offsetParent !== null); // visible elements only
     if (focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+    const first = focusable[0] as HTMLElement;
+    const last = focusable[focusable.length - 1] as HTMLElement;
     if (e.shiftKey) {
       if (document.activeElement === first) {
         e.preventDefault();

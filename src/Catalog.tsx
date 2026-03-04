@@ -562,6 +562,12 @@ export function Catalog({ onSelectApp, clock }: CatalogProps) {
                   className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer"
                 >
                   <X className="size-4" />
+                  className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer"
+                  aria-label="Clear search"
+                >
+                  <span className="material-symbols-outlined text-base font-light">
+                    close
+                  </span>
                 </button>
               )}
             </div>
