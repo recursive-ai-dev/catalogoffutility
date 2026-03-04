@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
-import { useAuth } from "./lib/auth";
+import { useAuth, useAuthModal } from "./lib/auth";
 import { Clock, realClock } from "./lib/clock";
 
 interface CatalogProps {
@@ -29,8 +29,11 @@ const SEARCHABLE_ENTRIES = CATALOG_ENTRIES.map((entry) => ({
   ].join(" ").toLowerCase(),
 }));
 
+/** Sentinel value representing the "show all" filter state. Single-sourced here. */
+export const DEFAULT_TAG = "All_Entries" as const;
+
 const FILTER_TAGS = [
-  "All_Entries",
+  DEFAULT_TAG,
   "Pointless",
   "Endless",
   "Corrupted",
@@ -50,7 +53,8 @@ function initials(name: string): string {
 }
 
 const UserSection = React.memo(function UserSection() {
-  const { user, profile, loading, showAuthModal, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
+  const { showAuthModal } = useAuthModal();
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -361,7 +365,7 @@ const Card = React.memo(function Card({
 
 export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState("All_Entries");
+  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
   // it avoids the exhaustive-deps violation that useMemo([]) would produce.
@@ -376,12 +380,19 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { user, showAuthModal } = useAuth();
+  const { user } = useAuth();
+  const { showAuthModal } = useAuthModal();
 
   const showNotification = useCallback((msg: string) => {
     if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
     setNotification(msg);
     notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
+  }, []);
+
+  /** Centralised filter reset — single source of truth for clearing search and tag. */
+  const resetFilters = useCallback(() => {
+    setSearchQuery("");
+    setSelectedTag(DEFAULT_TAG);
   }, []);
 
   // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
@@ -396,7 +407,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         const matchesSearch =
           normalizedQuery === "" || entry.searchBlob.includes(normalizedQuery);
         const matchesTag =
-          selectedTag === "All_Entries" ||
+          selectedTag === DEFAULT_TAG ||
           (entry.tags && entry.tags.includes(selectedTag));
         return matchesSearch && matchesTag;
       }),
@@ -564,12 +575,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                   className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer"
                 >
                   <X className="size-4" />
-                  className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer"
-                  aria-label="Clear search"
-                >
-                  <span className="material-symbols-outlined text-base font-light">
-                    close
-                  </span>
                 </button>
               )}
             </div>
@@ -628,12 +633,9 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               <p className="text-white/20 font-mono text-xs tracking-widest uppercase">
                 Nothing found. The void returns nothing.
               </p>
-              {(searchQuery !== "" || selectedTag !== "All_Entries") && (
+              {(searchQuery !== "" || selectedTag !== DEFAULT_TAG) && (
                 <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedTag("All_Entries");
-                  }}
+                  onClick={resetFilters}
                   className="mt-2 px-6 py-2 border border-white/10 text-white/40 hover:text-white/70 hover:border-white/25 text-[10px] font-mono tracking-widest uppercase transition-colors rounded-full cursor-pointer"
                 >
                   Clear all filters

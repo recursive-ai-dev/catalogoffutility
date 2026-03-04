@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useAuth } from "./lib/auth";
+import { useAuth, useAuthModal } from "./lib/auth";
 
 type Mode = "signin" | "signup";
 
@@ -22,7 +22,8 @@ function humanizeError(raw: string): string {
 }
 
 export function AuthModal() {
-  const { hideAuthModal, signIn, signUp } = useAuth();
+  const { signIn, signUp } = useAuth();
+  const { hideAuthModal } = useAuthModal();
 
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
