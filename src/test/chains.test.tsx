@@ -244,7 +244,7 @@ describe('Chain 1 — BrowseFilter', () => {
     const clearBtn = screen.getByLabelText('Clear search');
     fireEvent.click(clearBtn);
 
-    expect(input.getAttribute('value')).toBe('');
+    expect((input as HTMLInputElement).value).toBe('');
     expect(screen.getByText('WHEN THE SUN DIED')).toBeTruthy();
   });
 
