@@ -16,6 +16,7 @@ import { Catalog } from '../Catalog';
 import { Chamber } from '../Chamber';
 import { ProductPage } from '../ProductPage';
 import { AppEntry, CATALOG_ENTRIES } from '../data';
+import { DEFAULT_TAG } from '../Catalog';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -719,5 +720,168 @@ describe('Deterministic Replay — Clock Provider', () => {
     expect(fakeClock.timeString()).toBe(expected);
     expect(fakeClock.timeString()).toBe(expected);
     expect(fakeClock.now().getTime()).toBe(FIXED.getTime());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// DEFAULT_TAG constant & resetFilters — Catalog.tsx
+// Invariant: DEFAULT_TAG is the single source of truth for the "show all" state.
+// ---------------------------------------------------------------------------
+describe('DEFAULT_TAG & resetFilters — Catalog', () => {
+  it('DEFAULT_TAG exported constant equals "All_Entries"', () => {
+    expect(DEFAULT_TAG).toBe('All_Entries');
+  });
+
+  it('first filter button label matches DEFAULT_TAG', () => {
+    render(<App />);
+    const btn = screen.getByRole('button', { name: DEFAULT_TAG });
+    expect(btn).toBeTruthy();
+  });
+
+  it('"Clear all filters" button uses resetFilters — resets both search and tag', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'xyznotfound');
+    fireEvent.click(screen.getByRole('button', { name: 'Narrative' }));
+    expect(screen.getByText(/Nothing found/i)).toBeTruthy();
+
+    fireEvent.click(screen.getByText('Clear all filters'));
+
+    // After reset, full catalog should be visible again
+    expect(screen.queryByText(/Nothing found/i)).toBeNull();
+    // Verify a known entry is back
+    expect(screen.getByText('WARREN: INVASION PROTOCOL')).toBeTruthy();
+  });
+
+  it('"Clear all filters" button is absent when no filters are active', () => {
+    render(<App />);
+    expect(screen.queryByText('Clear all filters')).toBeNull();
+  });
+
+  it('"Clear all filters" button appears when only search is active', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'xyznotfound');
+    expect(screen.getByText('Clear all filters')).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AuthModalContext — useAuthModal hook isolation
+// Invariant: toggling modal does not re-render Catalog component subtree needlessly.
+// We verify showAuthModal/hideAuthModal are accessible via useAuthModal.
+// Note: UserSection shows a loading skeleton until auth state settles (loading=false),
+// so tests that need the "Identify Yourself" button must await it via findByText.
+// ---------------------------------------------------------------------------
+describe('AuthModalContext — modal state isolated from auth state', () => {
+  it('clicking "Identify Yourself" opens auth modal (showAuthModal works)', async () => {
+    render(<App />);
+    // Wait for UserSection to settle out of loading state
+    const identifyBtn = await screen.findByText('Identify Yourself');
+    fireEvent.click(identifyBtn);
+    // Auth modal heading — use the labelled heading element
+    expect(screen.getByRole('heading', { name: /Authenticate/i })).toBeTruthy();
+  });
+
+  it('modal closes on Escape key (hideAuthModal works)', async () => {
+    render(<App />);
+    const identifyBtn = await screen.findByText('Identify Yourself');
+    fireEvent.click(identifyBtn);
+    expect(screen.getByRole('heading', { name: /Authenticate/i })).toBeTruthy();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('heading', { name: /Authenticate/i })).toBeNull();
+  });
+
+  it('modal close button triggers hideAuthModal', async () => {
+    render(<App />);
+    const identifyBtn = await screen.findByText('Identify Yourself');
+    fireEvent.click(identifyBtn);
+    expect(screen.getByRole('heading', { name: /Authenticate/i })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Close/i }));
+    expect(screen.queryByRole('heading', { name: /Authenticate/i })).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Chain 15 — Agent Smith & Neural Runner catalog entries
+// Invariant: both entries present, correctly gated, and searchable
+// ---------------------------------------------------------------------------
+describe('Chain 15 — Agent Smith & Neural Runner Entries', () => {
+  it('AGENT SMITH entry exists in CATALOG_ENTRIES', () => {
+    const entry = CATALOG_ENTRIES.find(e => e.id === 'agent-smith');
+    expect(entry).toBeTruthy();
+    expect(entry?.requiresAuth).toBe(true);
+    expect(entry?.url).toBe('/agent-smith.html');
+  });
+
+  it('NEURAL RUNNER entry exists in CATALOG_ENTRIES', () => {
+    const entry = CATALOG_ENTRIES.find(e => e.id === 'neural-runner-v3');
+    expect(entry).toBeTruthy();
+    expect(entry?.requiresAuth).toBe(true);
+    expect(entry?.url).toBe('/neural-runner-v3.html');
+  });
+
+  it('AGENT SMITH appears in catalog and shows lock for unauthenticated user', () => {
+    render(<App />);
+    expect(screen.getByText('AGENT SMITH')).toBeTruthy();
+    // Locked entries show "Authentication Required" overlay text
+    const lockElements = screen.getAllByText('Authentication Required');
+    expect(lockElements.length).toBeGreaterThan(0);
+  });
+
+  it('NEURAL RUNNER appears in catalog', () => {
+    render(<App />);
+    expect(screen.getByText('NEURAL RUNNER')).toBeTruthy();
+  });
+
+  it('AGENT SMITH is searchable by title', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'agent smith');
+    expect(screen.getByText('AGENT SMITH')).toBeTruthy();
+    expect(screen.queryByText('WARREN: INVASION PROTOCOL')).toBeNull();
+  });
+
+  it('NEURAL RUNNER is searchable by tag (Tool)', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'neural');
+    expect(screen.getByText('NEURAL RUNNER')).toBeTruthy();
+  });
+
+  it('AGENT SMITH shows auth modal when unauthenticated user clicks it', async () => {
+    render(<App />);
+    // Click the card — it should trigger showAuthModal, not navigate
+    const card = screen.getByText('AGENT SMITH').closest('[role="button"]')!;
+    fireEvent.click(card);
+    // Auth modal heading appears (state update is synchronous from click handler)
+    await waitFor(() => expect(screen.getByRole('heading', { name: /Authenticate/i })).toBeTruthy());
+    // Should NOT have navigated to product page
+    expect(screen.queryByText(/Enter Chamber/i)).toBeNull();
+  });
+
+  it('Tool filter includes AGENT SMITH', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Tool' }));
+    expect(screen.getByText('AGENT SMITH')).toBeTruthy();
+    expect(screen.getByText('NEURAL RUNNER')).toBeTruthy();
+  });
+
+  it('AGENT SMITH has required data integrity fields', () => {
+    const entry = CATALOG_ENTRIES.find(e => e.id === 'agent-smith')!;
+    expect(typeof entry.id).toBe('string');
+    expect(typeof entry.title).toBe('string');
+    expect(typeof entry.description).toBe('string');
+    expect(typeof entry.image).toBe('string');
+    expect(entry.url).toMatch(/^\//);
+  });
+
+  it('NEURAL RUNNER has required data integrity fields', () => {
+    const entry = CATALOG_ENTRIES.find(e => e.id === 'neural-runner-v3')!;
+    expect(typeof entry.id).toBe('string');
+    expect(typeof entry.title).toBe('string');
+    expect(typeof entry.description).toBe('string');
+    expect(typeof entry.image).toBe('string');
+    expect(entry.url).toMatch(/^\//);
   });
 });

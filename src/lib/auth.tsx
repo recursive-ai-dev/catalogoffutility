@@ -9,14 +9,17 @@ import React, {
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase, Profile } from "./supabase";
 
+// ---------------------------------------------------------------------------
+// Auth Context — user/session/profile state only.
+// Modal visibility lives in a separate AuthModalContext so that toggling the
+// auth modal does NOT re-render every useAuth() consumer (e.g. Catalog cards).
+// ---------------------------------------------------------------------------
+
 interface AuthContextValue {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  authModalVisible: boolean;
-  showAuthModal: () => void;
-  hideAuthModal: () => void;
   signIn: (
     email: string,
     password: string,
@@ -30,12 +33,50 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// ---------------------------------------------------------------------------
+// Auth Modal Context — modal visibility state only.
+// ---------------------------------------------------------------------------
+
+interface AuthModalContextValue {
+  authModalVisible: boolean;
+  showAuthModal: () => void;
+  hideAuthModal: () => void;
+}
+
+const AuthModalContext = createContext<AuthModalContextValue | null>(null);
+
+// ---------------------------------------------------------------------------
+// AuthModalProvider — standalone provider for modal state.
+// Can be placed inside AuthProvider so consumers of either context stay minimal.
+// ---------------------------------------------------------------------------
+
+export function AuthModalProvider({ children }: { children: React.ReactNode }) {
+  const [authModalVisible, setAuthModalVisible] = useState(false);
+
+  const showAuthModal = useCallback(() => setAuthModalVisible(true), []);
+  const hideAuthModal = useCallback(() => setAuthModalVisible(false), []);
+
+  const value = useMemo(
+    () => ({ authModalVisible, showAuthModal, hideAuthModal }),
+    [authModalVisible, showAuthModal, hideAuthModal],
+  );
+
+  return (
+    <AuthModalContext.Provider value={value}>
+      {children}
+    </AuthModalContext.Provider>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AuthProvider — auth state only, wraps children with AuthModalProvider.
+// ---------------------------------------------------------------------------
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [authModalVisible, setAuthModalVisible] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string, email: string) => {
     const now = new Date().toISOString();
@@ -97,9 +138,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
 
-  const showAuthModal = useCallback(() => setAuthModalVisible(true), []);
-  const hideAuthModal = useCallback(() => setAuthModalVisible(false), []);
-
   const signIn = useCallback(
     async (
       email: string,
@@ -135,44 +173,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   }, []);
 
-  // Memoize the context value to prevent unnecessary re-renders of all consumers
-  // when state changes that may not be relevant to them (e.g., authModalVisible).
+  // Memoize the context value — contains only auth state, no modal fields,
+  // so toggling the modal no longer triggers re-renders of all auth consumers.
   const value = useMemo(
     () => ({
       user,
       session,
       profile,
       loading,
-      authModalVisible,
-      showAuthModal,
-      hideAuthModal,
       signIn,
       signUp,
       signOut,
     }),
-    [
-      user,
-      session,
-      profile,
-      loading,
-      authModalVisible,
-      showAuthModal,
-      hideAuthModal,
-      signIn,
-      signUp,
-      signOut,
-    ],
+    [user, session, profile, loading, signIn, signUp, signOut],
   );
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      <AuthModalProvider>
+        {children}
+      </AuthModalProvider>
     </AuthContext.Provider>
   );
 }
 
+// ---------------------------------------------------------------------------
+// Hooks
+// ---------------------------------------------------------------------------
+
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
+}
+
+export function useAuthModal(): AuthModalContextValue {
+  const ctx = useContext(AuthModalContext);
+  if (!ctx) throw new Error("useAuthModal must be used inside AuthModalProvider");
   return ctx;
 }

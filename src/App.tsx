@@ -3,7 +3,7 @@ import { Catalog } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
-import { AuthProvider, useAuth } from "./lib/auth";
+import { AuthProvider, useAuth, useAuthModal } from "./lib/auth";
 import { AuthModal } from "./AuthModal";
 import { PrivacyBanner } from "./PrivacyBanner";
 
@@ -21,7 +21,8 @@ type View = "catalog" | "product" | "chamber";
 function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
-  const { user, authModalVisible, showAuthModal } = useAuth();
+  const { user } = useAuth();
+  const { authModalVisible, showAuthModal } = useAuthModal();
 
   // Stabilize handlers to prevent unnecessary re-renders of memoized child components (e.g. Catalog).
   const handleSelectApp = useCallback(
