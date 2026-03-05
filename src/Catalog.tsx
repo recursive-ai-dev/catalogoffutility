@@ -401,18 +401,22 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
-  const filteredEntries = useMemo(
-    () =>
-      SEARCHABLE_ENTRIES.filter((entry) => {
-        const matchesSearch =
-          normalizedQuery === "" || entry.searchBlob.includes(normalizedQuery);
-        const matchesTag =
-          selectedTag === DEFAULT_TAG ||
-          (entry.tags && entry.tags.includes(selectedTag));
-        return matchesSearch && matchesTag;
-      }),
-    [normalizedQuery, selectedTag],
-  );
+  const filteredEntries = useMemo(() => {
+    // Short-circuit: if no search query and default tag, avoid O(N) iteration
+    // and return the pre-calculated searchable entries directly.
+    if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
+      return SEARCHABLE_ENTRIES;
+    }
+
+    return SEARCHABLE_ENTRIES.filter((entry) => {
+      const matchesSearch =
+        normalizedQuery === "" || entry.searchBlob.includes(normalizedQuery);
+      const matchesTag =
+        selectedTag === DEFAULT_TAG ||
+        (entry.tags && entry.tags.includes(selectedTag));
+      return matchesSearch && matchesTag;
+    });
+  }, [normalizedQuery, selectedTag]);
 
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
