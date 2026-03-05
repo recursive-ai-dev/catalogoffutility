@@ -127,6 +127,16 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     if (e.key === "Escape") setHotlinkedImage(null);
   }, []);
 
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !hotlinkedImage) {
+        onBack();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [onBack, hotlinkedImage]);
+
   // Cleanup injected iframe listener on Chamber unmount
   useEffect(() => {
     return () => {
@@ -299,7 +309,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
             onClick={() => setNoiseEnabled(!noiseEnabled)}
             className={`hidden md:flex items-center gap-3 text-[10px] font-mono tracking-widest uppercase px-4 py-2 rounded-full border transition-all duration-300 ${noiseEnabled ? "border-white/20 text-white bg-white/5" : "border-transparent text-white/40 hover:text-white hover:bg-white/5"}`}
           >
-            <span className="material-symbols-outlined text-sm font-light">
+            <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
               {noiseEnabled ? "grain" : "lens_blur"}
             </span>
             <span>NOISE</span>
@@ -317,7 +327,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               className="rounded border border-[#233f48] size-8 opacity-70 flex items-center justify-center bg-white/5"
               aria-hidden="true"
             >
-              <span className="material-symbols-outlined text-white/40 font-light text-sm">
+              <span className="material-symbols-outlined text-white/40 font-light text-sm" aria-hidden="true">
                 person
               </span>
             </div>
@@ -374,7 +384,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                   <>
                     <div className="absolute inset-0 opacity-20 mix-blend-luminosity" style={{background: "radial-gradient(ellipse at 60% 40%, #1a1a2e 0%, #0a0a0f 60%, #000 100%)"}}></div>
                     <div className="text-center z-10 space-y-6">
-                      <span className="material-symbols-outlined text-6xl text-white/20 animate-pulse font-light">
+                      <span className="material-symbols-outlined text-6xl text-white/20 animate-pulse font-light" aria-hidden="true">
                         visibility_off
                       </span>
                       <p className="text-white/40 font-mono text-xs tracking-widest uppercase leading-relaxed">
@@ -399,7 +409,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                   </>
                 ) : iframeError ? (
                   <div className="text-center z-10 space-y-6 max-w-md p-8 border border-red-900/30 bg-red-950/10 rounded-2xl backdrop-blur-md">
-                    <span className="material-symbols-outlined text-6xl text-red-500/40 font-light">
+                    <span className="material-symbols-outlined text-6xl text-red-500/40 font-light" aria-hidden="true">
                       error_outline
                     </span>
                     <p className="text-red-400/60 font-mono text-xs tracking-widest uppercase mb-4 leading-relaxed">
@@ -449,7 +459,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                     {iframeLoading && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
                         <div className="flex flex-col items-center gap-4">
-                          <span className="material-symbols-outlined text-4xl text-primary animate-spin">
+                          <span className="material-symbols-outlined text-4xl text-primary animate-spin" aria-hidden="true">
                             sync
                           </span>
                           <span className="text-primary/70 font-mono text-xs tracking-widest uppercase animate-pulse">
@@ -487,7 +497,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
           <div className="p-8 border-b border-white/10 bg-white/5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white/80 text-xs font-light tracking-widest uppercase flex items-center gap-3">
-                <span className="material-symbols-outlined text-white/60 text-base font-light">
+                <span className="material-symbols-outlined text-white/60 text-base font-light" aria-hidden="true">
                   ecg_heart
                 </span>
                 Psych_Stblty
@@ -519,7 +529,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                   className="text-white/40 hover:text-white transition-colors"
                   title={showLogs ? "Hide Logs" : "Show Logs"}
                 >
-                  <span className="material-symbols-outlined text-sm font-light">
+                  <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                     {showLogs ? "visibility" : "visibility_off"}
                   </span>
                 </button>
@@ -567,7 +577,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                 }
                 className="w-full flex items-center gap-3 text-white/30 hover:text-white/70 transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-sm font-light">lock</span>
+                <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">lock</span>
                 <span className="text-[10px] font-mono uppercase tracking-widest">
                   Transmission Blocked
                 </span>
@@ -585,7 +595,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                 }
                 className="w-full flex items-center gap-3 text-white/30 hover:text-white/70 transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-sm font-light">
+                <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                   add_circle
                 </span>
                 <span className="text-[10px] font-mono uppercase tracking-widest">Inject Log</span>
@@ -599,7 +609,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               onClick={onBack}
               className="group w-full relative h-12 bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-all duration-300 overflow-hidden flex items-center justify-center gap-4 cursor-pointer rounded-full"
             >
-              <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light">
+              <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light" aria-hidden="true">
                 power_settings_new
               </span>
               <span className="text-white/50 font-light tracking-[0.2em] text-[10px] uppercase group-hover:text-white transition-colors">
