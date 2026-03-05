@@ -21,10 +21,10 @@
     "motion": "^12.23.24",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "vercel": "^50.25.1",
     "vite": "^6.4.1"
   },
   "devDependencies": {
+    "vercel": "^50.25.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.14.0",
@@ -34,7 +34,9 @@
     "typescript": "~5.8.2",
     "vitest": "^4.0.18"
   },
-  "overrides": {
-    "minimatch": "^10.2.1"
+  "pnpm": {
+    "overrides": {
+      "minimatch": "10.2.4"
+    }
   }
 }

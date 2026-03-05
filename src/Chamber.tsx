@@ -16,7 +16,11 @@ function isSafeImageSrc(src: string): boolean {
 
   try {
     const url = new URL(src);
-    if (url.protocol === "https:" || url.protocol === "http:") return true;
+    if (url.protocol === "https:") return true;
+    // Allow http: only for local development (localhost or 127.0.0.1)
+    if (url.protocol === "http:") {
+      return url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    }
     if (url.protocol === "data:") {
       // Allow only common raster image formats; explicitly block image/svg+xml
       // to mitigate potential XSS risks in certain rendering contexts.
@@ -110,6 +114,8 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
   const clkRef = useRef(clk);
   clkRef.current = clk;
 
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
   const iframeDocRef = useRef<Document | null>(null);
   const iframeClickHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
@@ -166,6 +172,10 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       // Chain 8 (ImageHotlink): validate origin — only accept from same origin or null (srcdoc iframes)
       const isSameOrigin = e.origin === window.location.origin || e.origin === "null";
       if (!isSameOrigin) return;
+
+      // Verify that the message is coming from our own iframe to prevent spoofing
+      // from other windows or tabs (BUG-08b).
+      if (e.source !== iframeRef.current?.contentWindow) return;
 
       if (e.data && e.data.type === "IMAGE_CLICKED") {
         // Validate src: non-empty string with a safe image URL scheme (BUG-06)
@@ -459,6 +469,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                       </div>
                     )}
                     <iframe
+                      ref={iframeRef}
                       src={app.url}
                       srcDoc={app.url ? undefined : htmlContentWithScript}
                       className="w-full h-full border-none bg-black"
