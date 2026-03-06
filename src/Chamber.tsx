@@ -4,6 +4,19 @@ import { Clock, realClock } from "./lib/clock";
 
 const MAX_LOGS = 100;
 
+const HOTLINK_SCRIPT_TEMPLATE = `<script>
+  document.addEventListener('click', function(e) {
+    if (e.target.tagName === 'IMG') {
+      e.preventDefault();
+      // Use '*' as target origin because sandboxed iframes without 'allow-same-origin'
+      // have origin 'null', and window.location.origin would fail delivery.
+      window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, '*');
+    }
+  });
+</script>`;
+
+const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i;
+
 /**
  * Returns true only for URL schemes that are safe to render in an <img> src.
  * Blocks javascript:, vbscript:, blob:, and other non-media schemes.
@@ -14,22 +27,20 @@ function isSafeImageSrc(src: string): boolean {
   // Enforce a reasonable length limit (2MB) to prevent DoS via massive payloads.
   if (src.length > 2 * 1024 * 1024) return false;
 
+  // Short-circuit common protocols to avoid expensive URL parsing overhead.
+  if (src.startsWith("https://") || src.startsWith("http://")) return true;
+  if (src.startsWith("data:")) return SAFE_DATA_URL_REGEX.test(src);
+
   try {
-    const url = new URL(src);
+    // Fallback for relative paths or non-standard absolute URLs.
+    // Providing window.location.origin as base ensures relative paths parse correctly.
+    const url = new URL(src, window.location.origin);
     if (url.protocol === "https:" || url.protocol === "http:") return true;
-    if (url.protocol === "data:") {
-      // Allow only common raster image formats; explicitly block image/svg+xml
-      // to mitigate potential XSS risks in certain rendering contexts.
-      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
-    }
-    return false;
+    if (url.protocol === "data:") return SAFE_DATA_URL_REGEX.test(src);
   } catch {
-    // If URL parsing fails, check if it's a valid data URL manually
-    if (src.startsWith("data:")) {
-      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
-    }
-    return false;
+    // Parsing failed; reject.
   }
+  return false;
 }
 
 function appendLog(
@@ -212,12 +223,14 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
             const target = event.target as HTMLElement;
             if (target.tagName === "IMG") {
               event.preventDefault();
+              // Use '*' as target origin because sandboxed iframes without 'allow-same-origin'
+              // have origin 'null', and window.location.origin would fail delivery.
               window.parent.postMessage(
                 {
                   type: "IMAGE_CLICKED",
                   src: (target as HTMLImageElement).src,
                 },
-                window.location.origin,
+                "*",
               );
             }
           };
@@ -251,20 +264,13 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     console.log(`[Chamber] Fullscreen mode: ${!isFullscreen ? "ON" : "OFF"}`);
   };
 
-  // Chain 13 (HTMLContentInjection): memoize so string is only built when app.htmlContent changes
+  // Chain 13 (HTMLContentInjection): memoize so string is only built when app.htmlContent changes.
+  // Template is hoisted to module scope to avoid repeated string creation.
   const htmlContentWithScript = useMemo(() => {
     if (!app.htmlContent) return "";
-    const script = `<script>
-      document.addEventListener('click', function(e) {
-        if (e.target.tagName === 'IMG') {
-          e.preventDefault();
-          window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, window.location.origin);
-        }
-      });
-    </script>`;
     return app.htmlContent.includes("</body>")
-      ? app.htmlContent.replace("</body>", `${script}</body>`)
-      : app.htmlContent + script;
+      ? app.htmlContent.replace("</body>", `${HOTLINK_SCRIPT_TEMPLATE}</body>`)
+      : app.htmlContent + HOTLINK_SCRIPT_TEMPLATE;
   }, [app.htmlContent]);
 
   return (
