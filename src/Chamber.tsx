@@ -8,7 +8,9 @@ const HOTLINK_SCRIPT_TEMPLATE = `<script>
   document.addEventListener('click', function(e) {
     if (e.target.tagName === 'IMG') {
       e.preventDefault();
-      window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, window.location.origin);
+      // Use '*' as target origin because sandboxed iframes without 'allow-same-origin'
+      // have origin 'null', and window.location.origin would fail delivery.
+      window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, '*');
     }
   });
 </script>`;
@@ -221,12 +223,14 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
             const target = event.target as HTMLElement;
             if (target.tagName === "IMG") {
               event.preventDefault();
+              // Use '*' as target origin because sandboxed iframes without 'allow-same-origin'
+              // have origin 'null', and window.location.origin would fail delivery.
               window.parent.postMessage(
                 {
                   type: "IMAGE_CLICKED",
                   src: (target as HTMLImageElement).src,
                 },
-                window.location.origin,
+                "*",
               );
             }
           };
