@@ -4,30 +4,35 @@ import { Clock, realClock } from "./lib/clock";
 
 const MAX_LOGS = 100;
 
+// Pre-compiled regex for safe data:image raster formats (blocks SVG/XSS).
+const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i;
+
 /**
  * Returns true only for URL schemes that are safe to render in an <img> src.
  * Blocks javascript:, vbscript:, blob:, and other non-media schemes.
- * Restricts data: URLs to safe raster formats (no SVG) to prevent potential XSS
- * and enforces a length limit to guard against client-side DoS (BUG-06b).
+ * Restricts data: URLs to safe raster formats (no SVG) to prevent potential XSS.
+ * Restricts http: to localhost/127.0.0.1 to prevent mixed-content warnings.
+ * Enforces a 2MB length limit to guard against client-side DoS.
  */
 function isSafeImageSrc(src: string): boolean {
   // Enforce a reasonable length limit (2MB) to prevent DoS via massive payloads.
   if (src.length > 2 * 1024 * 1024) return false;
 
+  // Performance optimization: check common prefixes before full URL parsing.
+  if (src.startsWith("data:")) {
+    return SAFE_DATA_URL_REGEX.test(src);
+  }
+
   try {
     const url = new URL(src);
-    if (url.protocol === "https:" || url.protocol === "http:") return true;
-    if (url.protocol === "data:") {
-      // Allow only common raster image formats; explicitly block image/svg+xml
-      // to mitigate potential XSS risks in certain rendering contexts.
-      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
+    if (url.protocol === "https:") return true;
+    if (url.protocol === "http:") {
+      // Only allow local development hosts for http to ensure transport security
+      // for all production external assets (defense in depth).
+      return url.hostname === "localhost" || url.hostname === "127.0.0.1";
     }
     return false;
   } catch {
-    // If URL parsing fails, check if it's a valid data URL manually
-    if (src.startsWith("data:")) {
-      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
-    }
     return false;
   }
 }
