@@ -15,6 +15,15 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
     return () => clearTimeout(timer);
   }, []);
 
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onBack();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onBack]);
+
   // Memoize paragraph splitting to avoid redundant string operations on every render.
   const paragraphs = useMemo(
     () => (app.longDescription ? app.longDescription.split("\n\n").filter(Boolean) : []),
@@ -56,6 +65,7 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
         <header className="shrink-0 flex items-center justify-between px-8 py-5 border-b border-white/10 bg-black/50 backdrop-blur-xl">
           <button
             onClick={onBack}
+            title="Back to catalog (Esc)"
             className="flex items-center gap-3 text-white/50 hover:text-white transition-colors group cursor-pointer"
           >
             <span className="material-symbols-outlined !text-lg font-light transition-transform group-hover:-translate-x-1">

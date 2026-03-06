@@ -353,6 +353,49 @@ describe('Chain 12 — BackNavigation', () => {
     fireEvent.click(screen.getByText(/Cease/i));
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
   });
+
+  it('Escape key in product view returns to catalog', () => {
+    render(<App />);
+    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('heading', { name: /The Archive/i })).toBeTruthy();
+  });
+
+  it('Escape key in chamber view returns to product page', () => {
+    render(<App />);
+    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    fireEvent.click(screen.getByText(/Enter Chamber/i));
+    expect(screen.getByText('The Chamber')).toBeTruthy();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
+  });
+
+  it('Escape key in chamber view closes image modal before navigating back', async () => {
+    render(<App />);
+    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    fireEvent.click(screen.getByText(/Enter Chamber/i));
+
+    // Trigger image modal
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', {
+        data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
+        origin: window.location.origin,
+      }));
+    });
+    await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
+
+    // First Escape closes modal
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByText(/Asset_Viewer/i)).toBeNull());
+
+    // Chamber should still be active
+    expect(screen.getByText('The Chamber')).toBeTruthy();
+
+    // Second Escape navigates back
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
+  });
 });
 
 // ---------------------------------------------------------------------------
