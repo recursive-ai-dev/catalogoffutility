@@ -381,7 +381,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
 
@@ -473,23 +472,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         // Handle escape - could clear search or navigate back
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === "/" &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        document.activeElement?.tagName !== "INPUT" &&
-        document.activeElement?.tagName !== "TEXTAREA" &&
-        !(document.activeElement as HTMLElement | null)?.isContentEditable
-      ) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
