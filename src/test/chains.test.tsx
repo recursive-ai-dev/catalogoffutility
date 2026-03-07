@@ -375,12 +375,15 @@ describe('Chain 12 — BackNavigation', () => {
     render(<App />);
     fireEvent.click(screen.getByText(firstNavigableEntry.title));
     fireEvent.click(screen.getByText(/Enter Chamber/i));
+    fireEvent.click(screen.getByText(/Initialize/i));
 
     // Trigger image modal
+    const iframe = screen.getByTitle(firstNavigableEntry.title) as HTMLIFrameElement;
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
         origin: window.location.origin,
+        source: iframe.contentWindow,
       }));
     });
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
