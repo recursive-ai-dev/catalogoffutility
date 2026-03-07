@@ -516,33 +516,46 @@ describe('Chain 8 — ImageHotlink', () => {
   });
 
   it('shows modal for valid IMAGE_CLICKED from same origin', async () => {
-    render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    // In JSDOM, we must initialize to render the iframe and get its contentWindow
+    fireEvent.click(screen.getByText('Initialize'));
+    const iframe = container.querySelector('iframe')!;
+
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
         origin: window.location.origin,
+        source: iframe.contentWindow,
       }));
     });
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
   });
 
   it('accepts IMAGE_CLICKED from srcdoc iframe (origin "null")', async () => {
-    render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByText('Initialize'));
+    const iframe = container.querySelector('iframe')!;
+
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'data:image/png;base64,abc' },
         origin: 'null',
+        source: iframe.contentWindow,
       }));
     });
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
   });
 
   it('closes modal when backdrop overlay is clicked', async () => {
-    render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByText('Initialize'));
+    const iframe = container.querySelector('iframe')!;
+
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
         origin: window.location.origin,
+        source: iframe.contentWindow,
       }));
     });
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
@@ -624,7 +637,8 @@ describe('Chain 13 — HTMLContentInjection', () => {
   });
 
   it('returns empty string for falsy htmlContent', () => {
-    const result = (undefined as unknown as string) ? 'something' : '';
+    const content: string | undefined = undefined;
+    const result = content ? 'something' : '';
     expect(result).toBe('');
   });
 });
