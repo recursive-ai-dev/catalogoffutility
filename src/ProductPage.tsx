@@ -18,7 +18,7 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
   // Close on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" || e.repeat) return;
+      if (e.key === "Escape" && !e.repeat) onBack();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
