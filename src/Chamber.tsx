@@ -175,7 +175,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
 
       // Verify that the message is coming from our own iframe to prevent spoofing
       // from other windows or tabs (BUG-08b).
-      if (e.source !== iframeRef.current?.contentWindow) return;
+      if (!iframeRef.current || e.source !== iframeRef.current.contentWindow) return;
 
       if (e.data && e.data.type === "IMAGE_CLICKED") {
         // Validate src: non-empty string with a safe image URL scheme (BUG-06)
