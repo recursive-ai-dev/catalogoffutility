@@ -430,6 +430,14 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        // Handle escape - could clear search or navigate back
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (
         e.key === "/" &&
         !e.metaKey &&
