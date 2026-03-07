@@ -366,6 +366,7 @@ const Card = React.memo(function Card({
 export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
   // it avoids the exhaustive-deps violation that useMemo([]) would produce.
@@ -468,6 +469,33 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     [user, showAuthModal, onSelectApp],
   );
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        // Handle escape - could clear search or navigate back
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === "/" &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA" &&
+        !(document.activeElement as HTMLElement | null)?.isContentEditable
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
 
@@ -504,7 +532,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Time is already wasted.")}
           >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
+            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               schedule
             </span>
             <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
@@ -515,7 +543,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Memories purged.")}
           >
-            <span className="material-symbols-outlined text-white text-xl font-light">
+            <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
               delete
             </span>
             <span className="text-white font-light uppercase tracking-widest text-xs">
@@ -526,7 +554,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Giving up is not an option.")}
           >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
+            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               cancel
             </span>
             <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
@@ -538,7 +566,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Staring into the void...")}
           >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
+            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               block
             </span>
             <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
@@ -549,7 +577,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Exit mechanism destroyed.")}
           >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
+            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               warning
             </span>
             <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
@@ -598,7 +626,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors">
-              <span className="material-symbols-outlined text-base font-light">
+              <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
                 search
               </span>
               <input
@@ -610,6 +638,9 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1"
               />
+              <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+                [/]
+              </span>
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
