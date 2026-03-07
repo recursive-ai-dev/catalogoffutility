@@ -381,7 +381,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
 
@@ -402,7 +401,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
       }
 
       // Don't focus if focus is already in an input, textarea, or contentEditable element
-      const activeElement = document.activeElement;
+      const activeElement = document.activeElement as HTMLElement | null;
       const tagName = activeElement?.tagName;
       const isContentEditable = activeElement?.isContentEditable;
       if (
@@ -433,13 +432,13 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     setSelectedTag(DEFAULT_TAG);
   }, []);
 
-  // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
   const filteredEntries = useMemo(() => {
+    // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
     if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
@@ -454,7 +453,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [normalizedQuery, selectedTag]);
+  }, [searchQuery, selectedTag]);
 
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
@@ -469,32 +468,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     [user, showAuthModal, onSelectApp],
   );
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        // Handle escape - could clear search or navigate back
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === "/" &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        document.activeElement?.tagName !== "INPUT" &&
-        document.activeElement?.tagName !== "TEXTAREA" &&
-        !(document.activeElement as HTMLElement | null)?.isContentEditable
-      ) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
