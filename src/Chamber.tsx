@@ -4,6 +4,19 @@ import { Clock, realClock } from "./lib/clock";
 
 const MAX_LOGS = 100;
 
+const HOTLINK_SCRIPT_TEMPLATE = `<script>
+  document.addEventListener('click', function(e) {
+    if (e.target.tagName === 'IMG') {
+      e.preventDefault();
+      // Use '*' as target origin because sandboxed iframes without 'allow-same-origin'
+      // have origin 'null', and window.location.origin would fail delivery.
+      window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, '*');
+    }
+  });
+</script>`;
+
+const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i;
+
 /**
  * Returns true only for URL schemes that are safe to render in an <img> src.
  * Blocks javascript:, vbscript:, blob:, and other non-media schemes.
@@ -14,9 +27,17 @@ function isSafeImageSrc(src: string): boolean {
   // Enforce a reasonable length limit (2MB) to prevent DoS via massive payloads.
   if (src.length > 2 * 1024 * 1024) return false;
 
+  // Short-circuit common protocols to avoid expensive URL parsing overhead.
+  if (src.startsWith("https://") || src.startsWith("http://")) return true;
+  if (src.startsWith("data:")) return SAFE_DATA_URL_REGEX.test(src);
+
   try {
     const url = new URL(src);
-    if (url.protocol === "https:" || url.protocol === "http:") return true;
+    if (url.protocol === "https:") return true;
+    // Allow http: only for local development (localhost or 127.0.0.1)
+    if (url.protocol === "http:") {
+      return url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    }
     if (url.protocol === "data:") {
       // Allow only common raster image formats; explicitly block image/svg+xml
       // to mitigate potential XSS risks in certain rendering contexts.
@@ -24,12 +45,9 @@ function isSafeImageSrc(src: string): boolean {
     }
     return false;
   } catch {
-    // If URL parsing fails, check if it's a valid data URL manually
-    if (src.startsWith("data:")) {
-      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
-    }
-    return false;
+    // Parsing failed; reject.
   }
+  return false;
 }
 
 function appendLog(
@@ -110,6 +128,8 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
   const clkRef = useRef(clk);
   clkRef.current = clk;
 
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
   const iframeDocRef = useRef<Document | null>(null);
   const iframeClickHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
@@ -127,15 +147,19 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     if (e.key === "Escape") setHotlinkedImage(null);
   }, []);
 
+  // Global Escape listener for navigation and modal closure
   useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !hotlinkedImage) {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.repeat) return;
+      if (hotlinkedImage) {
+        setHotlinkedImage(null);
+      } else {
         onBack();
       }
     };
-    window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [onBack, hotlinkedImage]);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [hotlinkedImage, onBack]);
 
   // Cleanup injected iframe listener on Chamber unmount
   useEffect(() => {
@@ -176,6 +200,10 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       // Chain 8 (ImageHotlink): validate origin — only accept from same origin or null (srcdoc iframes)
       const isSameOrigin = e.origin === window.location.origin || e.origin === "null";
       if (!isSameOrigin) return;
+
+      // Verify that the message is coming from our own iframe to prevent spoofing
+      // from other windows or tabs (BUG-08b).
+      if (!iframeRef.current || e.source !== iframeRef.current.contentWindow) return;
 
       if (e.data && e.data.type === "IMAGE_CLICKED") {
         // Validate src: non-empty string with a safe image URL scheme (BUG-06)
@@ -222,12 +250,14 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
             const target = event.target as HTMLElement;
             if (target.tagName === "IMG") {
               event.preventDefault();
+              // Use '*' as target origin because sandboxed iframes without 'allow-same-origin'
+              // have origin 'null', and window.location.origin would fail delivery.
               window.parent.postMessage(
                 {
                   type: "IMAGE_CLICKED",
                   src: (target as HTMLImageElement).src,
                 },
-                window.location.origin,
+                "*",
               );
             }
           };
@@ -261,20 +291,13 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     console.log(`[Chamber] Fullscreen mode: ${!isFullscreen ? "ON" : "OFF"}`);
   };
 
-  // Chain 13 (HTMLContentInjection): memoize so string is only built when app.htmlContent changes
+  // Chain 13 (HTMLContentInjection): memoize so string is only built when app.htmlContent changes.
+  // Template is hoisted to module scope to avoid repeated string creation.
   const htmlContentWithScript = useMemo(() => {
     if (!app.htmlContent) return "";
-    const script = `<script>
-      document.addEventListener('click', function(e) {
-        if (e.target.tagName === 'IMG') {
-          e.preventDefault();
-          window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, window.location.origin);
-        }
-      });
-    </script>`;
     return app.htmlContent.includes("</body>")
-      ? app.htmlContent.replace("</body>", `${script}</body>`)
-      : app.htmlContent + script;
+      ? app.htmlContent.replace("</body>", `${HOTLINK_SCRIPT_TEMPLATE}</body>`)
+      : app.htmlContent + HOTLINK_SCRIPT_TEMPLATE;
   }, [app.htmlContent]);
 
   return (
@@ -292,6 +315,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
         <button
           className="flex items-center gap-6 text-white/70 hover:text-white cursor-pointer transition-colors group"
           onClick={onBack}
+          title="Back to product (Esc)"
           aria-label="Back to product page"
         >
           <div className="size-6 transition-transform group-hover:-translate-x-1">
@@ -469,6 +493,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                       </div>
                     )}
                     <iframe
+                      ref={iframeRef}
                       src={app.url}
                       srcDoc={app.url ? undefined : htmlContentWithScript}
                       className="w-full h-full border-none bg-black"
@@ -607,6 +632,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
           <div className="p-8 border-t border-white/10 bg-white/5">
             <button
               onClick={onBack}
+              title="Cease (Esc)"
               className="group w-full relative h-12 bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-all duration-300 overflow-hidden flex items-center justify-center gap-4 cursor-pointer rounded-full"
             >
               <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light" aria-hidden="true">
