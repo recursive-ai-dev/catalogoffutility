@@ -372,15 +372,20 @@ describe('Chain 12 — BackNavigation', () => {
   });
 
   it('Escape key in chamber view closes image modal before navigating back', async () => {
-    render(<App />);
+    const { container } = render(<App />);
     fireEvent.click(screen.getByText(firstNavigableEntry.title));
     fireEvent.click(screen.getByText(/Enter Chamber/i));
+
+    // Initialize the Chamber so the iframe is rendered
+    fireEvent.click(screen.getByText('Initialize'));
+    const iframe = container.querySelector('iframe')!;
 
     // Trigger image modal
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
         origin: window.location.origin,
+        source: iframe.contentWindow,
       }));
     });
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());

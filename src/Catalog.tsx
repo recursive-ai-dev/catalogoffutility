@@ -381,7 +381,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
 
@@ -404,7 +403,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
       // Don't focus if focus is already in an input, textarea, or contentEditable element
       const activeElement = document.activeElement;
       const tagName = activeElement?.tagName;
-      const isContentEditable = activeElement?.isContentEditable;
+      const isContentEditable = (activeElement as HTMLElement | null)?.isContentEditable;
       if (
         tagName === "INPUT" ||
         tagName === "TEXTAREA" ||
@@ -469,32 +468,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     [user, showAuthModal, onSelectApp],
   );
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        // Handle escape - could clear search or navigate back
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === "/" &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        document.activeElement?.tagName !== "INPUT" &&
-        document.activeElement?.tagName !== "TEXTAREA" &&
-        !(document.activeElement as HTMLElement | null)?.isContentEditable
-      ) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
