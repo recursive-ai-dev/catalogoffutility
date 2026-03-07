@@ -430,7 +430,15 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "/" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+      if (
+        e.key === "/" &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA" &&
+        !(document.activeElement as HTMLElement | null)?.isContentEditable
+      ) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
