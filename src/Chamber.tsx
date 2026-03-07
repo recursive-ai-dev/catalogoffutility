@@ -130,12 +130,11 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
   // Global Escape listener for navigation and modal closure
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (hotlinkedImage) {
-          setHotlinkedImage(null);
-        } else {
-          onBack();
-        }
+      if (e.key !== "Escape" || e.repeat) return;
+      if (hotlinkedImage) {
+        setHotlinkedImage(null);
+      } else {
+        onBack();
       }
     };
     window.addEventListener("keydown", onKey);
