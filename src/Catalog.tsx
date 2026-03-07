@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth, useAuthModal } from "./lib/auth";
@@ -380,8 +380,45 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
+
+  // "/" shortcut handler — only triggers when no modifier keys are pressed,
+  // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if composing (IME), modifier keys pressed, or not the "/" key
+      if (
+        e.isComposing ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        e.shiftKey ||
+        e.key !== "/"
+      ) {
+        return;
+      }
+
+      // Don't focus if focus is already in an input, textarea, or contentEditable element
+      const activeElement = document.activeElement;
+      const tagName = activeElement?.tagName;
+      const isContentEditable = activeElement?.isContentEditable;
+      if (
+        tagName === "INPUT" ||
+        tagName === "TEXTAREA" ||
+        isContentEditable
+      ) {
+        return;
+      }
+
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const showNotification = useCallback((msg: string) => {
     if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
@@ -565,6 +602,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                 search
               </span>
               <input
+                ref={searchInputRef}
                 type="text"
                 aria-label="Search catalog entries"
                 placeholder="Search the void..."
