@@ -147,6 +147,20 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     if (e.key === "Escape") setHotlinkedImage(null);
   }, []);
 
+  // Global Escape listener for navigation and modal closure
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.repeat) return;
+      if (hotlinkedImage) {
+        setHotlinkedImage(null);
+      } else {
+        onBack();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [hotlinkedImage, onBack]);
+
   // Cleanup injected iframe listener on Chamber unmount
   useEffect(() => {
     return () => {
@@ -301,6 +315,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
         <button
           className="flex items-center gap-6 text-white/70 hover:text-white cursor-pointer transition-colors group"
           onClick={onBack}
+          title="Back to product (Esc)"
           aria-label="Back to product page"
         >
           <div className="size-6 transition-transform group-hover:-translate-x-1">
@@ -617,6 +632,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
           <div className="p-8 border-t border-white/10 bg-white/5">
             <button
               onClick={onBack}
+              title="Cease (Esc)"
               className="group w-full relative h-12 bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-all duration-300 overflow-hidden flex items-center justify-center gap-4 cursor-pointer rounded-full"
             >
               <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light">
