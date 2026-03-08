@@ -306,6 +306,9 @@ const Card = React.memo(function Card({
               <button
                 key={tag}
                 onClick={(e) => {
+              <button
+                key={tag}
+                onClick={(e) => {
                   e.stopPropagation();
                   onTagSelect(tag);
                 }}
