@@ -379,30 +379,16 @@ const Card = React.memo(function Card({
 });
 
 export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  // Capture the exact time the catalog first mounted — displayed in system logs.
-  // useRef lazy-init is the correct React idiom for "compute once at mount";
-  // it avoids the exhaustive-deps violation that useMemo([]) would produce.
-  // useRef (not useMemo with []) avoids the exhaustive-deps lint violation while
-  // preserving mount-only semantics: the value is sampled once and never updates
-  // even if the `clock` prop changes (BUG-07).
-  const mountTimeRef = useRef<string | null>(null);
-  if (mountTimeRef.current === null) {
-    mountTimeRef.current = (clock ?? realClock).timeString();
-  }
-  const mountTime = mountTimeRef.current;
-  // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
-  const [notification, setNotification] = useState<string | null>(null);
-  const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { user } = useAuth();
-  const { showAuthModal } = useAuthModal();
-
   // Global keyboard shortcut handler for search focus (/) and filter reset (Escape).
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.isComposing) return;
+
+      const activeElement = document.activeElement as HTMLElement | null;
+      const isInDialog =
+        activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') != null;
+
+      if (isInDialog) return;
 
       if (e.key === "Escape") {
         setSearchQuery("");
