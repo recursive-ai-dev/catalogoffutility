@@ -176,11 +176,14 @@
     function loadVisited() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return {};
-        const parsed = JSON.parse(raw);
-        if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) return {};
-        return parsed;
-      } catch { return {}; }
+    function loadVisited() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) { 
+        console.warn('SOUL MIRROR: Could not load visited state', e);
+        return {}; 
+      }
     }
 
     function saveVisited(visited) {
