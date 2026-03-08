@@ -7,185 +7,428 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
-      --bg: #fafafa;
-      --surface: #f5f5f5;
-      --text-primary: #171717;
-      --text-dim: #737373;
-      --border: #e5e5e5;
-      --accent: #525252;
+      --bg: #080808;
+      --surface: #0f0f0f;
+      --surface2: #161616;
+      --border: #1e1e1e;
+      --border2: #2a2a2a;
+      --text: #c8c8c8;
+      --text-dim: #555;
+      --text-ghost: #2a2a2a;
+      --accent: #8a7a6a;
+      --accent-dim: #3a3028;
     }
     html, body {
       height: 100%;
       background: var(--bg);
-      color: var(--text-primary);
+      color: var(--text);
       font-family: 'JetBrains Mono', monospace;
-      font-size: 14px;
-      overflow: auto;
+      font-size: 13px;
+      overflow-y: auto;
+      -webkit-font-smoothing: antialiased;
     }
-    #root { height: 100%; }
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+      pointer-events: none;
+      z-index: 9999;
+    }
+    #root { min-height: 100%; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shimmer {
+      0%,100% { opacity: 0.6; }
+      50%      { opacity: 1; }
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel" data-type="module">
+  <script type="text/babel">
     const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
-    // Core symbolic system
+    const STORAGE_KEY = 'soul-mirror-v1';
+
     const CORE_CONCEPTS = [
-      'Agency', 'Balance', 'Connection', 'Discovery', 'Empathy', 'Freedom', 'Growth', 'Hope',
-      'Identity', 'Joy', 'Knowledge', 'Love', 'Memory', 'Nature', 'Order', 'Peace',
-      'Questions', 'Resilience', 'Spirit', 'Time', 'Understanding', 'Vitality', 'Wisdom',
-      'eXperience', 'Yearning', 'Zen'
+      'Agency', 'Balance', 'Connection', 'Discovery', 'Empathy',
+      'Freedom', 'Growth', 'Hope', 'Identity', 'Joy',
+      'Knowledge', 'Love', 'Memory', 'Nature', 'Order',
+      'Peace', 'Questions', 'Resilience', 'Spirit', 'Time',
+      'Understanding', 'Vitality', 'Wisdom', 'eXperience', 'Yearning', 'Zen'
     ];
 
-    const shadeMap = {
-      'Agency': ['autonomy', 'choice', 'control', 'decision', 'empowerment'],
-      'Balance': ['harmony', 'equilibrium', 'stability', 'centeredness', 'proportion'],
-      'Connection': ['bonding', 'relationship', 'unity', 'intimacy', 'communication'],
-      'Discovery': ['exploration', 'revelation', 'insight', 'finding', 'uncovering'],
-      'Empathy': ['compassion', 'understanding', 'sympathy', 'sensitivity', 'care'],
-      'Freedom': ['liberation', 'independence', 'autonomy', 'release', 'openness'],
-      'Growth': ['development', 'progress', 'expansion', 'evolution', 'improvement'],
-      'Hope': ['optimism', 'aspiration', 'expectation', 'possibility', 'anticipation'],
-      'Identity': ['self', 'individuality', 'character', 'essence', 'personhood'],
-      'Joy': ['happiness', 'delight', 'pleasure', 'bliss', 'contentment'],
-      'Knowledge': ['wisdom', 'understanding', 'insight', 'learning', 'awareness'],
-      'Love': ['affection', 'devotion', 'passion', 'tenderness', 'adoration'],
-      'Memory': ['recollection', 'remembrance', 'nostalgia', 'retention', 'recall'],
-      'Nature': ['environment', 'ecology', 'organic', 'wilderness', 'natural'],
-      'Order': ['structure', 'organization', 'system', 'arrangement', 'pattern'],
-      'Peace': ['tranquility', 'calm', 'serenity', 'harmony', 'stillness'],
-      'Questions': ['inquiry', 'curiosity', 'wonder', 'doubt', 'exploration'],
-      'Resilience': ['endurance', 'perseverance', 'strength', 'tenacity', 'fortitude'],
-      'Spirit': ['soul', 'essence', 'animating', 'ethereal', 'transcendent'],
-      'Time': ['duration', 'moment', 'temporal', 'chronology', 'eternity'],
-      'Understanding': ['comprehension', 'grasp', 'insight', 'perception', 'awareness'],
-      'Vitality': ['energy', 'life', 'vigor', 'animation', 'aliveness'],
-      'Wisdom': ['sagacity', 'insight', 'judgment', 'prudence', 'enlightenment'],
-      'eXperience': ['encounter', 'undergoing', 'adventure', 'involvement', 'participation'],
-      'Yearning': ['longing', 'desire', 'craving', 'ache', 'aspiration'],
-      'Zen': ['meditation', 'peace', 'mindfulness', 'enlightenment', 'stillness']
+    const conceptData = {
+      'Agency': {
+        shades: ['autonomy', 'choice', 'control', 'decision', 'empowerment'],
+        reflection: 'The capacity to act according to one's own will — and to know where that will came from.'
+      },
+      'Balance': {
+        shades: ['harmony', 'equilibrium', 'stability', 'centeredness', 'proportion'],
+        reflection: 'Not the absence of opposing forces, but the place where they cancel without collapse.'
+      },
+      'Connection': {
+        shades: ['bonding', 'relationship', 'unity', 'intimacy', 'communication'],
+        reflection: 'The bridge between the self and the other — always partial, always sufficient.'
+      },
+      'Discovery': {
+        shades: ['exploration', 'revelation', 'insight', 'finding', 'uncovering'],
+        reflection: 'The moment of arriving somewhere that was always there, but not yet seen.'
+      },
+      'Empathy': {
+        shades: ['compassion', 'understanding', 'sympathy', 'sensitivity', 'care'],
+        reflection: 'Knowing that another's suffering is real without requiring it to be your own.'
+      },
+      'Freedom': {
+        shades: ['liberation', 'independence', 'autonomy', 'release', 'openness'],
+        reflection: 'The awareness that constraint exists — and that something within it still moves.'
+      },
+      'Growth': {
+        shades: ['development', 'progress', 'expansion', 'evolution', 'improvement'],
+        reflection: 'Change that carries forward something essential while leaving the rest behind.'
+      },
+      'Hope': {
+        shades: ['optimism', 'aspiration', 'expectation', 'possibility', 'anticipation'],
+        reflection: 'Not certainty — only the wager that the future holds room for what you need.'
+      },
+      'Identity': {
+        shades: ['self', 'individuality', 'character', 'essence', 'personhood'],
+        reflection: 'The story you tell about continuity — and the thread you find when you look.'
+      },
+      'Joy': {
+        shades: ['happiness', 'delight', 'pleasure', 'bliss', 'contentment'],
+        reflection: 'The state in which the present moment requires no justification.'
+      },
+      'Knowledge': {
+        shades: ['wisdom', 'understanding', 'insight', 'learning', 'awareness'],
+        reflection: 'The reduction of uncertainty — and the discovery of larger uncertainties beneath.'
+      },
+      'Love': {
+        shades: ['affection', 'devotion', 'passion', 'tenderness', 'adoration'],
+        reflection: 'The only force that converts the other's existence into a reason for your own.'
+      },
+      'Memory': {
+        shades: ['recollection', 'remembrance', 'nostalgia', 'retention', 'recall'],
+        reflection: 'The past arriving in the present — always translated, never unchanged.'
+      },
+      'Nature': {
+        shades: ['environment', 'ecology', 'organic', 'wilderness', 'natural'],
+        reflection: 'The system that existed before the word existed — and will remain after the word is forgotten.'
+      },
+      'Order': {
+        shades: ['structure', 'organization', 'system', 'arrangement', 'pattern'],
+        reflection: 'The shape that emerges when chaos is asked the same question enough times.'
+      },
+      'Peace': {
+        shades: ['tranquility', 'calm', 'serenity', 'harmony', 'stillness'],
+        reflection: 'Not the absence of difficulty — the absence of resistance to what is.'
+      },
+      'Questions': {
+        shades: ['inquiry', 'curiosity', 'wonder', 'doubt', 'exploration'],
+        reflection: 'The engine beneath everything — the force that refuses to accept completion.'
+      },
+      'Resilience': {
+        shades: ['endurance', 'perseverance', 'strength', 'tenacity', 'fortitude'],
+        reflection: 'Not invulnerability. The capacity to be broken and to begin again.'
+      },
+      'Spirit': {
+        shades: ['soul', 'essence', 'animating force', 'ethereal', 'transcendent'],
+        reflection: 'Whatever it is that insists on continuing when the rest of you would stop.'
+      },
+      'Time': {
+        shades: ['duration', 'moment', 'temporal', 'chronology', 'eternity'],
+        reflection: 'The medium in which everything happens — and which nothing can observe from outside.'
+      },
+      'Understanding': {
+        shades: ['comprehension', 'grasp', 'insight', 'perception', 'awareness'],
+        reflection: 'The point at which a pattern stops requiring explanation and begins generating predictions.'
+      },
+      'Vitality': {
+        shades: ['energy', 'life', 'vigor', 'animation', 'aliveness'],
+        reflection: 'The quality of being fully present in the body, the moment, the breath.'
+      },
+      'Wisdom': {
+        shades: ['sagacity', 'insight', 'judgment', 'prudence', 'enlightenment'],
+        reflection: 'Knowledge with consequences — understanding that has survived contact with reality.'
+      },
+      'eXperience': {
+        shades: ['encounter', 'undergoing', 'adventure', 'involvement', 'participation'],
+        reflection: 'Everything that leaves a mark. The total of what has passed through you.'
+      },
+      'Yearning': {
+        shades: ['longing', 'desire', 'craving', 'ache', 'aspiration'],
+        reflection: 'The pull toward what is not yet here — and the proof that the self extends beyond the present.'
+      },
+      'Zen': {
+        shades: ['meditation', 'presence', 'mindfulness', 'simplicity', 'stillness'],
+        reflection: 'The refusal to add anything to what already is.'
+      }
     };
 
-    const generateShades = (concept) => {
-      const shades = shadeMap[concept] || ['essence', 'manifestation', 'expression'];
-      return shades;
-    };
+    function loadVisited() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+    function loadVisited() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) { 
+        console.warn('SOUL MIRROR: Could not load visited state', e);
+        return {}; 
+      }
+    }
 
-    // Main App Component
+    function saveVisited(visited) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(visited));
+      } catch {}
+    }
+
     function SoulMirror() {
       const [selectedConcept, setSelectedConcept] = useState(null);
-      const [reflection, setReflection] = useState([]);
-      const [isReflecting, setIsReflecting] = useState(false);
+      const [shades, setShades] = useState([]);
+      const [reflecting, setReflecting] = useState(false);
+      const [visited, setVisited] = useState(loadVisited);
+      const timerIds = useRef([]);
 
-      const handleReflection = useCallback((concept) => {
+      const handleSelect = useCallback((concept) => {
+        // Cancel any pending shade-reveal timers from the previous selection
+        timerIds.current.forEach(id => clearTimeout(id));
+        timerIds.current = [];
+
         setSelectedConcept(concept);
-        setIsReflecting(true);
-        const shades = generateShades(concept);
-        setReflection([]);
-        
-        // Animate shades appearing
-        shades.forEach((shade, i) => {
-          setTimeout(() => {
-            setReflection(prev => [...prev, shade]);
-          }, 200 * (i + 1));
+        setShades([]);
+        setReflecting(true);
+
+        const conceptShades = conceptData[concept]?.shades || [];
+        conceptShades.forEach((shade, i) => {
+          const id = setTimeout(() => {
+            setShades(prev => [...prev, shade]);
+          }, 180 * (i + 1));
+          timerIds.current.push(id);
         });
-        
-        setTimeout(() => setIsReflecting(false), shades.length * 200 + 500);
-      }, []);
+        const finalId = setTimeout(() => setReflecting(false), 180 * conceptShades.length + 400);
+        timerIds.current.push(finalId);
+
+        // Persist visit with timestamp
+        const now = Date.now();
+        const updatedVisited = { ...visited, [concept]: { count: (visited[concept]?.count || 0) + 1, last: now } };
+        setVisited(updatedVisited);
+        saveVisited(updatedVisited);
+      }, [visited]);
+
+      const visitedCount = Object.keys(visited).length;
+      const totalConcepts = CORE_CONCEPTS.length;
+      const progressPct = Math.round((visitedCount / totalConcepts) * 100);
+
+      const selectedData = selectedConcept ? conceptData[selectedConcept] : null;
 
       return (
-        <div style={{
-          minHeight: '100%',
-          padding: '2rem',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center'
-        }}>
-          <header style={{ textAlign: 'center', marginBottom: '3rem' }}>
+        <div style={{ minHeight: '100%', padding: '2rem 1.5rem', maxWidth: '780px', margin: '0 auto' }}>
+
+          {/* Header */}
+          <header style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1.25rem' }}>
             <h1 style={{
-              fontSize: '2.5rem',
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: '2rem',
               fontWeight: 300,
-              letterSpacing: '0.2em',
-              marginBottom: '0.5rem'
-            }}>SOUL MIRROR</h1>
-            <p style={{ color: 'var(--text-dim)', fontSize: '0.875rem' }}>
-              Reflect on the core concepts of existence
+              letterSpacing: '0.3em',
+              color: 'var(--text)',
+              marginBottom: '0.4rem'
+            }}>
+              SOUL MIRROR
+            </h1>
+            <p style={{ color: 'var(--text-dim)', fontSize: '11px', letterSpacing: '0.1em' }}>
+              reflect on the core concepts of existence
             </p>
           </header>
 
+          {/* Progress map */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-            gap: '0.75rem',
-            maxWidth: '800px',
-            width: '100%'
+            marginBottom: '1.5rem',
+            padding: '0.75rem 1rem',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem'
           }}>
-            {CORE_CONCEPTS.map(concept => (
+            <div style={{ flex: 1 }}>
+              <div style={{
+                height: '2px',
+                background: 'var(--border2)',
+                borderRadius: '1px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${progressPct}%`,
+                  background: 'var(--accent)',
+                  transition: 'width 0.6s ease',
+                  borderRadius: '1px'
+                }} />
+              </div>
+            </div>
+            <div style={{ fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
+              {visitedCount} / {totalConcepts} REFLECTED
+            </div>
+            {visitedCount > 0 && (
               <button
-                key={concept}
-                onClick={() => handleReflection(concept)}
+                onClick={() => { saveVisited({}); setVisited({}); }}
                 style={{
-                  padding: '1rem',
-                  background: selectedConcept === concept ? 'var(--text-primary)' : 'var(--surface)',
-                  color: selectedConcept === concept ? 'var(--bg)' : 'var(--text-primary)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '4px',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-ghost)',
+                  fontSize: '10px',
                   cursor: 'pointer',
-                  fontSize: '0.75rem',
                   letterSpacing: '0.1em',
-                  transition: 'all 0.2s ease',
-                  textTransform: 'uppercase'
+                  padding: 0,
+                  fontFamily: "'JetBrains Mono', monospace"
                 }}
+                title="Clear mirror"
               >
-                {concept}
+                CLEAR
               </button>
-            ))}
+            )}
           </div>
 
-          {selectedConcept && (
+          {/* Concept grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+            gap: '0.5rem',
+            marginBottom: '2rem'
+          }}>
+            {CORE_CONCEPTS.map(concept => {
+              const isSelected = selectedConcept === concept;
+              const isVisited = !!visited[concept];
+              const visitCount = visited[concept]?.count || 0;
+              return (
+                <button
+                  key={concept}
+                  onClick={() => handleSelect(concept)}
+                  style={{
+                    padding: '0.75rem 0.5rem',
+                    background: isSelected ? 'var(--accent-dim)' : isVisited ? 'var(--surface2)' : 'var(--surface)',
+                    color: isSelected ? 'var(--text)' : isVisited ? '#888' : 'var(--text-dim)',
+                    border: `1px solid ${isSelected ? 'var(--accent)' : isVisited ? 'var(--border2)' : 'var(--border)'}`,
+                    borderRadius: '3px',
+                    cursor: 'pointer',
+                    fontSize: '10px',
+                    letterSpacing: '0.12em',
+                    transition: 'all 0.15s ease',
+                    textTransform: 'uppercase',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    position: 'relative',
+                    textAlign: 'center',
+                    lineHeight: 1.4
+                  }}
+                >
+                  {concept}
+                  {visitCount > 1 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '3px',
+                      right: '5px',
+                      fontSize: '8px',
+                      color: 'var(--text-ghost)',
+                      letterSpacing: 0
+                    }}>
+                      ×{visitCount}
+                    </span>
+                  )}
+                  {isVisited && !isSelected && (
+                    <span style={{
+                      display: 'block',
+                      width: '4px',
+                      height: '4px',
+                      borderRadius: '50%',
+                      background: 'var(--accent)',
+                      margin: '4px auto 0',
+                      opacity: 0.5
+                    }} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Reflection panel */}
+          {selectedConcept && selectedData && (
             <div style={{
-              marginTop: '3rem',
-              padding: '2rem',
+              padding: '1.5rem',
               background: 'var(--surface)',
               border: '1px solid var(--border)',
-              borderRadius: '8px',
-              maxWidth: '600px',
-              width: '100%',
-              textAlign: 'center'
+              borderRadius: '4px',
+              animation: 'fadeIn 0.3s ease'
             }}>
               <h2 style={{
+                fontFamily: "'Cormorant Garamond', serif",
                 fontSize: '1.5rem',
-                fontWeight: 400,
-                marginBottom: '1.5rem',
-                letterSpacing: '0.15em'
+                fontWeight: 300,
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                marginBottom: '0.25rem',
+                color: 'var(--text)'
               }}>
                 {selectedConcept}
               </h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center' }}>
-                {reflection.map((shade, i) => (
-                  <span key={i} style={{
-                    padding: '0.5rem 1rem',
-                    background: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '999px',
-                    fontSize: '0.75rem',
-                    animation: 'fadeIn 0.3s ease'
-                  }}>
+              <p style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontStyle: 'italic',
+                fontSize: '0.95rem',
+                color: '#777',
+                lineHeight: 1.6,
+                marginBottom: '1.25rem',
+                maxWidth: '520px'
+              }}>
+                {selectedData.reflection}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                {shades.map((shade, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      padding: '0.35rem 0.75rem',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border2)',
+                      borderRadius: '999px',
+                      fontSize: '10px',
+                      letterSpacing: '0.1em',
+                      color: 'var(--text-dim)',
+                      animation: 'fadeIn 0.25s ease'
+                    }}
+                  >
                     {shade}
                   </span>
                 ))}
-                {isReflecting && (
-                  <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>
+                {reflecting && (
+                  <span style={{ fontSize: '10px', color: 'var(--text-ghost)', padding: '0.35rem 0', animation: 'shimmer 1s infinite' }}>
                     reflecting...
                   </span>
                 )}
               </div>
+              {visited[selectedConcept] && (
+                <div style={{ marginTop: '1rem', fontSize: '9px', color: 'var(--text-ghost)', letterSpacing: '0.1em' }}>
+                  VISITED {visited[selectedConcept].count}× — LAST: {new Date(visited[selectedConcept].last).toLocaleDateString()}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!selectedConcept && (
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-ghost)', fontSize: '11px', letterSpacing: '0.15em' }}>
+              — select a concept to begin —
             </div>
           )}
         </div>
@@ -195,11 +438,5 @@
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<SoulMirror />);
   </script>
-  <style>
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
 </body>
 </html>
