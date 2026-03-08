@@ -372,15 +372,20 @@ describe('Chain 12 — BackNavigation', () => {
   });
 
   it('Escape key in chamber view closes image modal before navigating back', async () => {
-    render(<App />);
+    const { container } = render(<App />);
     fireEvent.click(screen.getByText(firstNavigableEntry.title));
     fireEvent.click(screen.getByText(/Enter Chamber/i));
+
+    // In JSDOM, we must initialize to render the iframe and get its contentWindow
+    fireEvent.click(screen.getByText('Initialize'));
+    const iframe = container.querySelector('iframe')!;
 
     // Trigger image modal
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
         origin: window.location.origin,
+        source: iframe.contentWindow,
       }));
     });
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
@@ -606,6 +611,35 @@ describe('Chain 8 — ImageHotlink', () => {
     await waitFor(() => expect(screen.queryByText(/Asset_Viewer/i)).toBeNull());
   });
 
+  it('rejects postMessage with insecure external http: URL (regression BUG-06c)', async () => {
+    const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByText('Initialize'));
+    const iframe = container.querySelector('iframe')!;
+
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', {
+        data: { type: 'IMAGE_CLICKED', src: 'http://evil.com/img.jpg' },
+        origin: window.location.origin,
+        source: iframe.contentWindow,
+      }));
+    });
+    // Modal should NOT appear
+    expect(screen.queryByText(/Asset_Viewer/i)).toBeNull();
+  });
+
+  it('accepts postMessage with localhost http: URL', async () => {
+    const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByText('Initialize'));
+    const iframe = container.querySelector('iframe')!;
+
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', {
+        data: { type: 'IMAGE_CLICKED', src: 'http://localhost:3000/img.jpg' },
+        origin: window.location.origin,
+        source: iframe.contentWindow,
+      }));
+    });
+    await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
   it('isSafeImageSrc enhancement: protocol/format validation', async () => {
     render(<Chamber app={makeApp()} onBack={vi.fn()} />);
     const cases = [
