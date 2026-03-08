@@ -157,10 +157,12 @@ const UserSection = React.memo(function UserSection() {
 const Card = React.memo(function Card({
   entry,
   onSelect,
+  onTagSelect,
   isUserLoggedIn,
 }: {
   entry: AppEntry;
   onSelect: (entry: AppEntry) => void;
+  onTagSelect: (tag: string) => void;
   isUserLoggedIn: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -301,12 +303,25 @@ const Card = React.memo(function Card({
         {entry.tags && entry.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {entry.tags.map((tag) => (
-              <span
+              <button
                 key={tag}
-                className="text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 border border-white/8 text-white/25 rounded-full"
+                onClick={(e) => {
+              <button
+                key={tag}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagSelect(tag);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation();
+                  }
+                }}
+                aria-label={`Filter by ${tag}`}
+                className="text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 border border-white/8 text-white/25 rounded-full hover:border-white/30 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
               >
                 {tag}
-              </span>
+              </button>
             ))}
           </div>
         )}
@@ -364,56 +379,44 @@ const Card = React.memo(function Card({
 });
 
 export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  // Capture the exact time the catalog first mounted — displayed in system logs.
-  // useRef lazy-init is the correct React idiom for "compute once at mount";
-  // it avoids the exhaustive-deps violation that useMemo([]) would produce.
-  // useRef (not useMemo with []) avoids the exhaustive-deps lint violation while
-  // preserving mount-only semantics: the value is sampled once and never updates
-  // even if the `clock` prop changes (BUG-07).
-  const mountTimeRef = useRef<string | null>(null);
-  if (mountTimeRef.current === null) {
-    mountTimeRef.current = (clock ?? realClock).timeString();
-  }
-  const mountTime = mountTimeRef.current;
-  // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
-  const [notification, setNotification] = useState<string | null>(null);
-  const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { user } = useAuth();
-  const { showAuthModal } = useAuthModal();
-
-  // "/" shortcut handler — only triggers when no modifier keys are pressed,
-  // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
+  // Global keyboard shortcut handler for search focus (/) and filter reset (Escape).
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if composing (IME), modifier keys pressed, or not the "/" key
-      if (
-        e.isComposing ||
-        e.ctrlKey ||
-        e.metaKey ||
-        e.altKey ||
-        e.shiftKey ||
-        e.key !== "/"
-      ) {
+      if (e.isComposing) return;
+
+      const activeElement = document.activeElement as HTMLElement | null;
+      const isInDialog =
+        activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') != null;
+
+      if (isInDialog) return;
+
+      if (e.key === "Escape") {
+        setSearchQuery("");
         return;
       }
 
-      // Don't focus if focus is already in an input, textarea, or contentEditable element
-      const activeElement = document.activeElement;
-      const tagName = activeElement?.tagName;
-      const isContentEditable = activeElement?.isContentEditable;
       if (
-        tagName === "INPUT" ||
-        tagName === "TEXTAREA" ||
-        isContentEditable
+        e.key === "/" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !e.shiftKey
       ) {
-        return;
-      }
+        // Don't focus if focus is already in an input, textarea, or contentEditable element
+        const activeElement = document.activeElement;
+        const tagName = activeElement?.tagName;
+        const isContentEditable = (activeElement as HTMLElement)?.isContentEditable;
+        if (
+          tagName === "INPUT" ||
+          tagName === "TEXTAREA" ||
+          isContentEditable
+        ) {
+          return;
+        }
 
-      e.preventDefault();
-      searchInputRef.current?.focus();
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -614,11 +617,11 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               <input
                 ref={searchInputRef}
                 type="text"
-                aria-label="Search catalog entries"
+                aria-label="Search catalog entries (Press / to focus)"
                 placeholder="Search the void..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1"
+                className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
               />
               <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
                 [/]
@@ -704,6 +707,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                   key={entry.id}
                   entry={entry}
                   onSelect={handleCardSelect}
+                  onTagSelect={setSelectedTag}
                   isUserLoggedIn={!!user}
                 />
               ))}
