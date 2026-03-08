@@ -206,6 +206,7 @@
             Avoid the SENTINELS (red) and DATA MINES (pink).<br>
             Reach the KERNEL at the top to corrupt the system.
         </p>
+        <div id="highscore-display" style="font-size: 20px; color: var(--accent); margin-top: 16px; letter-spacing: 2px;"></div>
         <button class="btn" onclick="startGame()">INITIALIZE</button>
         <div class="controls-hint">
             Use <span class="key">←</span> <span class="key">→</span> to Move & <span class="key">SPACE</span> to Jump
@@ -242,6 +243,7 @@ let score = 0;
 let lives = 3;
 let level = 1;
 let frameCount = 0;
+let highScore = parseInt(localStorage.getItem('warren-highscore') || '0', 10);
 
 // Input Handling
 const keys = {
@@ -664,27 +666,38 @@ function winLevel() {
     }
 }
 
+function saveHighScore() {
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('warren-highscore', highScore);
+    }
+}
+
 function gameOver() {
     gameState = 'GAMEOVER';
+    saveHighScore();
     document.getElementById('end-title').innerText = "SYSTEM FAILURE";
     document.getElementById('end-title').style.color = "var(--danger)";
     document.getElementById('end-reason').innerText = "THE WARREN HAS ABSORBED YOU";
-    document.getElementById('final-score').innerText = "FINAL SCORE: " + score;
+    const hiText = highScore > 0 && score >= highScore ? ' — NEW RECORD' : '';
+    document.getElementById('final-score').innerText = "FINAL SCORE: " + score + hiText;
     document.getElementById('game-over-screen').classList.remove('hidden');
 }
 
 function gameWin() {
     gameState = 'WIN';
+    saveHighScore();
     document.getElementById('end-title').innerText = "SYSTEM CORRUPTED";
     document.getElementById('end-title').style.color = "var(--primary)";
     document.getElementById('end-reason').innerText = "OMNICRON DEFEATED. REALITY RESTORED.";
-    document.getElementById('final-score').innerText = "FINAL SCORE: " + score;
+    const hiText = highScore > 0 && score >= highScore ? ' — NEW RECORD' : '';
+    document.getElementById('final-score').innerText = "FINAL SCORE: " + score + hiText;
     document.getElementById('game-over-screen').classList.remove('hidden');
 }
 
 function updateHUD() {
     document.getElementById('score-display').innerText = `SCORE: ${score.toString().padStart(5, '0')}`;
-    document.getElementById('level-display').innerText = `WARREN LVL: 0${level}`;
+    document.getElementById('level-display').innerText = `WARREN LVL: ${String(level).padStart(2, '0')}`;
     document.getElementById('lives-display').innerText = `LIVES: ${lives}`;
     
     if (lives === 1) {
@@ -734,6 +747,12 @@ function loop() {
 // Initial Draw
 ctx.fillStyle = '#000';
 ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// Show stored high score on start screen
+(function() {
+    const el = document.getElementById('highscore-display');
+    if (el && highScore > 0) el.innerText = `BEST: ${highScore.toString().padStart(5, '0')}`;
+})();
 
 </script>
 </body>

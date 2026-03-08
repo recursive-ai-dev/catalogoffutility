@@ -146,7 +146,8 @@
     <!-- Game Over Screen -->
     <div id="game-over-screen" class="hidden">
         <h1 class="text-8xl font-bold mb-4 text-red-600" style="text-shadow: 0 0 20px red;">EGO SHATTERED</h1>
-        <p class="text-3xl text-white mb-4">FINAL SCORE: <span id="finalScore">0</span></p>
+        <p class="text-3xl text-white mb-2">FINAL SCORE: <span id="finalScore">0</span></p>
+        <p id="finalHighScore" class="text-lg mb-4" style="color: var(--accent); letter-spacing: 2px;"></p>
         <p class="text-xl text-gray-400 mb-8 italic">"Sticks and stones may break my bones, but words... words killed me."</p>
         <button class="btn" onclick="resetGame()">TRY AGAIN</button>
     </div>
@@ -208,13 +209,14 @@
             PLAYING: 1,
             GAMEOVER: 2
         };
-        
+
         let gameState = STATE.START;
         let score = 0;
         let wave = 1;
         let insultsDeflected = 0;
         let frameCount = 0;
         let shake = 0;
+        let highScore = parseInt(localStorage.getItem('offensive-letters-highscore') || '0', 10);
 
         // --- Entities ---
         const player = {
@@ -566,32 +568,27 @@
                 
                 // Draw Word
                 ctx.rotate(-this.rotation); // Keep text upright
-                ctx.fillStyle = '#fff';
                 ctx.font = `bold ${this.radius}px VT323`;
-                ctx.textAlign = 'center';
+                ctx.textAlign = 'left';
                 ctx.textBaseline = 'middle';
-                
+
                 // Highlight progress
                 const typed = this.word.substring(0, this.wordProgress);
                 const remaining = this.word.substring(this.wordProgress);
-                
+
                 const totalWidth = ctx.measureText(this.word).width;
                 const typedWidth = ctx.measureText(typed).width;
-                
-                ctx.fillStyle = '#555'; // Background text
-                ctx.fillText(this.word, 0, 0);
-                
-                ctx.fillStyle = '#fff'; // Typed text
-                ctx.fillText(typed, -totalWidth/2 + typedWidth/2, 0); // Rough centering logic fix needed? 
-                // Actually simpler: just draw the remaining part in red on top? No, draw typed in white.
-                
-                // Re-draw strategy for text:
-                // Clear rect? No, just draw.
-                ctx.fillStyle = '#ff0000';
-                ctx.fillText(remaining, 2, 2); // Shadow/Offset
-                
-                ctx.fillStyle = '#fff';
-                ctx.fillText(typed, 0, 0);
+                const startX = -totalWidth / 2;
+
+                // Draw typed portion in white, remaining in red — left-aligned from center
+                if (typed) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(typed, startX, 0);
+                }
+                if (remaining) {
+                    ctx.fillStyle = '#ff3333';
+                    ctx.fillText(remaining, startX + typedWidth, 0);
+                }
                 
                 // If locked, draw indicator
                 if (this.locked) {
@@ -645,8 +642,14 @@
 
         function endGame() {
             gameState = STATE.GAMEOVER;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('offensive-letters-highscore', highScore);
+            }
             document.getElementById('game-over-screen').classList.remove('hidden');
             document.getElementById('finalScore').innerText = score;
+            const hiEl = document.getElementById('finalHighScore');
+            if (hiEl) hiEl.innerText = highScore > 0 ? `RECORD: ${highScore}` : '';
         }
 
         function createFloatingText(text, x, y, color) {
