@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth, useAuthModal } from "./lib/auth";
@@ -199,7 +199,7 @@ const Card = React.memo(function Card({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      if (!isDisabled) onSelect();
+      if (!isDisabled) onSelect(entry);
     }
   };
 
@@ -366,6 +366,7 @@ const Card = React.memo(function Card({
 export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
   // it avoids the exhaustive-deps violation that useMemo([]) would produce.
@@ -380,8 +381,45 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
+
+  // "/" shortcut handler — only triggers when no modifier keys are pressed,
+  // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if composing (IME), modifier keys pressed, or not the "/" key
+      if (
+        e.isComposing ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.altKey ||
+        e.shiftKey ||
+        e.key !== "/"
+      ) {
+        return;
+      }
+
+      // Don't focus if focus is already in an input, textarea, or contentEditable element
+      const activeElement = document.activeElement;
+      const tagName = activeElement?.tagName;
+      const isContentEditable = activeElement?.isContentEditable;
+      if (
+        tagName === "INPUT" ||
+        tagName === "TEXTAREA" ||
+        isContentEditable
+      ) {
+        return;
+      }
+
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const showNotification = useCallback((msg: string) => {
     if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
@@ -401,18 +439,22 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
-  const filteredEntries = useMemo(
-    () =>
-      SEARCHABLE_ENTRIES.filter((entry) => {
-        const matchesSearch =
-          normalizedQuery === "" || entry.searchBlob.includes(normalizedQuery);
-        const matchesTag =
-          selectedTag === DEFAULT_TAG ||
-          (entry.tags && entry.tags.includes(selectedTag));
-        return matchesSearch && matchesTag;
-      }),
-    [normalizedQuery, selectedTag],
-  );
+  const filteredEntries = useMemo(() => {
+    // Short-circuit: if no search query and default tag, avoid O(N) iteration
+    // and return the pre-calculated searchable entries directly.
+    if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
+      return SEARCHABLE_ENTRIES;
+    }
+
+    return SEARCHABLE_ENTRIES.filter((entry) => {
+      const matchesSearch =
+        normalizedQuery === "" || entry.searchBlob.includes(normalizedQuery);
+      const matchesTag =
+        selectedTag === DEFAULT_TAG ||
+        (entry.tags && entry.tags.includes(selectedTag));
+      return matchesSearch && matchesTag;
+    });
+  }, [normalizedQuery, selectedTag]);
 
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
@@ -426,6 +468,33 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     },
     [user, showAuthModal, onSelectApp],
   );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        // Handle escape - could clear search or navigate back
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === "/" &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA" &&
+        !(document.activeElement as HTMLElement | null)?.isContentEditable
+      ) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
@@ -463,7 +532,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Time is already wasted.")}
           >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
+            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               schedule
             </span>
             <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
@@ -474,7 +543,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Memories purged.")}
           >
-            <span className="material-symbols-outlined text-white text-xl font-light">
+            <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
               delete
             </span>
             <span className="text-white font-light uppercase tracking-widest text-xs">
@@ -485,7 +554,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Giving up is not an option.")}
           >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
+            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               cancel
             </span>
             <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
@@ -497,7 +566,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Staring into the void...")}
           >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
+            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               block
             </span>
             <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
@@ -508,7 +577,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Exit mechanism destroyed.")}
           >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light">
+            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               warning
             </span>
             <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
@@ -557,10 +626,11 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors">
-              <span className="material-symbols-outlined text-base font-light">
+              <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
                 search
               </span>
               <input
+                ref={searchInputRef}
                 type="text"
                 aria-label="Search catalog entries"
                 placeholder="Search the void..."
@@ -568,6 +638,9 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1"
               />
+              <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+                [/]
+              </span>
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}

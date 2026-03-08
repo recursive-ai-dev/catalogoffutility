@@ -15,11 +15,30 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
     return () => clearTimeout(timer);
   }, []);
 
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !e.repeat) onBack();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onBack]);
+
   // Memoize paragraph splitting to avoid redundant string operations on every render.
   const paragraphs = useMemo(
     () => (app.longDescription ? app.longDescription.split("\n\n").filter(Boolean) : []),
     [app.longDescription],
   );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onBack();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onBack]);
 
   return (
     <div className="relative flex h-screen w-full bg-black font-sans text-white antialiased overflow-hidden">
@@ -56,9 +75,10 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
         <header className="shrink-0 flex items-center justify-between px-8 py-5 border-b border-white/10 bg-black/50 backdrop-blur-xl">
           <button
             onClick={onBack}
+            title="Back to catalog (Esc)"
             className="flex items-center gap-3 text-white/50 hover:text-white transition-colors group cursor-pointer"
           >
-            <span className="material-symbols-outlined !text-lg font-light transition-transform group-hover:-translate-x-1">
+            <span className="material-symbols-outlined !text-lg font-light transition-transform group-hover:-translate-x-1" aria-hidden="true">
               arrow_back
             </span>
             <span className="text-[10px] font-mono tracking-widest uppercase">
@@ -189,7 +209,7 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
 
             {/* Atmospheric warning */}
             <div className="flex items-start gap-3 mb-6 opacity-40">
-              <span className="material-symbols-outlined text-sm font-light text-white/60 mt-px shrink-0">
+              <span className="material-symbols-outlined text-sm font-light text-white/60 mt-px shrink-0" aria-hidden="true">
                 warning
               </span>
               <p className="text-[9px] font-mono text-white/40 leading-relaxed tracking-wide">
@@ -207,7 +227,7 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
             onClick={onEnter}
             className="w-full group relative h-13 bg-white/[0.03] border border-white/20 hover:border-white/50 hover:bg-white/8 transition-all duration-500 flex items-center justify-center gap-4 cursor-pointer rounded-full overflow-hidden py-4"
           >
-            <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light">
+            <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light" aria-hidden="true">
               play_circle
             </span>
             <span className="text-white/50 font-light tracking-[0.3em] text-[11px] uppercase group-hover:text-white transition-colors">

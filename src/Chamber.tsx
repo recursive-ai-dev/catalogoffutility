@@ -4,7 +4,17 @@ import { Clock, realClock } from "./lib/clock";
 
 const MAX_LOGS = 100;
 
-// Pre-compiled regex for safe data:image raster formats (blocks SVG/XSS).
+const HOTLINK_SCRIPT_TEMPLATE = `<script>
+  document.addEventListener('click', function(e) {
+    if (e.target.tagName === 'IMG') {
+      e.preventDefault();
+      // Use '*' as target origin because sandboxed iframes without 'allow-same-origin'
+      // have origin 'null', and window.location.origin would fail delivery.
+      window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, '*');
+    }
+  });
+</script>`;
+
 const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i;
 
 /**
@@ -18,23 +28,27 @@ function isSafeImageSrc(src: string): boolean {
   // Enforce a reasonable length limit (2MB) to prevent DoS via massive payloads.
   if (src.length > 2 * 1024 * 1024) return false;
 
-  // Performance optimization: check common prefixes before full URL parsing.
-  if (src.startsWith("data:")) {
-    return SAFE_DATA_URL_REGEX.test(src);
-  }
+  // Short-circuit common protocols to avoid expensive URL parsing overhead.
+  if (src.startsWith("https://") || src.startsWith("http://")) return true;
+  if (src.startsWith("data:")) return SAFE_DATA_URL_REGEX.test(src);
 
   try {
     const url = new URL(src);
     if (url.protocol === "https:") return true;
+    // Allow http: only for local development (localhost or 127.0.0.1)
     if (url.protocol === "http:") {
-      // Only allow local development hosts for http to ensure transport security
-      // for all production external assets (defense in depth).
       return url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    }
+    if (url.protocol === "data:") {
+      // Allow only common raster image formats; explicitly block image/svg+xml
+      // to mitigate potential XSS risks in certain rendering contexts.
+      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
     }
     return false;
   } catch {
-    return false;
+    // Parsing failed; reject.
   }
+  return false;
 }
 
 function appendLog(
@@ -115,6 +129,8 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
   const clkRef = useRef(clk);
   clkRef.current = clk;
 
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
   const iframeDocRef = useRef<Document | null>(null);
   const iframeClickHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
@@ -131,6 +147,20 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
   const handleModalKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Escape") setHotlinkedImage(null);
   }, []);
+
+  // Global Escape listener for navigation and modal closure
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.repeat) return;
+      if (hotlinkedImage) {
+        setHotlinkedImage(null);
+      } else {
+        onBack();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [hotlinkedImage, onBack]);
 
   // Cleanup injected iframe listener on Chamber unmount
   useEffect(() => {
@@ -171,6 +201,10 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       // Chain 8 (ImageHotlink): validate origin — only accept from same origin or null (srcdoc iframes)
       const isSameOrigin = e.origin === window.location.origin || e.origin === "null";
       if (!isSameOrigin) return;
+
+      // Verify that the message is coming from our own iframe to prevent spoofing
+      // from other windows or tabs (BUG-08b).
+      if (!iframeRef.current || e.source !== iframeRef.current.contentWindow) return;
 
       if (e.data && e.data.type === "IMAGE_CLICKED") {
         // Validate src: non-empty string with a safe image URL scheme (BUG-06)
@@ -217,12 +251,14 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
             const target = event.target as HTMLElement;
             if (target.tagName === "IMG") {
               event.preventDefault();
+              // Use '*' as target origin because sandboxed iframes without 'allow-same-origin'
+              // have origin 'null', and window.location.origin would fail delivery.
               window.parent.postMessage(
                 {
                   type: "IMAGE_CLICKED",
                   src: (target as HTMLImageElement).src,
                 },
-                window.location.origin,
+                "*",
               );
             }
           };
@@ -256,20 +292,13 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     console.log(`[Chamber] Fullscreen mode: ${!isFullscreen ? "ON" : "OFF"}`);
   };
 
-  // Chain 13 (HTMLContentInjection): memoize so string is only built when app.htmlContent changes
+  // Chain 13 (HTMLContentInjection): memoize so string is only built when app.htmlContent changes.
+  // Template is hoisted to module scope to avoid repeated string creation.
   const htmlContentWithScript = useMemo(() => {
     if (!app.htmlContent) return "";
-    const script = `<script>
-      document.addEventListener('click', function(e) {
-        if (e.target.tagName === 'IMG') {
-          e.preventDefault();
-          window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, window.location.origin);
-        }
-      });
-    </script>`;
     return app.htmlContent.includes("</body>")
-      ? app.htmlContent.replace("</body>", `${script}</body>`)
-      : app.htmlContent + script;
+      ? app.htmlContent.replace("</body>", `${HOTLINK_SCRIPT_TEMPLATE}</body>`)
+      : app.htmlContent + HOTLINK_SCRIPT_TEMPLATE;
   }, [app.htmlContent]);
 
   return (
@@ -287,6 +316,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
         <button
           className="flex items-center gap-6 text-white/70 hover:text-white cursor-pointer transition-colors group"
           onClick={onBack}
+          title="Back to product (Esc)"
           aria-label="Back to product page"
         >
           <div className="size-6 transition-transform group-hover:-translate-x-1">
@@ -304,7 +334,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
             onClick={() => setNoiseEnabled(!noiseEnabled)}
             className={`hidden md:flex items-center gap-3 text-[10px] font-mono tracking-widest uppercase px-4 py-2 rounded-full border transition-all duration-300 ${noiseEnabled ? "border-white/20 text-white bg-white/5" : "border-transparent text-white/40 hover:text-white hover:bg-white/5"}`}
           >
-            <span className="material-symbols-outlined text-sm font-light">
+            <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
               {noiseEnabled ? "grain" : "lens_blur"}
             </span>
             <span>NOISE</span>
@@ -322,7 +352,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               className="rounded border border-[#233f48] size-8 opacity-70 flex items-center justify-center bg-white/5"
               aria-hidden="true"
             >
-              <span className="material-symbols-outlined text-white/40 font-light text-sm">
+              <span className="material-symbols-outlined text-white/40 font-light text-sm" aria-hidden="true">
                 person
               </span>
             </div>
@@ -379,7 +409,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                   <>
                     <div className="absolute inset-0 opacity-20 mix-blend-luminosity" style={{background: "radial-gradient(ellipse at 60% 40%, #1a1a2e 0%, #0a0a0f 60%, #000 100%)"}}></div>
                     <div className="text-center z-10 space-y-6">
-                      <span className="material-symbols-outlined text-6xl text-white/20 animate-pulse font-light">
+                      <span className="material-symbols-outlined text-6xl text-white/20 animate-pulse font-light" aria-hidden="true">
                         visibility_off
                       </span>
                       <p className="text-white/40 font-mono text-xs tracking-widest uppercase leading-relaxed">
@@ -404,7 +434,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                   </>
                 ) : iframeError ? (
                   <div className="text-center z-10 space-y-6 max-w-md p-8 border border-red-900/30 bg-red-950/10 rounded-2xl backdrop-blur-md">
-                    <span className="material-symbols-outlined text-6xl text-red-500/40 font-light">
+                    <span className="material-symbols-outlined text-6xl text-red-500/40 font-light" aria-hidden="true">
                       error_outline
                     </span>
                     <p className="text-red-400/60 font-mono text-xs tracking-widest uppercase mb-4 leading-relaxed">
@@ -454,7 +484,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                     {iframeLoading && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
                         <div className="flex flex-col items-center gap-4">
-                          <span className="material-symbols-outlined text-4xl text-primary animate-spin">
+                          <span className="material-symbols-outlined text-4xl text-primary animate-spin" aria-hidden="true">
                             sync
                           </span>
                           <span className="text-primary/70 font-mono text-xs tracking-widest uppercase animate-pulse">
@@ -464,6 +494,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                       </div>
                     )}
                     <iframe
+                      ref={iframeRef}
                       src={app.url}
                       srcDoc={app.url ? undefined : htmlContentWithScript}
                       className="w-full h-full border-none bg-black"
@@ -492,7 +523,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
           <div className="p-8 border-b border-white/10 bg-white/5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-white/80 text-xs font-light tracking-widest uppercase flex items-center gap-3">
-                <span className="material-symbols-outlined text-white/60 text-base font-light">
+                <span className="material-symbols-outlined text-white/60 text-base font-light" aria-hidden="true">
                   ecg_heart
                 </span>
                 Psych_Stblty
@@ -524,7 +555,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                   className="text-white/40 hover:text-white transition-colors"
                   title={showLogs ? "Hide Logs" : "Show Logs"}
                 >
-                  <span className="material-symbols-outlined text-sm font-light">
+                  <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                     {showLogs ? "visibility" : "visibility_off"}
                   </span>
                 </button>
@@ -572,7 +603,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                 }
                 className="w-full flex items-center gap-3 text-white/30 hover:text-white/70 transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-sm font-light">lock</span>
+                <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">lock</span>
                 <span className="text-[10px] font-mono uppercase tracking-widest">
                   Transmission Blocked
                 </span>
@@ -590,7 +621,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                 }
                 className="w-full flex items-center gap-3 text-white/30 hover:text-white/70 transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-sm font-light">
+                <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                   add_circle
                 </span>
                 <span className="text-[10px] font-mono uppercase tracking-widest">Inject Log</span>
@@ -602,9 +633,10 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
           <div className="p-8 border-t border-white/10 bg-white/5">
             <button
               onClick={onBack}
+              title="Cease (Esc)"
               className="group w-full relative h-12 bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-all duration-300 overflow-hidden flex items-center justify-center gap-4 cursor-pointer rounded-full"
             >
-              <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light">
+              <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light" aria-hidden="true">
                 power_settings_new
               </span>
               <span className="text-white/50 font-light tracking-[0.2em] text-[10px] uppercase group-hover:text-white transition-colors">

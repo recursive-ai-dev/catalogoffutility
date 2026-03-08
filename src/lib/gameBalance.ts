@@ -326,7 +326,7 @@ export const SANITY_PENALTY_TABLE: SanityPenaltyBand[] = [
     basePenalty: 70, // floor of 70–100 random range
     dangerMultiplier: "dangerLevel",
     perfModFormula: "same",
-    variation: "±15 (70–100 roll)",
+    variation: "±20%",
     notes: "Endgame zones. Very high loss potential.",
   },
 ];

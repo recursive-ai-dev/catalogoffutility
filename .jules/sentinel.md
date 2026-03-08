@@ -7,3 +7,8 @@
 **Vulnerability:** Insecure image hotlinking via `postMessage` could lead to mixed-content warnings or insecure asset loading.
 **Learning:** Scheme validation should be specific; `http:` is only necessary for local development. Hoisting regex and using string prefix checks before full `URL` parsing reduces overhead in high-frequency event handlers.
 **Prevention:** Enforce `https:` for external assets and restrict `http:` to `localhost`/`127.0.0.1`. Use pre-compiled regex for `data:` URL validation.
+## 2025-05-22 - [Enhancement] Strengthened Iframe postMessage Validation
+
+**Vulnerability:** Weak `postMessage` validation only checked `origin`, allowing any window or tab on the same origin to trigger restricted UI logic (e.g., Asset Viewer) in the parent.
+**Learning:** `origin` validation is insufficient for sandboxed iframes when other tabs on the same origin might be malicious. `e.source` should be verified against the intended iframe's `contentWindow`.
+**Prevention:** Always verify `e.source === iframeRef.current.contentWindow` in addition to `e.origin` when handling messages from embedded iframes.
