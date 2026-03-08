@@ -605,6 +605,25 @@ describe('Chain 8 — ImageHotlink', () => {
     fireEvent.click(screen.getByText(/Asset_Viewer/i).closest('.fixed')!);
     await waitFor(() => expect(screen.queryByText(/Asset_Viewer/i)).toBeNull());
   });
+
+  it('isSafeImageSrc enhancement: protocol/format validation', async () => {
+    render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    const cases = [
+      { src: 'http://evil.com/x.jpg', ok: false }, { src: 'https://safe.com/x.jpg', ok: true },
+      { src: 'http://localhost:3000/x.jpg', ok: true }, { src: 'data:image/png;base64,abc', ok: true },
+      { src: 'data:image/svg+xml;base64,abc', ok: false },
+    ];
+    for (const { src, ok } of cases) {
+      act(() => { window.dispatchEvent(new MessageEvent('message', {
+        data: { type: 'IMAGE_CLICKED', src }, origin: window.location.origin,
+      })); });
+      if (ok) {
+        await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
+        fireEvent.click(screen.getByLabelText(/Close/i));
+        await waitFor(() => expect(screen.queryByText(/Asset_Viewer/i)).toBeNull());
+      } else expect(screen.queryByText(/Asset_Viewer/i)).toBeNull();
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

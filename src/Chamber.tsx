@@ -20,8 +20,9 @@ const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base6
 /**
  * Returns true only for URL schemes that are safe to render in an <img> src.
  * Blocks javascript:, vbscript:, blob:, and other non-media schemes.
- * Restricts data: URLs to safe raster formats (no SVG) to prevent potential XSS
- * and enforces a length limit to guard against client-side DoS (BUG-06b).
+ * Restricts data: URLs to safe raster formats (no SVG) to prevent potential XSS.
+ * Restricts http: to localhost/127.0.0.1 to prevent mixed-content warnings.
+ * Enforces a 2MB length limit to guard against client-side DoS.
  */
 function isSafeImageSrc(src: string): boolean {
   // Enforce a reasonable length limit (2MB) to prevent DoS via massive payloads.
