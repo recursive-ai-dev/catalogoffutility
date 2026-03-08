@@ -309,6 +309,11 @@ const Card = React.memo(function Card({
                   e.stopPropagation();
                   onTagSelect(tag);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation();
+                  }
+                }}
                 aria-label={`Filter by ${tag}`}
                 className="text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 border border-white/8 text-white/25 rounded-full hover:border-white/30 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
               >
