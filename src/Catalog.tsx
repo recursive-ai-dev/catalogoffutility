@@ -379,7 +379,28 @@ const Card = React.memo(function Card({
 });
 
 export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
-  // Global keyboard shortcut handler for search focus (/) and filter reset (Escape).
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  // Capture the exact time the catalog first mounted — displayed in system logs.
+  // useRef lazy-init is the correct React idiom for "compute once at mount";
+  // it avoids the exhaustive-deps violation that useMemo([]) would produce.
+  // useRef (not useMemo with []) avoids the exhaustive-deps lint violation while
+  // preserving mount-only semantics: the value is sampled once and never updates
+  // even if the `clock` prop changes (BUG-07).
+  const mountTimeRef = useRef<string | null>(null);
+  if (mountTimeRef.current === null) {
+    mountTimeRef.current = (clock ?? realClock).timeString();
+  }
+  const mountTime = mountTimeRef.current;
+  // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
+  const [notification, setNotification] = useState<string | null>(null);
+  const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { user } = useAuth();
+  const { showAuthModal } = useAuthModal();
+
+  // "/" shortcut handler — only triggers when no modifier keys are pressed,
+  // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.isComposing) return;
@@ -395,6 +416,10 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         return;
       }
 
+      // Don't focus if focus is already in an input, textarea, or contentEditable element
+      const activeElement = document.activeElement as HTMLElement | null;
+      const tagName = activeElement?.tagName;
+      const isContentEditable = activeElement?.isContentEditable;
       if (
         e.key === "/" &&
         !e.ctrlKey &&
@@ -435,13 +460,13 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     setSelectedTag(DEFAULT_TAG);
   }, []);
 
-  // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
   const filteredEntries = useMemo(() => {
+    // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
     if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
@@ -456,7 +481,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [normalizedQuery, selectedTag]);
+  }, [searchQuery, selectedTag]);
 
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
