@@ -54,7 +54,7 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect, useCallback, useMemo } = React;
+    const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
     const STORAGE_KEY = 'soul-mirror-v1';
 
@@ -176,7 +176,10 @@
     function loadVisited() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : {};
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) return {};
+        return parsed;
       } catch { return {}; }
     }
 
@@ -191,19 +194,26 @@
       const [shades, setShades] = useState([]);
       const [reflecting, setReflecting] = useState(false);
       const [visited, setVisited] = useState(loadVisited);
+      const timerIds = useRef([]);
 
       const handleSelect = useCallback((concept) => {
+        // Cancel any pending shade-reveal timers from the previous selection
+        timerIds.current.forEach(id => clearTimeout(id));
+        timerIds.current = [];
+
         setSelectedConcept(concept);
         setShades([]);
         setReflecting(true);
 
         const conceptShades = conceptData[concept]?.shades || [];
         conceptShades.forEach((shade, i) => {
-          setTimeout(() => {
+          const id = setTimeout(() => {
             setShades(prev => [...prev, shade]);
           }, 180 * (i + 1));
+          timerIds.current.push(id);
         });
-        setTimeout(() => setReflecting(false), 180 * conceptShades.length + 400);
+        const finalId = setTimeout(() => setReflecting(false), 180 * conceptShades.length + 400);
+        timerIds.current.push(finalId);
 
         // Persist visit with timestamp
         const now = Date.now();

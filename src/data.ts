@@ -216,7 +216,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     title: "WARREN: INVASION PROTOCOL",
     version: "v.1.0",
     description:
-      "Defend the warren. An arcade-style defense game with CRT aesthetics and neon decay. The invaders are relentless. Your ammunition is finite.",
+      "A CRT-aesthetic platformer across three levels of recursive architecture. Climb as the GLITCH. Evade SENTINELs and DATA MINEs. Reach the KERNEL. Your record is saved.",
     longDescription: `Climb or fall. The WARREN has no mercy.\n\nWARREN: INVASION PROTOCOL is a CRT-aesthetic platformer across three levels of recursive architecture. You are the GLITCH — a rogue signal navigating platforms, evading SENTINELS that patrol back and forth, and avoiding DATA MINES that hover in the void.\n\nUse the arrow keys to move. SPACE to jump. Reach the KERNEL at the top of each level to corrupt the system and advance. Lose all lives and the WARREN absorbs you.\n\nThe game tracks your score across levels. Surviving earns you points. Reaching the KERNEL earns more. Your personal record is saved — return to beat it.\n\nThe visual style draws from the degraded CRT displays and neon palettes of earlier computing. Scan lines flicker. The GLITCH leaves light trails. The WARREN is vast and hostile and beautiful in the dark.\n\nThree levels. Three chances. The KERNEL awaits.`,
     size: "21 KB",
     tags: ["Interactive", "Endless"],
@@ -257,7 +257,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     title: "NEXUS WAR",
     version: "v.1.0",
     description:
-      "A strategic board game of conflict and conquest. Crimson versus Azure. Move pieces, capture opponents, control the nexus. Turn-based warfare in a void.",
+      "A chess-variant of void warfare. Crimson versus Azure. Six piece types with distinct movement rules. Capture the opposing King. Turn-based. Fully deterministic.",
     longDescription: `Two factions. One board. A King to protect.\n\nNEXUS WAR is a turn-based chess-variant rendered in the aesthetic of void warfare. Crimson versus Azure. Each faction commands six piece types — King, Queen, Rook, Bishop, Knight, Pawn — each with its own movement rules. The objective is to capture the opposing King.\n\nThe game is fully deterministic. Pawns advance and promote. Bishops cut diagonals. Knights leap in their unmistakable L. Queens range across the void without limit. Valid moves are highlighted when you select a piece. The battle log records every capture.\n\nThe visual style is minimal: pieces rendered as symbolic glyphs on a void grid, factions in Crimson and Azure. The aesthetic serves the warfare. Nothing distracts from the board state.\n\nPlay across the board with another player or against yourself. Plan openings. Sacrifice pieces. Protect your King. The war continues until the crown falls.`,
     size: "65 KB",
     tags: ["Interactive", "Strategy"],

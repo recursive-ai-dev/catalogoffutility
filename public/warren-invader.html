@@ -243,7 +243,8 @@ let score = 0;
 let lives = 3;
 let level = 1;
 let frameCount = 0;
-let highScore = parseInt(localStorage.getItem('warren-highscore') || '0', 10);
+const _parsedHs = parseInt(localStorage.getItem('warren-highscore') || '0', 10);
+let highScore = Number.isNaN(_parsedHs) ? 0 : Math.max(0, _parsedHs);
 
 // Input Handling
 const keys = {
@@ -670,27 +671,29 @@ function saveHighScore() {
     if (score > highScore) {
         highScore = score;
         localStorage.setItem('warren-highscore', highScore);
+        return true;
     }
+    return false;
 }
 
 function gameOver() {
     gameState = 'GAMEOVER';
-    saveHighScore();
+    const isNewRecord = saveHighScore();
     document.getElementById('end-title').innerText = "SYSTEM FAILURE";
     document.getElementById('end-title').style.color = "var(--danger)";
     document.getElementById('end-reason').innerText = "THE WARREN HAS ABSORBED YOU";
-    const hiText = highScore > 0 && score >= highScore ? ' — NEW RECORD' : '';
+    const hiText = isNewRecord ? ' — NEW RECORD' : '';
     document.getElementById('final-score').innerText = "FINAL SCORE: " + score + hiText;
     document.getElementById('game-over-screen').classList.remove('hidden');
 }
 
 function gameWin() {
     gameState = 'WIN';
-    saveHighScore();
+    const isNewRecord = saveHighScore();
     document.getElementById('end-title').innerText = "SYSTEM CORRUPTED";
     document.getElementById('end-title').style.color = "var(--primary)";
     document.getElementById('end-reason').innerText = "OMNICRON DEFEATED. REALITY RESTORED.";
-    const hiText = highScore > 0 && score >= highScore ? ' — NEW RECORD' : '';
+    const hiText = isNewRecord ? ' — NEW RECORD' : '';
     document.getElementById('final-score').innerText = "FINAL SCORE: " + score + hiText;
     document.getElementById('game-over-screen').classList.remove('hidden');
 }
