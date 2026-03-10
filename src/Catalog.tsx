@@ -306,9 +306,6 @@ const Card = React.memo(function Card({
               <button
                 key={tag}
                 onClick={(e) => {
-              <button
-                key={tag}
-                onClick={(e) => {
                   e.stopPropagation();
                   onTagSelect(tag);
                 }}
@@ -416,10 +413,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         return;
       }
 
-      // Don't focus if focus is already in an input, textarea, or contentEditable element
-      const activeElement = document.activeElement as HTMLElement | null;
-      const tagName = activeElement?.tagName;
-      const isContentEditable = activeElement?.isContentEditable;
       if (
         e.key === "/" &&
         !e.ctrlKey &&
@@ -427,10 +420,8 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         !e.altKey &&
         !e.shiftKey
       ) {
-        // Don't focus if focus is already in an input, textarea, or contentEditable element
-        const activeElement = document.activeElement;
         const tagName = activeElement?.tagName;
-        const isContentEditable = (activeElement as HTMLElement)?.isContentEditable;
+        const isContentEditable = activeElement?.isContentEditable;
         if (
           tagName === "INPUT" ||
           tagName === "TEXTAREA" ||
@@ -496,15 +487,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     [user, showAuthModal, onSelectApp],
   );
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        // Handle escape - could clear search or navigate back
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
