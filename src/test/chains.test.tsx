@@ -375,18 +375,12 @@ describe('Chain 12 — BackNavigation', () => {
     const { container } = render(<App />);
     fireEvent.click(screen.getByText(firstNavigableEntry.title));
     fireEvent.click(screen.getByText(/Enter Chamber/i));
-    fireEvent.click(screen.getByText(/Initialize/i));
-
-    // In JSDOM, we must initialize to render the iframe and get its contentWindow
-    fireEvent.click(screen.getByText('Initialize'));
-    const iframe = container.querySelector('iframe')!;
 
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
     fireEvent.click(screen.getByText('Initialize'));
     const iframe = container.querySelector('iframe')!;
 
     // Trigger image modal
-    const iframe = screen.getByTitle(firstNavigableEntry.title) as HTMLIFrameElement;
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
@@ -646,8 +640,13 @@ describe('Chain 8 — ImageHotlink', () => {
       }));
     });
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
+  });
+
   it('isSafeImageSrc enhancement: protocol/format validation', async () => {
-    render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByText('Initialize'));
+    const iframe = container.querySelector('iframe')!;
+
     const cases = [
       { src: 'http://evil.com/x.jpg', ok: false }, { src: 'https://safe.com/x.jpg', ok: true },
       { src: 'http://localhost:3000/x.jpg', ok: true }, { src: 'data:image/png;base64,abc', ok: true },
@@ -655,7 +654,9 @@ describe('Chain 8 — ImageHotlink', () => {
     ];
     for (const { src, ok } of cases) {
       act(() => { window.dispatchEvent(new MessageEvent('message', {
-        data: { type: 'IMAGE_CLICKED', src }, origin: window.location.origin,
+        data: { type: 'IMAGE_CLICKED', src },
+        origin: window.location.origin,
+        source: iframe.contentWindow,
       })); });
       if (ok) {
         await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
