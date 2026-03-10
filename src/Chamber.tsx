@@ -132,6 +132,14 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
   clkRef.current = clk;
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom of logs
+  useEffect(() => {
+    if (showLogs && logsEndRef.current?.scrollIntoView) {
+      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [logs, showLogs]);
 
   // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
   const iframeDocRef = useRef<Document | null>(null);
@@ -583,6 +591,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                     </p>
                   </div>
                 ))}
+                <div ref={logsEndRef} />
               </div>
             ) : (
               <div className="flex-1 flex items-center justify-center font-mono text-[10px] tracking-widest text-white/20">
