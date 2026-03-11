@@ -15,6 +15,8 @@ export interface AppEntry {
   tech?: string[];
   htmlContent?: string;
   url?: string;
+  /** Custom sandbox attributes for the iframe (e.g., 'allow-scripts allow-forms'). Defaults to a safe restrictive set. */
+  sandbox?: string;
   /** If true, the entry is only accessible to authenticated users */
   requiresAuth?: boolean;
 }
