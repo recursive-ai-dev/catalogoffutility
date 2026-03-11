@@ -25,7 +25,9 @@ const SEARCHABLE_ENTRIES = CATALOG_ENTRIES.map((entry) => ({
   searchBlob: [
     entry.title,
     entry.description,
+    entry.version || "",
     ...(entry.tags || []),
+    ...(entry.tech || []),
   ].join(" ").toLowerCase(),
 }));
 

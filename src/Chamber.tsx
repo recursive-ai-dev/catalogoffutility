@@ -495,16 +495,20 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                         </div>
                       </div>
                     )}
-                    <iframe
-                      ref={iframeRef}
-                      src={app.url}
-                      srcDoc={app.url ? undefined : htmlContentWithScript}
-                      className="w-full h-full border-none bg-black"
-                      title={app.title}
-                      sandbox={app.url ? "allow-scripts allow-forms" : "allow-scripts"}
-                      onLoad={handleIframeLoad}
-                      onError={handleIframeError}
-                    />
+                      <iframe
+                        ref={iframeRef}
+                        src={app.url}
+                        srcDoc={app.url ? undefined : htmlContentWithScript}
+                        className="w-full h-full border-none bg-black"
+                        title={app.title}
+                        // Default to allow-scripts and allow-same-origin (if app.url)
+                        // This allows cross-origin communication when app.url is used from the same domain.
+                        // Without allow-same-origin, some local storage or origin-based APIs may fail.
+                        // For srcDoc, allow-same-origin is generally not allowed without a specific reason as it creates a loophole.
+                        sandbox={app.sandbox || (app.url ? "allow-scripts allow-forms allow-same-origin" : "allow-scripts")}
+                        onLoad={handleIframeLoad}
+                        onError={handleIframeError}
+                      />
                   </>
                 )}
               </div>
