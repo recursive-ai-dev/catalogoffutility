@@ -150,11 +150,16 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     if (e.key === "Escape") setHotlinkedImage(null);
   }, []);
 
+  // Keep hotlinkedImage in a ref for the global keydown listener to avoid
+  // re-registering the listener on every hotlink event (BUG-13).
+  const hotlinkedImageRef = useRef(hotlinkedImage);
+  hotlinkedImageRef.current = hotlinkedImage;
+
   // Global Escape listener for navigation and modal closure
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || e.repeat) return;
-      if (hotlinkedImage) {
+      if (hotlinkedImageRef.current) {
         setHotlinkedImage(null);
       } else {
         onBack();
@@ -162,7 +167,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [hotlinkedImage, onBack]);
+  }, [onBack]);
 
   // Cleanup injected iframe listener on Chamber unmount
   useEffect(() => {
