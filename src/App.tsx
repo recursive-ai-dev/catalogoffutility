@@ -22,23 +22,25 @@ function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
   const { user } = useAuth();
+  const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
 
   // Stabilize handlers to prevent unnecessary re-renders of memoized child components (e.g. Catalog).
+  // Depends on isLoggedIn rather than the full user object to avoid re-renders when profile fields change (BUG-12).
   const handleSelectApp = useCallback(
     (app: AppEntry) => {
       // Chain 2 (AppSelection): single authoritative guard — missing entries are never navigated to.
       // Auth-gated entries are also intercepted here so selectedApp never drifts to a value
       // the current user is not permitted to hold (LC-N).
       if (app.missing) return;
-      if (app.requiresAuth && !user) {
+      if (app.requiresAuth && !isLoggedIn) {
         showAuthModal();
         return;
       }
       setSelectedApp(app);
       setView("product");
     },
-    [user, showAuthModal],
+    [isLoggedIn, showAuthModal],
   );
 
   const handleEnterChamber = useCallback(() => {
@@ -64,18 +66,18 @@ function AppInner() {
 
   // Derive effective view at render time to prevent auth-gated pages from
   // flashing before the useEffect runs.
-  const isUnauthorized = !user && selectedApp?.requiresAuth;
+  const isUnauthorized = !isLoggedIn && selectedApp?.requiresAuth;
   const effectiveView = isUnauthorized ? "catalog" : view;
 
   // If a logged-out user somehow reaches a product or chamber view for an
   // auth-gated entry, synchronise the underlying view state so that logging
   // back in does not silently teleport them back to the gated page.
   useEffect(() => {
-    if (!user && selectedApp?.requiresAuth && view !== "catalog") {
+    if (!isLoggedIn && selectedApp?.requiresAuth && view !== "catalog") {
       setView("catalog");
       setSelectedApp(null);
     }
-  }, [user, selectedApp, view]);
+  }, [isLoggedIn, selectedApp, view]);
 
   // Use effectiveView in render (not raw `view`) so that auth-gated pages
   // never flash for a frame before the useEffect above fires on logout.
