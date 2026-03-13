@@ -24,21 +24,23 @@ function AppInner() {
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
 
-  // Stabilize handlers to prevent unnecessary re-renders of memoized child components (e.g. Catalog).
+  // Stabilize handlers by depending on derived primitives (isLoggedIn) instead of the full user object.
+  // This prevents the Catalog from re-rendering when irrelevant user profile properties change.
+  const isLoggedIn = !!user;
   const handleSelectApp = useCallback(
     (app: AppEntry) => {
       // Chain 2 (AppSelection): single authoritative guard — missing entries are never navigated to.
       // Auth-gated entries are also intercepted here so selectedApp never drifts to a value
       // the current user is not permitted to hold (LC-N).
       if (app.missing) return;
-      if (app.requiresAuth && !user) {
+      if (app.requiresAuth && !isLoggedIn) {
         showAuthModal();
         return;
       }
       setSelectedApp(app);
       setView("product");
     },
-    [user, showAuthModal],
+    [isLoggedIn, showAuthModal],
   );
 
   const handleEnterChamber = useCallback(() => {
