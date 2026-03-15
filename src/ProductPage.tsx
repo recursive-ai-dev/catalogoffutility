@@ -17,11 +17,13 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
 
   // Close on Escape
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.repeat) onBack();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !e.repeat) {
+        onBack();
+      }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onBack]);
 
   // Memoize paragraph splitting to avoid redundant string operations on every render.
@@ -29,16 +31,6 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
     () => (app.longDescription ? app.longDescription.split("\n\n").filter(Boolean) : []),
     [app.longDescription],
   );
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onBack();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onBack]);
 
   return (
     <div className="relative flex h-screen w-full bg-black font-sans text-white antialiased overflow-hidden">
