@@ -396,8 +396,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
 
-  // "/" shortcut handler — only triggers when no modifier keys are pressed,
-  // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
+  // Global keyboard shortcuts handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.isComposing) return;
@@ -412,6 +411,9 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         setSearchQuery("");
         return;
       }
+
+      const tagName = activeElement?.tagName;
+      const isContentEditable = activeElement?.isContentEditable;
 
       if (
         e.key === "/" &&
