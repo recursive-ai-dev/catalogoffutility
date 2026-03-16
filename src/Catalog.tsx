@@ -47,8 +47,16 @@ const FILTER_TAGS = [
 
 // Generates a deterministic two-letter avatar from a username/email
 function initials(name: string): string {
-  const parts = name.replace(/@.*/, "").split(/[._\-\s]+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  // Filter out empty parts to prevent crashes on inputs like ".."
+  const parts = name
+    .replace(/@.*/, "")
+    .split(/[._\-\s]+/)
+    .filter(Boolean);
+  if (parts.length >= 2) {
+    const first = parts[0]?.[0] || "";
+    const second = parts[1]?.[0] || "";
+    return (first + second).toUpperCase();
+  }
   return name.slice(0, 2).toUpperCase();
 }
 
@@ -405,7 +413,8 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
 
       const activeElement = document.activeElement as HTMLElement | null;
       const isInDialog =
-        activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') != null;
+        activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
+        null;
 
       if (isInDialog) return;
 
@@ -413,14 +422,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         setSearchQuery("");
         return;
       }
-
-      // Don't focus if focus is already in an input, textarea, or contentEditable element
-      const tagName = activeElement?.tagName;
-      const isContentEditable = activeElement?.isContentEditable;
-      const isInputFocused =
-        tagName === "INPUT" ||
-        tagName === "TEXTAREA" ||
-        isContentEditable;
 
       if (
         e.key === "/" &&
@@ -430,6 +431,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         !e.shiftKey &&
         !isInputFocused
       ) {
+        // Don't focus if focus is already in an input, textarea, or contentEditable element
         const tagName = activeElement?.tagName;
         const isContentEditable = activeElement?.isContentEditable;
         if (
