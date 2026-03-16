@@ -413,8 +413,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
       }
 
       const tagName = activeElement?.tagName;
-      const isContentEditable = activeElement?.isContentEditable;
-
+      const isContentEditable = (activeElement as HTMLElement | null)?.isContentEditable;
       if (
         e.key === "/" &&
         !e.ctrlKey &&
