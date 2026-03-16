@@ -5,4 +5,4 @@
 
 ## 2025-05-15 - Responsive Search with useDeferredValue
 **Learning:** In React 19, `useDeferredValue` is the optimal pattern for search filtering. It keeps the main thread responsive for user typing by deferring the heavy filtering computation to a non-blocking render pass. This is more efficient than debouncing as it renders the results as soon as the main thread is idle, rather than waiting for a fixed timeout.
-**Action:** Use `useDeferredValue` for all search-driven list filtering to prioritize input responsiveness.
+**Action:** Use `useDeferredValue` for expensive client-side search rendering to prioritize input responsiveness, and use debouncing/throttling when you need to reduce side effects such as API request frequency.
