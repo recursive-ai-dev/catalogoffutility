@@ -20,15 +20,18 @@ const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base6
 /**
  * Returns true only for URL schemes that are safe to render in an <img> src.
  * Blocks javascript:, vbscript:, blob:, and other non-media schemes.
- * Restricts data: URLs to safe raster formats (no SVG) to prevent potential XSS
- * and enforces a length limit to guard against client-side DoS (BUG-06b).
+ * Restricts data: URLs to safe raster formats (no SVG) to prevent potential XSS.
+ * Restricts http: to localhost/127.0.0.1 to prevent mixed-content warnings.
+ * Enforces a 2MB length limit to guard against client-side DoS.
  */
 function isSafeImageSrc(src: string): boolean {
   // Enforce a reasonable length limit (2MB) to prevent DoS via massive payloads.
   if (src.length > 2 * 1024 * 1024) return false;
 
   // Short-circuit common protocols to avoid expensive URL parsing overhead.
-  if (src.startsWith("https://") || src.startsWith("http://")) return true;
+  // We only short-circuit https: as it is always safe. http: must proceed
+  // to hostname validation to ensure it only points to localhost (BUG-06c).
+  if (src.startsWith("https://")) return true;
   if (src.startsWith("data:")) return SAFE_DATA_URL_REGEX.test(src);
 
   try {
@@ -129,6 +132,18 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
   clkRef.current = clk;
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom of logs
+  useEffect(() => {
+    if (!showLogs || !logsEndRef.current) return;
+    const prefersReducedMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    logsEndRef.current.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "end",
+    });
+  }, [logs, showLogs]);
 
   // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
   const iframeDocRef = useRef<Document | null>(null);
@@ -580,6 +595,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                     </p>
                   </div>
                 ))}
+                <div ref={logsEndRef} />
               </div>
             ) : (
               <div className="flex-1 flex items-center justify-center font-mono text-[10px] tracking-widest text-white/20">

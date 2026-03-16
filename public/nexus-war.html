@@ -21,6 +21,8 @@
       --p2: #3d9de0;
       --accent: #a855f7;
       --gold: #e8b830;
+      --valid: rgba(100, 220, 100, 0.25);
+      --valid-border: rgba(100, 220, 100, 0.6);
     }
     html, body {
       height: 100%;
@@ -37,58 +39,177 @@
 <body>
   <div id="root"></div>
   <script type="text/babel">
-    const { useState, useEffect, useCallback, useRef } = React;
+    const { useState, useCallback } = React;
 
     const GRID_SIZE = 8;
-    const PIECES = {
-      KING: 'K',
-      QUEEN: 'Q',
-      ROOK: 'R',
-      BISHOP: 'B',
-      KNIGHT: 'N',
-      PAWN: 'P'
-    };
+
+    function initBoard() {
+      const b = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
+      const backRow = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
+      for (let i = 0; i < 8; i++) {
+        b[0][i] = { type: backRow[i], player: 2 };
+        b[1][i] = { type: 'P', player: 2 };
+        b[6][i] = { type: 'P', player: 1 };
+        b[7][i] = { type: backRow[i], player: 1 };
+      }
+      return b;
+    }
+
+    function inBounds(r, c) {
+      return r >= 0 && r < GRID_SIZE && c >= 0 && c < GRID_SIZE;
+    }
+
+    // Slide in a direction, collecting moves until blocked
+    function slide(board, r, c, dr, dc, player) {
+      const moves = [];
+      let nr = r + dr, nc = c + dc;
+      while (inBounds(nr, nc)) {
+        const target = board[nr][nc];
+        if (!target) {
+          moves.push([nr, nc]);
+        } else {
+          if (target.player !== player) moves.push([nr, nc]); // capture
+          break;
+        }
+        nr += dr; nc += dc;
+      }
+      return moves;
+    }
+
+    function getValidMoves(board, r, c) {
+      const piece = board[r][c];
+      if (!piece) return [];
+      const { type, player } = piece;
+      const dir = player === 1 ? -1 : 1; // P1 moves up (decreasing row), P2 moves down
+      const moves = [];
+
+      if (type === 'P') {
+        // Move forward 1
+        const nr = r + dir;
+        if (inBounds(nr, c) && !board[nr][c]) {
+          moves.push([nr, c]);
+          // Move forward 2 from starting row
+          const startRow = player === 1 ? 6 : 1;
+          const nr2 = r + dir * 2;
+          if (r === startRow && inBounds(nr2, c) && !board[nr2][c]) {
+            moves.push([nr2, c]);
+          }
+        }
+        // Diagonal captures
+        for (const dc of [-1, 1]) {
+          const nc = c + dc;
+          if (inBounds(nr, nc) && board[nr][nc] && board[nr][nc].player !== player) {
+            moves.push([nr, nc]);
+          }
+        }
+        // Pawn promotion handled at move time — just allow it
+      } else if (type === 'R') {
+        for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+          moves.push(...slide(board, r, c, dr, dc, player));
+        }
+      } else if (type === 'B') {
+        for (const [dr, dc] of [[1,1],[1,-1],[-1,1],[-1,-1]]) {
+          moves.push(...slide(board, r, c, dr, dc, player));
+        }
+      } else if (type === 'Q') {
+        for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+          moves.push(...slide(board, r, c, dr, dc, player));
+        }
+      } else if (type === 'N') {
+        for (const [dr, dc] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]) {
+          const nr = r + dr, nc = c + dc;
+          if (inBounds(nr, nc) && (!board[nr][nc] || board[nr][nc].player !== player)) {
+            moves.push([nr, nc]);
+          }
+        }
+      } else if (type === 'K') {
+        for (const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]) {
+          const nr = r + dr, nc = c + dc;
+          if (inBounds(nr, nc) && (!board[nr][nc] || board[nr][nc].player !== player)) {
+            moves.push([nr, nc]);
+          }
+        }
+      }
+      return moves;
+    }
+
+    const PIECE_SYMBOLS = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙' };
+    const PIECE_NAMES = { K: 'KING', Q: 'QUEEN', R: 'ROOK', B: 'BISHOP', N: 'KNIGHT', P: 'PAWN' };
 
     function NexusWar() {
-      const [board, setBoard] = useState(() => {
-        const initialBoard = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
-        // Place pieces
-        const backRow = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
-        for (let i = 0; i < 8; i++) {
-          initialBoard[0][i] = { type: backRow[i], player: 2 };
-          initialBoard[1][i] = { type: 'P', player: 2 };
-          initialBoard[6][i] = { type: 'P', player: 1 };
-          initialBoard[7][i] = { type: backRow[i], player: 1 };
-        }
-        return initialBoard;
-      });
+      const [board, setBoard] = useState(initBoard);
       const [selectedCell, setSelectedCell] = useState(null);
+      const [validMoves, setValidMoves] = useState([]);
       const [currentPlayer, setCurrentPlayer] = useState(1);
-      const [gameStatus, setGameStatus] = useState('ACTIVE');
+      const [gameStatus, setGameStatus] = useState('ACTIVE'); // ACTIVE | WIN1 | WIN2
+      const [moveLog, setMoveLog] = useState([]);
 
-      const handleCellClick = (row, col) => {
+      const resetGame = useCallback(() => {
+        setBoard(initBoard());
+        setSelectedCell(null);
+        setValidMoves([]);
+        setCurrentPlayer(1);
+        setGameStatus('ACTIVE');
+        setMoveLog([]);
+      }, []);
+
+      const handleCellClick = useCallback((row, col) => {
+        if (gameStatus !== 'ACTIVE') return;
         const piece = board[row][col];
-        
+
         if (selectedCell) {
-          // Try to move
           const [sr, sc] = selectedCell;
-          if (board[sr][sc]?.player === currentPlayer) {
-            // Simple move validation (any empty or enemy cell)
-            if (!piece || piece.player !== currentPlayer) {
-              const newBoard = board.map(r => [...r]);
-              newBoard[row][col] = newBoard[sr][sc];
-              newBoard[sr][sc] = null;
-              setBoard(newBoard);
-              setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
-              setSelectedCell(null);
-              return;
+          const isValidMove = validMoves.some(([r, c]) => r === row && c === col);
+
+          if (isValidMove) {
+            const newBoard = board.map(r => r.map(c => c ? { ...c } : null));
+            const movingPiece = newBoard[sr][sc];
+            const captured = newBoard[row][col];
+
+            // Execute move
+            newBoard[row][col] = movingPiece;
+            newBoard[sr][sc] = null;
+
+            // Pawn promotion to Queen
+            if (movingPiece.type === 'P') {
+              if ((movingPiece.player === 1 && row === 0) || (movingPiece.player === 2 && row === 7)) {
+                newBoard[row][col] = { type: 'Q', player: movingPiece.player };
+              }
             }
+
+            // Log move
+            const logEntry = `${currentPlayer === 1 ? 'CRIMSON' : 'AZURE'}: ${PIECE_NAMES[movingPiece.type]} ${String.fromCharCode(65 + sc)}${8 - sr} → ${String.fromCharCode(65 + col)}${8 - row}${captured ? ' ×' + captured.type : ''}`;
+
+            // Check win: did we capture a king?
+            let newStatus = 'ACTIVE';
+            if (captured && captured.type === 'K') {
+              newStatus = currentPlayer === 1 ? 'WIN1' : 'WIN2';
+            }
+
+            setBoard(newBoard);
+            setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
+            setSelectedCell(null);
+            setValidMoves([]);
+            setGameStatus(newStatus);
+            setMoveLog(prev => [logEntry, ...prev].slice(0, 10));
+          } else if (piece && piece.player === currentPlayer && !(row === sr && col === sc)) {
+            // Select a different piece of the same player
+            const moves = getValidMoves(board, row, col);
+            setSelectedCell([row, col]);
+            setValidMoves(moves);
+          } else {
+            // Deselect
+            setSelectedCell(null);
+            setValidMoves([]);
           }
-          setSelectedCell(null);
         } else if (piece && piece.player === currentPlayer) {
+          const moves = getValidMoves(board, row, col);
           setSelectedCell([row, col]);
+          setValidMoves(moves);
         }
-      };
+      }, [board, selectedCell, validMoves, currentPlayer, gameStatus]);
+
+      const isValidTarget = (r, c) => validMoves.some(([vr, vc]) => vr === r && vc === c);
 
       return (
         <div style={{
@@ -97,78 +218,169 @@
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '1rem'
+          padding: '1rem',
+          gap: '0.75rem'
         }}>
           <h1 style={{
-            fontSize: '2rem',
+            fontSize: '1.75rem',
             fontWeight: 600,
             letterSpacing: '0.2em',
-            marginBottom: '1rem',
             color: 'var(--gold)'
           }}>NEXUS WAR</h1>
-          
+
+          {/* Status bar */}
           <div style={{
-            marginBottom: '1rem',
             padding: '0.5rem 1.5rem',
             background: 'var(--panel)',
-            border: '1px solid var(--border)',
+            border: `1px solid ${gameStatus === 'ACTIVE' ? 'var(--border)' : 'var(--gold)'}`,
             borderRadius: '4px',
             fontFamily: "'Share Tech Mono', monospace",
             fontSize: '0.75rem',
-            letterSpacing: '0.1em'
+            letterSpacing: '0.12em',
+            color: gameStatus === 'ACTIVE' ? 'var(--text)' : 'var(--gold)',
+            animation: gameStatus !== 'ACTIVE' ? 'pulse 1s infinite' : 'none',
+            textAlign: 'center'
           }}>
-            PLAYER {currentPlayer} | {currentPlayer === 1 ? 'CRIMSON' : 'AZURE'}
+            {gameStatus === 'ACTIVE'
+              ? `PLAYER ${currentPlayer} | ${currentPlayer === 1 ? 'CRIMSON' : 'AZURE'} TO MOVE`
+              : gameStatus === 'WIN1' ? 'CRIMSON WINS — KING FALLS' : 'AZURE WINS — KING FALLS'
+            }
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
-            gap: '2px',
-            padding: '1rem',
-            background: 'var(--panel)',
-            border: '2px solid var(--border)',
-            borderRadius: '8px'
-          }}>
-            {board.map((row, ri) =>
-              row.map((cell, ci) => {
-                const isSelected = selectedCell && selectedCell[0] === ri && selectedCell[1] === ci;
-                const isLight = (ri + ci) % 2 === 0;
-                return (
-                  <div
-                    key={`${ri}-${ci}`}
-                    onClick={() => handleCellClick(ri, ci)}
-                    style={{
-                      width: '3rem',
-                      height: '3rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: isSelected 
-                        ? 'var(--accent)' 
-                        : isLight ? 'var(--surface)' : 'var(--panel)',
-                      border: isSelected ? '2px solid var(--gold)' : '1px solid var(--border)',
-                      cursor: 'pointer',
-                      fontSize: '1.25rem',
-                      color: cell?.player === 1 ? 'var(--p1)' : 'var(--p2)',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    {cell?.type || ''}
-                  </div>
-                );
-              })
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+            {/* Board */}
+            <div>
+              {/* Column labels */}
+              <div style={{ display: 'flex', paddingLeft: '1.5rem', marginBottom: '2px' }}>
+                {['A','B','C','D','E','F','G','H'].map(l => (
+                  <div key={l} style={{ width: '2.75rem', textAlign: 'center', fontSize: '0.55rem', color: 'var(--muted)', fontFamily: "'Share Tech Mono', monospace" }}>{l}</div>
+                ))}
+              </div>
+              <div style={{ display: 'flex' }}>
+                {/* Row labels */}
+                <div style={{ display: 'flex', flexDirection: 'column', marginRight: '2px' }}>
+                  {[8,7,6,5,4,3,2,1].map(n => (
+                    <div key={n} style={{ height: '2.75rem', width: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', color: 'var(--muted)', fontFamily: "'Share Tech Mono', monospace" }}>{n}</div>
+                  ))}
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${GRID_SIZE}, 2.75rem)`,
+                  gridTemplateRows: `repeat(${GRID_SIZE}, 2.75rem)`,
+                  gap: '1px',
+                  padding: '0.5rem',
+                  background: 'var(--panel)',
+                  border: '2px solid var(--border)',
+                  borderRadius: '6px'
+                }}>
+                  {board.map((row, ri) =>
+                    row.map((cell, ci) => {
+                      const isSelected = selectedCell && selectedCell[0] === ri && selectedCell[1] === ci;
+                      const isValid = isValidTarget(ri, ci);
+                      const isCapture = isValid && !!cell;
+                      const isLight = (ri + ci) % 2 === 0;
+                      return (
+                        <div
+                          key={`${ri}-${ci}`}
+                          onClick={() => handleCellClick(ri, ci)}
+                          style={{
+                            width: '2.75rem',
+                            height: '2.75rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: isSelected
+                              ? 'rgba(168,85,247,0.4)'
+                              : isCapture
+                              ? 'rgba(224,72,72,0.25)'
+                              : isValid
+                              ? 'var(--valid)'
+                              : isLight ? 'var(--surface)' : 'var(--panel)',
+                            border: isSelected
+                              ? '2px solid var(--accent)'
+                              : isCapture
+                              ? '2px solid rgba(224,72,72,0.7)'
+                              : isValid
+                              ? '1px solid var(--valid-border)'
+                              : '1px solid var(--border)',
+                            cursor: (cell?.player === currentPlayer || isValid) ? 'pointer' : 'default',
+                            fontSize: '1.4rem',
+                            color: cell?.player === 1 ? 'var(--p1)' : 'var(--p2)',
+                            transition: 'background 0.1s ease',
+                            position: 'relative',
+                            userSelect: 'none'
+                          }}
+                        >
+                          {cell ? PIECE_SYMBOLS[cell.type] : ''}
+                          {isValid && !cell && (
+                            <div style={{
+                              position: 'absolute',
+                              width: '0.5rem',
+                              height: '0.5rem',
+                              borderRadius: '50%',
+                              background: 'rgba(100,220,100,0.5)'
+                            }} />
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Move log */}
+            <div style={{
+              width: '9rem',
+              background: 'var(--panel)',
+              border: '1px solid var(--border)',
+              borderRadius: '6px',
+              padding: '0.5rem',
+              fontFamily: "'Share Tech Mono', monospace",
+              fontSize: '0.5rem',
+              color: 'var(--muted)',
+              letterSpacing: '0.05em',
+              maxHeight: '16rem',
+              overflow: 'hidden'
+            }}>
+              <div style={{ color: 'var(--text)', fontSize: '0.55rem', marginBottom: '0.4rem', letterSpacing: '0.1em' }}>BATTLE LOG</div>
+              {moveLog.length === 0
+                ? <div>— awaiting moves —</div>
+                : moveLog.map((entry, i) => (
+                    <div key={i} style={{ marginBottom: '0.25rem', opacity: i === 0 ? 1 : 0.6 - i * 0.05, lineHeight: 1.3 }}>{entry}</div>
+                  ))
+              }
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <p style={{
+              color: 'var(--muted)',
+              fontFamily: "'Share Tech Mono', monospace",
+              fontSize: '0.55rem',
+              letterSpacing: '0.12em'
+            }}>
+              SELECT PIECE → HIGHLIGHTED SQUARES TO MOVE
+            </p>
+            {gameStatus !== 'ACTIVE' && (
+              <button
+                onClick={resetGame}
+                style={{
+                  background: 'none',
+                  border: '1px solid var(--gold)',
+                  color: 'var(--gold)',
+                  padding: '0.25rem 0.75rem',
+                  fontFamily: "'Share Tech Mono', monospace",
+                  fontSize: '0.6rem',
+                  letterSpacing: '0.15em',
+                  cursor: 'pointer',
+                  borderRadius: '3px'
+                }}
+              >
+                NEW CONFLICT
+              </button>
             )}
           </div>
-
-          <p style={{
-            marginTop: '1.5rem',
-            color: 'var(--muted)',
-            fontFamily: "'Share Tech Mono', monospace",
-            fontSize: '0.625rem',
-            letterSpacing: '0.15em'
-          }}>
-            SELECT PIECE → MOVE TO EMPTY OR CAPTURE
-          </p>
         </div>
       );
     }

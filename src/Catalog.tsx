@@ -157,10 +157,12 @@ const UserSection = React.memo(function UserSection() {
 const Card = React.memo(function Card({
   entry,
   onSelect,
+  onTagSelect,
   isUserLoggedIn,
 }: {
   entry: AppEntry;
   onSelect: (entry: AppEntry) => void;
+  onTagSelect: (tag: string) => void;
   isUserLoggedIn: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -301,12 +303,22 @@ const Card = React.memo(function Card({
         {entry.tags && entry.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {entry.tags.map((tag) => (
-              <span
+              <button
                 key={tag}
-                className="text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 border border-white/8 text-white/25 rounded-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagSelect(tag);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.stopPropagation();
+                  }
+                }}
+                aria-label={`Filter by ${tag}`}
+                className="text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 border border-white/8 text-white/25 rounded-full hover:border-white/30 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
               >
                 {tag}
-              </span>
+              </button>
             ))}
           </div>
         )}
@@ -384,36 +396,44 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
 
-  // "/" shortcut handler — only triggers when no modifier keys are pressed,
-  // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
+  // Global keyboard shortcuts handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if composing (IME), modifier keys pressed, or not the "/" key
-      if (
-        e.isComposing ||
-        e.ctrlKey ||
-        e.metaKey ||
-        e.altKey ||
-        e.shiftKey ||
-        e.key !== "/"
-      ) {
+      if (e.isComposing) return;
+
+      const activeElement = document.activeElement as HTMLElement | null;
+      const isInDialog =
+        activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') != null;
+
+      if (isInDialog) return;
+
+      if (e.key === "Escape") {
+        setSearchQuery("");
         return;
       }
 
-      // Don't focus if focus is already in an input, textarea, or contentEditable element
-      const activeElement = document.activeElement;
       const tagName = activeElement?.tagName;
       const isContentEditable = (activeElement as HTMLElement | null)?.isContentEditable;
       if (
-        tagName === "INPUT" ||
-        tagName === "TEXTAREA" ||
-        isContentEditable
+        e.key === "/" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !e.shiftKey
       ) {
-        return;
-      }
+        const tagName = activeElement?.tagName;
+        const isContentEditable = activeElement?.isContentEditable;
+        if (
+          activeElement?.tagName === "INPUT" ||
+          activeElement?.tagName === "TEXTAREA" ||
+          activeElement?.isContentEditable
+        ) {
+          return;
+        }
 
-      e.preventDefault();
-      searchInputRef.current?.focus();
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -432,13 +452,13 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     setSelectedTag(DEFAULT_TAG);
   }, []);
 
-  // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
   const filteredEntries = useMemo(() => {
+    // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
     if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
@@ -453,7 +473,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [normalizedQuery, selectedTag]);
+  }, [searchQuery, selectedTag]);
 
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
@@ -503,7 +523,15 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => showNotification("Time is already wasted.")}
+            onClick={() => {
+              const navigable = CATALOG_ENTRIES.filter(e => !e.missing && (!e.requiresAuth || user));
+              if (navigable.length > 0) {
+                const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
+                onSelectApp(randomApp);
+              } else {
+                showNotification("No path found in the void.");
+              }
+            }}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               schedule
@@ -514,7 +542,10 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           </button>
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => showNotification("Memories purged.")}
+            onClick={() => {
+              resetFilters();
+              showNotification("Memories purged.");
+            }}
           >
             <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
               delete
@@ -605,11 +636,11 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               <input
                 ref={searchInputRef}
                 type="text"
-                aria-label="Search catalog entries"
+                aria-label="Search catalog entries (Press / to focus)"
                 placeholder="Search the void..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1"
+                className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
               />
               <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
                 [/]
@@ -695,6 +726,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                   key={entry.id}
                   entry={entry}
                   onSelect={handleCardSelect}
+                  onTagSelect={setSelectedTag}
                   isUserLoggedIn={!!user}
                 />
               ))}

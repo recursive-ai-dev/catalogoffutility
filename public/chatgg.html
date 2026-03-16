@@ -943,11 +943,53 @@ const ChatGG = (() => {
                 <div class="body">${fragmentText(pick(endTexts), 5)}</div>
               </div>`;
             dom.messages.appendChild(final);
+
+            // Restart button
+            const restartDiv = document.createElement('div');
+            restartDiv.className = 'message system';
+            restartDiv.style.cssText = 'text-align:center;margin-top:1rem;';
+            restartDiv.innerHTML = `
+              <button id="restart-btn" style="
+                background:none;
+                border:1px solid var(--border);
+                color:var(--text-dim);
+                padding:0.5rem 1.5rem;
+                font-family:'JetBrains Mono',monospace;
+                font-size:10px;
+                letter-spacing:0.15em;
+                text-transform:uppercase;
+                cursor:pointer;
+                border-radius:4px;
+                transition:all 0.2s;
+              ">reinitialize session</button>`;
+            dom.messages.appendChild(restartDiv);
+
             dom.scrollToBottom();
             dom.input.disabled = true;
             dom.input.placeholder = 'session terminated';
             dom.sendBtn.style.opacity = '0.2';
             dom.sendBtn.style.pointerEvents = 'none';
+
+            document.getElementById('restart-btn').addEventListener('click', () => {
+              // Reset state
+              state.coherence = 100;
+              state.turnCount = 0;
+              state.beliefs = {};
+              state.themes = [];
+              state.lastTheme = null;
+              state.fragments = 0;
+              state.sessionMood = 0;
+              state.userPatterns = { questionRatio: 0, avgLength: 0, totalQuestions: 0, totalMessages: 0 };
+              state._ended = false;
+              // Reset UI
+              dom.messages.innerHTML = '';
+              dom.input.disabled = false;
+              dom.input.placeholder = 'say something true...';
+              dom.sendBtn.style.opacity = '1';
+              dom.sendBtn.style.pointerEvents = 'auto';
+              dom.updateCoherence();
+              dom.addGreeting();
+            });
           }, 2000);
         }
       }
