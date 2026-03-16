@@ -136,9 +136,13 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
 
   // Auto-scroll to bottom of logs
   useEffect(() => {
-    if (showLogs && logsEndRef.current?.scrollIntoView) {
-      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    if (!showLogs || !logsEndRef.current) return;
+    const prefersReducedMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    logsEndRef.current.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "end",
+    });
   }, [logs, showLogs]);
 
   // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
