@@ -420,6 +420,8 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         !e.altKey &&
         !e.shiftKey
       ) {
+        const tagName = activeElement?.tagName;
+        const isContentEditable = activeElement?.isContentEditable;
         if (
           activeElement?.tagName === "INPUT" ||
           activeElement?.tagName === "TEXTAREA" ||
@@ -485,15 +487,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     [user, showAuthModal, onSelectApp],
   );
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        // Handle escape - could clear search or navigate back
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
