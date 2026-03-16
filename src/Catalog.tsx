@@ -54,19 +54,18 @@ const FILTER_TAGS = [
   "Horror",
 ];
 
-// Generates a deterministic two-letter avatar from a username/email
+// Generates a deterministic two-letter avatar from a username/email.
+// Optimized to use a single regex match for initials extraction while preserving
+// underscore/dot/dash boundaries, reducing multiple array allocations.
 function initials(name: string): string {
-  // Filter out empty parts to prevent crashes on inputs like ".."
-  const parts = name
-    .replace(/@.*/, "")
-    .split(/[._\-\s]+/)
-    .filter(Boolean);
-  if (parts.length >= 2) {
-    const first = parts[0]?.[0] || "";
-    const second = parts[1]?.[0] || "";
-    return (first + second).toUpperCase();
+  const username = name.split("@")[0] || "";
+  // Match any word character that is either at the start of the string
+  // or immediately preceded by a separator (., _, -, or space).
+  const matches = username.match(/(?:^|[._\-\s])(\w)/g);
+  if (matches && matches.length >= 2) {
+    return (matches[0].replace(/[._\-\s]/, "") + matches[1].replace(/[._\-\s]/, "")).toUpperCase();
   }
-  return name.slice(0, 2).toUpperCase();
+  return username.slice(0, 2).toUpperCase();
 }
 
 const UserSection = React.memo(function UserSection() {
@@ -394,7 +393,7 @@ const Card = React.memo(function Card({
 
 export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const deferredQuery = React.useDeferredValue(searchQuery);
+  const deferredSearchQuery = React.useDeferredValue(searchQuery);
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
@@ -440,8 +439,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         !e.ctrlKey &&
         !e.metaKey &&
         !e.altKey &&
-        !e.shiftKey &&
-        !isInputFocused
+        !e.shiftKey
       ) {
         // Don't focus if focus is already in an input, textarea, or contentEditable element
         const tagName = activeElement?.tagName;
