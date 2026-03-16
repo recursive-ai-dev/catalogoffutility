@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect, useDeferredValue } from "react";
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth, useAuthModal } from "./lib/auth";
@@ -25,7 +25,9 @@ const SEARCHABLE_ENTRIES = CATALOG_ENTRIES.map((entry) => ({
   searchBlob: [
     entry.title,
     entry.description,
+    entry.version || "",
     ...(entry.tags || []),
+    ...(entry.tech || []),
   ].join(" ").toLowerCase(),
 }));
 
@@ -47,8 +49,16 @@ const FILTER_TAGS = [
 
 // Generates a deterministic two-letter avatar from a username/email
 function initials(name: string): string {
-  const parts = name.replace(/@.*/, "").split(/[._\-\s]+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  // Filter out empty parts to prevent crashes on inputs like ".."
+  const parts = name
+    .replace(/@.*/, "")
+    .split(/[._\-\s]+/)
+    .filter(Boolean);
+  if (parts.length >= 2) {
+    const first = parts[0]?.[0] || "";
+    const second = parts[1]?.[0] || "";
+    return (first + second).toUpperCase();
+  }
   return name.slice(0, 2).toUpperCase();
 }
 
@@ -397,7 +407,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
 
-  // "/" shortcut handler — only triggers when no modifier keys are pressed,
+  // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -405,7 +415,8 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
 
       const activeElement = document.activeElement as HTMLElement | null;
       const isInDialog =
-        activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') != null;
+        activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
+        null;
 
       if (isInDialog) return;
 
@@ -419,15 +430,16 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         !e.ctrlKey &&
         !e.metaKey &&
         !e.altKey &&
-        !e.shiftKey
+        !e.shiftKey &&
+        !isInputFocused
       ) {
         // Don't focus if focus is already in an input, textarea, or contentEditable element
         const tagName = activeElement?.tagName;
         const isContentEditable = activeElement?.isContentEditable;
         if (
-          tagName === "INPUT" ||
-          tagName === "TEXTAREA" ||
-          isContentEditable
+          activeElement?.tagName === "INPUT" ||
+          activeElement?.tagName === "TEXTAREA" ||
+          activeElement?.isContentEditable
         ) {
           return;
         }
@@ -456,10 +468,10 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
-  // React 19: useDeferredValue for searchQuery prioritizes input responsiveness.
+  // Optimized with useDeferredValue to keep input responsive during heavy filtering.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredQuery.trim().toLowerCase();
+    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
 
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
@@ -475,7 +487,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredQuery, selectedTag]);
+  }, [deferredSearchQuery, selectedTag]);
 
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
@@ -489,6 +501,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     },
     [user, showAuthModal, onSelectApp],
   );
+
 
   // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
@@ -524,7 +537,15 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => showNotification("Time is already wasted.")}
+            onClick={() => {
+              const navigable = CATALOG_ENTRIES.filter(e => !e.missing && (!e.requiresAuth || user));
+              if (navigable.length > 0) {
+                const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
+                onSelectApp(randomApp);
+              } else {
+                showNotification("No path found in the void.");
+              }
+            }}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               schedule
@@ -535,7 +556,10 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           </button>
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => showNotification("Memories purged.")}
+            onClick={() => {
+              resetFilters();
+              showNotification("Memories purged.");
+            }}
           >
             <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
               delete
