@@ -139,7 +139,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     if (!showLogs || !logsEndRef.current) return;
     const prefersReducedMotion =
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    logsEndRef.current.scrollIntoView({
+    logsEndRef.current?.scrollIntoView?.({
       behavior: prefersReducedMotion ? "auto" : "smooth",
       block: "end",
     });
