@@ -380,10 +380,8 @@ describe('Chain 12 — BackNavigation', () => {
     const { container } = render(<App />);
     fireEvent.click(screen.getByText(firstNavigableEntry.title));
     fireEvent.click(screen.getByText(/Enter Chamber/i));
-
-    // Initialize the Chamber so the iframe is rendered
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
-    fireEvent.click(screen.getByText('Initialize'));
+    fireEvent.click(screen.getByText(/Initialize/i));
     const iframe = container.querySelector('iframe') as HTMLIFrameElement;
 
     // Trigger image modal
@@ -662,15 +660,11 @@ describe('Chain 8 — ImageHotlink', () => {
     ];
 
     for (const { src, ok } of cases) {
-      act(() => {
-        window.dispatchEvent(
-          new MessageEvent('message', {
-            data: { type: 'IMAGE_CLICKED', src },
-            origin: window.location.origin,
-            source: iframe.contentWindow,
-          }),
-        );
-      });
+      act(() => { window.dispatchEvent(new MessageEvent('message', {
+        data: { type: 'IMAGE_CLICKED', src },
+        origin: window.location.origin,
+        source: iframe.contentWindow,
+      })); });
       if (ok) {
         await waitFor(() =>
           expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy(),

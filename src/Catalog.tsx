@@ -387,7 +387,7 @@ const Card = React.memo(function Card({
 
 export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const deferredQuery = React.useDeferredValue(searchQuery);
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
