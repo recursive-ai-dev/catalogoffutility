@@ -380,16 +380,17 @@ describe('Chain 12 — BackNavigation', () => {
     const { container } = render(<App />);
     fireEvent.click(screen.getByText(firstNavigableEntry.title));
     fireEvent.click(screen.getByText(/Enter Chamber/i));
+
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
-    fireEvent.click(screen.getByText(/Initialize/i));
-    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    fireEvent.click(screen.getByText('Initialize'));
+    const iframeEl = container.querySelector('iframe')! as HTMLIFrameElement;
 
     // Trigger image modal
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
         origin: window.location.origin,
-        source: iframe.contentWindow,
+        source: iframeEl.contentWindow,
       }));
     });
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy(), { timeout: 2000 });
@@ -676,6 +677,7 @@ describe('Chain 8 — ImageHotlink', () => {
       } else expect(screen.queryByText(/Asset_Viewer/i)).toBeNull();
     }
   });
+
 });
 
 // ---------------------------------------------------------------------------

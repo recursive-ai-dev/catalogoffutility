@@ -1,4 +1,11 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect, useDeferredValue } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  useEffect,
+  useDeferredValue,
+} from "react";
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth, useAuthModal } from "./lib/auth";
@@ -425,6 +432,9 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         return;
       }
 
+      const tagName = activeElement?.tagName;
+      const isContentEditable = activeElement?.isContentEditable;
+
       if (
         e.key === "/" &&
         !e.ctrlKey &&
@@ -468,7 +478,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
-  // Optimized with useDeferredValue to keep input responsive during heavy filtering.
+  // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
     const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
@@ -489,17 +499,18 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     });
   }, [deferredSearchQuery, selectedTag]);
 
+  const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
       if (entry.missing) return;
       // Auth-gated entries open the auth modal for unauthenticated users
-      if (entry.requiresAuth && !user) {
+      if (entry.requiresAuth && !isLoggedIn) {
         showAuthModal();
         return;
       }
       onSelectApp(entry);
     },
-    [user, showAuthModal, onSelectApp],
+    [isLoggedIn, showAuthModal, onSelectApp],
   );
 
 
