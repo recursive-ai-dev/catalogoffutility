@@ -30,16 +30,6 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
     [app.longDescription],
   );
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onBack();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onBack]);
-
   return (
     <div className="relative flex h-screen w-full bg-black font-sans text-white antialiased overflow-hidden">
       {/* Atmospheric Background */}
