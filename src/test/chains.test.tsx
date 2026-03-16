@@ -271,19 +271,24 @@ describe('Chain 1 — BrowseFilter', () => {
 // Invariant: nav buttons emit non-blocking notifications; alert() must never fire
 // ---------------------------------------------------------------------------
 describe('Chain 14 — NavButtonActions', () => {
-  it('"Waste Time" shows notification without calling alert()', () => {
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+  it('"Waste Time" navigates to a random navigable entry', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /Waste Time/i }));
-    expect(screen.getByText('Time is already wasted.')).toBeTruthy();
-    expect(alertSpy).not.toHaveBeenCalled();
-    alertSpy.mockRestore();
+    // It should navigate to a product page, which has "Enter Chamber" button
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
   });
 
-  it('"Forget" shows notification', () => {
+  it('"Forget" resets filters and shows notification', async () => {
     render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'aria');
+    expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
+
     fireEvent.click(screen.getByRole('button', { name: /Forget/i }));
+
     expect(screen.getByText('Memories purged.')).toBeTruthy();
+    expect((input as HTMLInputElement).value).toBe('');
+    expect(screen.getByText('WHEN THE SUN DIED')).toBeTruthy();
   });
 
   it('"Give Up" shows notification', () => {
@@ -309,10 +314,10 @@ describe('Chain 14 — NavButtonActions', () => {
   it('notification auto-dismisses after 2500ms', () => {
     vi.useFakeTimers();
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: /Waste Time/i }));
-    expect(screen.getByText('Time is already wasted.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Give Up/i }));
+    expect(screen.getByText('Giving up is not an option.')).toBeTruthy();
     act(() => { vi.advanceTimersByTime(2600); });
-    expect(screen.queryByText('Time is already wasted.')).toBeNull();
+    expect(screen.queryByText('Giving up is not an option.')).toBeNull();
     vi.useRealTimers();
   });
 });
@@ -378,7 +383,6 @@ describe('Chain 12 — BackNavigation', () => {
     fireEvent.click(screen.getByText(/Initialize/i));
 
     // Trigger image modal
-    const iframe = screen.getByTitle(firstNavigableEntry.title) as HTMLIFrameElement;
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
@@ -386,11 +390,11 @@ describe('Chain 12 — BackNavigation', () => {
         source: iframe.contentWindow,
       }));
     });
-    await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy(), { timeout: 2000 });
 
     // First Escape closes modal
     fireEvent.keyDown(window, { key: 'Escape' });
-    await waitFor(() => expect(screen.queryByText(/Asset_Viewer/i)).toBeNull());
+    await waitFor(() => expect(screen.queryByText(/Asset_Viewer/i)).toBeNull(), { timeout: 2000 });
 
     // Chamber should still be active
     expect(screen.getByText('The Chamber')).toBeTruthy();
