@@ -384,7 +384,7 @@ describe('Chain 12 — BackNavigation', () => {
     // Initialize the Chamber so the iframe is rendered
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
     fireEvent.click(screen.getByText('Initialize'));
-    const iframe = container.querySelector('iframe')!;
+    const iframe = container.querySelector('iframe')! as HTMLIFrameElement;
 
     // Trigger image modal
     act(() => {
@@ -650,9 +650,8 @@ describe('Chain 8 — ImageHotlink', () => {
 
   it('isSafeImageSrc enhancement: protocol/format validation', async () => {
     const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
-    // Initialize so the iframe renders and iframeRef is populated (required by BUG-08b source check)
     fireEvent.click(screen.getByText('Initialize'));
-    const iframe = container.querySelector('iframe')!;
+    const iframe = container.querySelector('iframe')! as HTMLIFrameElement;
 
     const cases = [
       { src: 'http://evil.com/x.jpg', ok: false },
@@ -661,17 +660,23 @@ describe('Chain 8 — ImageHotlink', () => {
       { src: 'data:image/png;base64,abc', ok: true },
       { src: 'data:image/svg+xml;base64,abc', ok: false },
     ];
+
     for (const { src, ok } of cases) {
-      act(() => { window.dispatchEvent(new MessageEvent('message', {
-        data: { type: 'IMAGE_CLICKED', src },
-        origin: window.location.origin,
-        source: iframe.contentWindow,
-      })); });
+      act(() => {
+        window.dispatchEvent(new MessageEvent('message', {
+          data: { type: 'IMAGE_CLICKED', src },
+          origin: window.location.origin,
+          source: iframe.contentWindow,
+        }));
+      });
+
       if (ok) {
         await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
         fireEvent.click(screen.getByLabelText(/Close/i));
         await waitFor(() => expect(screen.queryByText(/Asset_Viewer/i)).toBeNull());
-      } else expect(screen.queryByText(/Asset_Viewer/i)).toBeNull();
+      } else {
+        expect(screen.queryByText(/Asset_Viewer/i)).toBeNull();
+      }
     }
   });
 });
