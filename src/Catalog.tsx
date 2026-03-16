@@ -430,6 +430,16 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         !e.shiftKey &&
         !isInputFocused
       ) {
+        const tagName = activeElement?.tagName;
+        const isContentEditable = activeElement?.isContentEditable;
+        if (
+          activeElement?.tagName === "INPUT" ||
+          activeElement?.tagName === "TEXTAREA" ||
+          activeElement?.isContentEditable
+        ) {
+          return;
+        }
+
         e.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -523,7 +533,15 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => showNotification("Time is already wasted.")}
+            onClick={() => {
+              const navigable = CATALOG_ENTRIES.filter(e => !e.missing && (!e.requiresAuth || user));
+              if (navigable.length > 0) {
+                const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
+                onSelectApp(randomApp);
+              } else {
+                showNotification("No path found in the void.");
+              }
+            }}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               schedule
@@ -534,7 +552,10 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           </button>
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => showNotification("Memories purged.")}
+            onClick={() => {
+              resetFilters();
+              showNotification("Memories purged.");
+            }}
           >
             <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
               delete
