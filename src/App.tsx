@@ -22,7 +22,6 @@ function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
   const { user } = useAuth();
-  const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
 
   // Stabilize handlers by depending on derived primitives (isLoggedIn) instead of the full user object.
