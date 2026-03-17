@@ -25,7 +25,9 @@ const SEARCHABLE_ENTRIES = CATALOG_ENTRIES.map((entry) => ({
   searchBlob: [
     entry.title,
     entry.description,
+    entry.version || "",
     ...(entry.tags || []),
+    ...(entry.tech || []),
   ].join(" ").toLowerCase(),
 }));
 
@@ -47,8 +49,16 @@ const FILTER_TAGS = [
 
 // Generates a deterministic two-letter avatar from a username/email
 function initials(name: string): string {
-  const parts = name.replace(/@.*/, "").split(/[._\-\s]+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  // Filter out empty parts to prevent crashes on inputs like ".."
+  const parts = name
+    .replace(/@.*/, "")
+    .split(/[._\-\s]+/)
+    .filter(Boolean);
+  if (parts.length >= 2) {
+    const first = parts[0]?.[0] || "";
+    const second = parts[1]?.[0] || "";
+    return (first + second).toUpperCase();
+  }
   return name.slice(0, 2).toUpperCase();
 }
 
@@ -396,16 +406,18 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
+  const isLoggedIn = !!user;
 
-  // "/" shortcut handler — only triggers when no modifier keys are pressed,
+  // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.isComposing) return;
+      if (e.isComposing || e.repeat) return;
 
       const activeElement = document.activeElement as HTMLElement | null;
       const isInDialog =
-        activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') != null;
+        activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
+        null;
 
       if (isInDialog) return;
 
@@ -417,17 +429,22 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
       // Don't focus if focus is already in an input, textarea, or contentEditable element
       const tagName = activeElement?.tagName;
       const isContentEditable = activeElement?.isContentEditable;
+
       if (
         e.key === "/" &&
         !e.ctrlKey &&
         !e.metaKey &&
         !e.altKey &&
-        !e.shiftKey
+        !e.shiftKey &&
+        !isInputFocused
       ) {
+        // Don't focus if focus is already in an input, textarea, or contentEditable element
+        const tagName = activeElement?.tagName;
+        const isContentEditable = activeElement?.isContentEditable;
         if (
-          tagName === "INPUT" ||
-          tagName === "TEXTAREA" ||
-          isContentEditable
+          activeElement?.tagName === "INPUT" ||
+          activeElement?.tagName === "TEXTAREA" ||
+          activeElement?.isContentEditable
         ) {
           return;
         }
@@ -458,6 +475,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
   // React 19: Uses deferredSearchQuery to prioritize input responsiveness over
   // expensive filtering operations.
+  // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
     const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
@@ -478,28 +496,20 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
     });
   }, [deferredSearchQuery, selectedTag]);
 
+  const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
       if (entry.missing) return;
       // Auth-gated entries open the auth modal for unauthenticated users
-      if (entry.requiresAuth && !user) {
+      if (entry.requiresAuth && !isLoggedIn) {
         showAuthModal();
         return;
       }
       onSelectApp(entry);
     },
-    [user, showAuthModal, onSelectApp],
+    [isLoggedIn, showAuthModal, onSelectApp],
   );
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        // Handle escape - could clear search or navigate back
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
@@ -535,7 +545,15 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => showNotification("Time is already wasted.")}
+            onClick={() => {
+              const navigable = CATALOG_ENTRIES.filter(e => !e.missing && (!e.requiresAuth || user));
+              if (navigable.length > 0) {
+                const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
+                onSelectApp(randomApp);
+              } else {
+                showNotification("No path found in the void.");
+              }
+            }}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
               schedule
@@ -546,7 +564,10 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           </button>
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
-            onClick={() => showNotification("Memories purged.")}
+            onClick={() => {
+              resetFilters();
+              showNotification("Memories purged.");
+            }}
           >
             <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
               delete
@@ -631,9 +652,16 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors">
-              <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
-                search
-              </span>
+              <button
+                type="button"
+                onClick={() => searchInputRef.current?.focus()}
+                className="flex items-center justify-center text-white/40 hover:text-white/70 transition-colors cursor-pointer"
+                aria-label="Focus search input"
+              >
+                <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
+                  search
+                </span>
+              </button>
               <input
                 ref={searchInputRef}
                 type="text"
