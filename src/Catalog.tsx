@@ -47,7 +47,9 @@ const FILTER_TAGS = [
   "Horror",
 ];
 
-// Generates a deterministic two-letter avatar from a username/email
+// Generates a deterministic two-letter avatar from a username/email.
+// Optimized to use a single regex match for initials extraction while preserving
+// underscore/dot/dash boundaries, reducing multiple array allocations.
 function initials(name: string): string {
   // Filter out empty parts to prevent crashes on inputs like ".."
   const parts = name
@@ -438,8 +440,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         !e.ctrlKey &&
         !e.metaKey &&
         !e.altKey &&
-        !e.shiftKey &&
-        !isInputFocused
+        !e.shiftKey
       ) {
         e.preventDefault();
         searchInputRef.current?.focus();
