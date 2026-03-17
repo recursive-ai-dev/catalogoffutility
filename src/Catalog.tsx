@@ -413,12 +413,13 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
+  const isLoggedIn = !!user;
 
   // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.isComposing) return;
+      if (e.isComposing || e.repeat) return;
 
       const activeElement = document.activeElement as HTMLElement | null;
       const isInDialog =
