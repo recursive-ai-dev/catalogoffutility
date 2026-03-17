@@ -1,11 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  useCallback,
-  useMemo,
-  useEffect,
-  useDeferredValue,
-} from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect, useDeferredValue } from "react";
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth, useAuthModal } from "./lib/auth";
@@ -58,14 +51,15 @@ const FILTER_TAGS = [
 // Optimized to use a single regex match for initials extraction while preserving
 // underscore/dot/dash boundaries, reducing multiple array allocations.
 function initials(name: string): string {
-  const username = name.split("@")[0] || "";
-  // Match any word character that is either at the start of the string
-  // or immediately preceded by a separator (., _, -, or space).
-  const parts = username.split(/[._\-\s]+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-  return username.slice(0, 2).toUpperCase();
+  // Filter out empty parts to prevent crashes on inputs like ".."
+  const parts = name
+    .replace(/@.*/, "")
+    .split(/[._\-\s]+/)
+    .filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  const fallback = name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
+  return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
 
 const UserSection = React.memo(function UserSection() {
@@ -412,14 +406,20 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
+  const isLoggedIn = !!user;
 
   // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.isComposing) return;
+      if (e.isComposing || e.repeat) return;
 
       const activeElement = document.activeElement as HTMLElement | null;
+      const isInputFocused =
+        activeElement?.tagName === "INPUT" ||
+        activeElement?.tagName === "TEXTAREA" ||
+        activeElement?.isContentEditable === true;
+
       const isInDialog =
         activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
         null;
@@ -431,6 +431,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         return;
       }
 
+      // Don't focus if focus is already in an input, textarea, or contentEditable element
       const tagName = activeElement?.tagName;
       const isContentEditable = activeElement?.isContentEditable;
 
@@ -441,17 +442,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         !e.altKey &&
         !e.shiftKey
       ) {
-        // Don't focus if focus is already in an input, textarea, or contentEditable element
-        const tagName = activeElement?.tagName;
-        const isContentEditable = activeElement?.isContentEditable;
-        if (
-          activeElement?.tagName === "INPUT" ||
-          activeElement?.tagName === "TEXTAREA" ||
-          activeElement?.isContentEditable
-        ) {
-          return;
-        }
-
         e.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -476,6 +466,8 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
+  // React 19: Uses deferredSearchQuery to prioritize input responsiveness over
+  // expensive filtering operations.
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
@@ -653,9 +645,16 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors">
-              <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
-                search
-              </span>
+              <button
+                type="button"
+                onClick={() => searchInputRef.current?.focus()}
+                className="flex items-center justify-center text-white/40 hover:text-white/70 transition-colors cursor-pointer"
+                aria-label="Focus search input"
+              >
+                <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
+                  search
+                </span>
+              </button>
               <input
                 ref={searchInputRef}
                 type="text"
@@ -670,7 +669,11 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               </span>
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    searchInputRef.current?.focus();
+                  }}
                   aria-label="Clear search"
                   className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer"
                 >
@@ -735,7 +738,11 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               </p>
               {(searchQuery !== "" || selectedTag !== DEFAULT_TAG) && (
                 <button
-                  onClick={resetFilters}
+                  type="button"
+                  onClick={() => {
+                    resetFilters();
+                    searchInputRef.current?.focus();
+                  }}
                   className="mt-2 px-6 py-2 border border-white/10 text-white/40 hover:text-white/70 hover:border-white/25 text-[10px] font-mono tracking-widest uppercase transition-colors rounded-full cursor-pointer"
                 >
                   Clear all filters

@@ -17,11 +17,13 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
 
   // Close on Escape - consolidated redundant listeners (BUG-14)
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !e.repeat) onBack();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !e.repeat) {
+        onBack();
+      }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onBack]);
 
   // Memoize paragraph splitting to avoid redundant string operations on every render.

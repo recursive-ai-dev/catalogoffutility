@@ -25,8 +25,9 @@ function AppInner() {
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
 
-  // Stabilize handlers to prevent unnecessary re-renders of memoized child components (e.g. Catalog).
-  // Depends on isLoggedIn rather than the full user object to avoid re-renders when profile fields change (BUG-12).
+  // Stabilize handlers by depending on derived primitives (isLoggedIn) instead of the full user object.
+  // This prevents the Catalog from re-rendering when irrelevant user profile properties change.
+  const isLoggedIn = !!user;
   const handleSelectApp = useCallback(
     (app: AppEntry) => {
       // Chain 2 (AppSelection): single authoritative guard — missing entries are never navigated to.
