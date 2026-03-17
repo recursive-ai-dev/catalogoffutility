@@ -433,6 +433,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         return;
       }
 
+      // Don't focus if focus is already in an input, textarea, or contentEditable element
       const tagName = activeElement?.tagName;
       const isContentEditable = activeElement?.isContentEditable;
 
@@ -656,9 +657,16 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors">
-              <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
-                search
-              </span>
+              <button
+                type="button"
+                onClick={() => searchInputRef.current?.focus()}
+                className="flex items-center justify-center text-white/40 hover:text-white/70 transition-colors cursor-pointer"
+                aria-label="Focus search input"
+              >
+                <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
+                  search
+                </span>
+              </button>
               <input
                 ref={searchInputRef}
                 type="text"
