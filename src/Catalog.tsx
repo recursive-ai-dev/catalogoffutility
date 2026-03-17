@@ -1,11 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  useCallback,
-  useMemo,
-  useEffect,
-  useDeferredValue,
-} from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect, useDeferredValue } from "react";
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth, useAuthModal } from "./lib/auth";
@@ -61,12 +54,10 @@ function initials(name: string): string {
     .replace(/@.*/, "")
     .split(/[._\-\s]+/)
     .filter(Boolean);
-  if (parts.length >= 2) {
-    const first = parts[0]?.[0] || "";
-    const second = parts[1]?.[0] || "";
-    return (first + second).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  const fallback = name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
+  return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
 
 const UserSection = React.memo(function UserSection() {
@@ -413,12 +404,13 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
+  const isLoggedIn = !!user;
 
   // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.isComposing) return;
+      if (e.isComposing || e.repeat) return;
 
       const activeElement = document.activeElement as HTMLElement | null;
       const isInputFocused =
@@ -436,6 +428,10 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         setSearchQuery("");
         return;
       }
+
+      // Don't focus if focus is already in an input, textarea, or contentEditable element
+      const tagName = activeElement?.tagName;
+      const isContentEditable = activeElement?.isContentEditable;
 
       if (
         e.key === "/" &&
@@ -469,6 +465,8 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
+  // React 19: Uses deferredSearchQuery to prioritize input responsiveness over
+  // expensive filtering operations.
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
@@ -649,8 +647,8 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               <button
                 type="button"
                 onClick={() => searchInputRef.current?.focus()}
-                className="flex items-center justify-center text-white/40 hover:text-white transition-colors cursor-pointer"
-                aria-label="Focus search"
+                className="flex items-center justify-center text-white/40 hover:text-white/70 transition-colors cursor-pointer"
+                aria-label="Focus search input"
               >
                 <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
                   search
