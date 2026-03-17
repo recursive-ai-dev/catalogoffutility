@@ -22,23 +22,26 @@ function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
   const { user } = useAuth();
+  const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
 
-  // Stabilize handlers to prevent unnecessary re-renders of memoized child components (e.g. Catalog).
+  // Stabilize handlers by depending on derived primitives (isLoggedIn) instead of the full user object.
+  // This prevents the Catalog from re-rendering when irrelevant user profile properties change.
+  const isLoggedIn = !!user;
   const handleSelectApp = useCallback(
     (app: AppEntry) => {
       // Chain 2 (AppSelection): single authoritative guard — missing entries are never navigated to.
       // Auth-gated entries are also intercepted here so selectedApp never drifts to a value
       // the current user is not permitted to hold (LC-N).
       if (app.missing) return;
-      if (app.requiresAuth && !user) {
+      if (app.requiresAuth && !isLoggedIn) {
         showAuthModal();
         return;
       }
       setSelectedApp(app);
       setView("product");
     },
-    [user, showAuthModal],
+    [isLoggedIn, showAuthModal],
   );
 
   const handleEnterChamber = useCallback(() => {
@@ -64,18 +67,37 @@ function AppInner() {
 
   // Derive effective view at render time to prevent auth-gated pages from
   // flashing before the useEffect runs.
-  const isUnauthorized = !user && selectedApp?.requiresAuth;
+  const isUnauthorized = !isLoggedIn && selectedApp?.requiresAuth;
   const effectiveView = isUnauthorized ? "catalog" : view;
+
+  // Dynamic Metadata: update document title and description based on current state
+  useEffect(() => {
+    if (effectiveView === "product" && selectedApp) {
+      document.title = `${selectedApp.title} | Catalog of Futility`;
+      const metaDescription = document.querySelector('meta[name="description"]');
+      if (metaDescription) {
+        metaDescription.setAttribute("content", selectedApp.description);
+      }
+    } else if (effectiveView === "chamber" && selectedApp) {
+      document.title = `[CHAMBER] ${selectedApp.title}`;
+    } else {
+      document.title = "Catalog of Futility";
+      const metaDescription = document.querySelector('meta[name="description"]');
+      if (metaDescription) {
+        metaDescription.setAttribute("content", "A brutalist archive of digital artifacts, simulations, and interactive tragedies.");
+      }
+    }
+  }, [effectiveView, selectedApp]);
 
   // If a logged-out user somehow reaches a product or chamber view for an
   // auth-gated entry, synchronise the underlying view state so that logging
   // back in does not silently teleport them back to the gated page.
   useEffect(() => {
-    if (!user && selectedApp?.requiresAuth && view !== "catalog") {
+    if (!isLoggedIn && selectedApp?.requiresAuth && view !== "catalog") {
       setView("catalog");
       setSelectedApp(null);
     }
-  }, [user, selectedApp, view]);
+  }, [isLoggedIn, selectedApp, view]);
 
   // Use effectiveView in render (not raw `view`) so that auth-gated pages
   // never flash for a frame before the useEffect above fires on logout.

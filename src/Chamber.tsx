@@ -132,6 +132,18 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
   clkRef.current = clk;
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom of logs
+  useEffect(() => {
+    if (!showLogs || !logsEndRef.current) return;
+    const prefersReducedMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    logsEndRef.current.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "end",
+    });
+  }, [logs, showLogs]);
 
   // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
   const iframeDocRef = useRef<Document | null>(null);
@@ -150,11 +162,16 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     if (e.key === "Escape") setHotlinkedImage(null);
   }, []);
 
+  // Keep hotlinkedImage in a ref for the global keydown listener to avoid
+  // re-registering the listener on every hotlink event (BUG-13).
+  const hotlinkedImageRef = useRef(hotlinkedImage);
+  hotlinkedImageRef.current = hotlinkedImage;
+
   // Global Escape listener for navigation and modal closure
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || e.repeat) return;
-      if (hotlinkedImage) {
+      if (hotlinkedImageRef.current) {
         setHotlinkedImage(null);
       } else {
         onBack();
@@ -162,7 +179,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [hotlinkedImage, onBack]);
+  }, [onBack]);
 
   // Cleanup injected iframe listener on Chamber unmount
   useEffect(() => {
@@ -495,16 +512,20 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                         </div>
                       </div>
                     )}
-                    <iframe
-                      ref={iframeRef}
-                      src={app.url}
-                      srcDoc={app.url ? undefined : htmlContentWithScript}
-                      className="w-full h-full border-none bg-black"
-                      title={app.title}
-                      sandbox={app.url ? "allow-scripts allow-forms" : "allow-scripts"}
-                      onLoad={handleIframeLoad}
-                      onError={handleIframeError}
-                    />
+                      <iframe
+                        ref={iframeRef}
+                        src={app.url}
+                        srcDoc={app.url ? undefined : htmlContentWithScript}
+                        className="w-full h-full border-none bg-black"
+                        title={app.title}
+                        // Default to allow-scripts and allow-same-origin (if app.url)
+                        // This allows cross-origin communication when app.url is used from the same domain.
+                        // Without allow-same-origin, some local storage or origin-based APIs may fail.
+                        // For srcDoc, allow-same-origin is generally not allowed without a specific reason as it creates a loophole.
+                        sandbox={app.sandbox ?? (app.url ? "allow-scripts allow-forms allow-same-origin" : "allow-scripts")}
+                        onLoad={handleIframeLoad}
+                        onError={handleIframeError}
+                      />
                   </>
                 )}
               </div>
@@ -583,6 +604,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                     </p>
                   </div>
                 ))}
+                <div ref={logsEndRef} />
               </div>
             ) : (
               <div className="flex-1 flex items-center justify-center font-mono text-[10px] tracking-widest text-white/20">
