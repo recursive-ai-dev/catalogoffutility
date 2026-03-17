@@ -377,12 +377,13 @@ describe('Chain 12 — BackNavigation', () => {
   });
 
   it('Escape key in chamber view closes image modal before navigating back', async () => {
-    const { container } = render(<App />);
+    render(<App />);
     fireEvent.click(screen.getByText(firstNavigableEntry.title));
     fireEvent.click(screen.getByText(/Enter Chamber/i));
 
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
     fireEvent.click(screen.getByText('Initialize'));
+    const iframe = screen.getByTitle(firstNavigableEntry.title) as HTMLIFrameElement;
     const iframe = container.querySelector('iframe')! as HTMLIFrameElement;
 
     // Trigger image modal
@@ -661,11 +662,15 @@ describe('Chain 8 — ImageHotlink', () => {
     ];
 
     for (const { src, ok } of cases) {
-      act(() => { window.dispatchEvent(new MessageEvent('message', {
-        data: { type: 'IMAGE_CLICKED', src },
-        origin: window.location.origin,
-        source: iframe.contentWindow,
-      })); });
+      act(() => {
+        window.dispatchEvent(
+          new MessageEvent('message', {
+            data: { type: 'IMAGE_CLICKED', src },
+            origin: window.location.origin,
+            source: iframe.contentWindow,
+          }),
+        );
+      });
       if (ok) {
         await waitFor(() =>
           expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy(),

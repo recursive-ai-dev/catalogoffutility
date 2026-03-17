@@ -54,12 +54,10 @@ function initials(name: string): string {
     .replace(/@.*/, "")
     .split(/[._\-\s]+/)
     .filter(Boolean);
-  if (parts.length >= 2) {
-    const first = parts[0]?.[0] || "";
-    const second = parts[1]?.[0] || "";
-    return (first + second).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  const fallback = name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
+  return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
 
 const UserSection = React.memo(function UserSection() {
