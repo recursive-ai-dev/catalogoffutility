@@ -380,9 +380,12 @@ describe('Chain 12 — BackNavigation', () => {
     const { container } = render(<App />);
     fireEvent.click(screen.getByText(firstNavigableEntry.title));
     fireEvent.click(screen.getByText(/Enter Chamber/i));
+
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
     fireEvent.click(screen.getByText('Initialize'));
     const iframe = container.querySelector('iframe')! as HTMLIFrameElement;
+
+    // Trigger image modal
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },

@@ -1,11 +1,4 @@
-import React, {
-  useState,
-  useRef,
-  useCallback,
-  useMemo,
-  useEffect,
-  useDeferredValue,
-} from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect, useDeferredValue } from "react";
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth, useAuthModal } from "./lib/auth";
@@ -394,7 +387,7 @@ const Card = React.memo(function Card({
 
 export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const deferredQuery = React.useDeferredValue(searchQuery);
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
@@ -480,6 +473,8 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
+  // React 19: Uses deferredSearchQuery to prioritize input responsiveness over
+  // expensive filtering operations.
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
