@@ -385,7 +385,7 @@ const Card = React.memo(function Card({
 
 export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const deferredSearchQuery = React.useDeferredValue(searchQuery);
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
@@ -413,6 +413,11 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
       if (e.isComposing || e.repeat) return;
 
       const activeElement = document.activeElement as HTMLElement | null;
+      const isInputFocused =
+        activeElement?.tagName === "INPUT" ||
+        activeElement?.tagName === "TEXTAREA" ||
+        activeElement?.isContentEditable === true;
+
       const isInDialog =
         activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
         null;
@@ -436,17 +441,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         !e.shiftKey &&
         !isInputFocused
       ) {
-        // Don't focus if focus is already in an input, textarea, or contentEditable element
-        const tagName = activeElement?.tagName;
-        const isContentEditable = activeElement?.isContentEditable;
-        if (
-          activeElement?.tagName === "INPUT" ||
-          activeElement?.tagName === "TEXTAREA" ||
-          activeElement?.isContentEditable
-        ) {
-          return;
-        }
-
         e.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -674,7 +668,11 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               </span>
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    searchInputRef.current?.focus();
+                  }}
                   aria-label="Clear search"
                   className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer"
                 >
@@ -739,7 +737,11 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               </p>
               {(searchQuery !== "" || selectedTag !== DEFAULT_TAG) && (
                 <button
-                  onClick={resetFilters}
+                  type="button"
+                  onClick={() => {
+                    resetFilters();
+                    searchInputRef.current?.focus();
+                  }}
                   className="mt-2 px-6 py-2 border border-white/10 text-white/40 hover:text-white/70 hover:border-white/25 text-[10px] font-mono tracking-widest uppercase transition-colors rounded-full cursor-pointer"
                 >
                   Clear all filters
