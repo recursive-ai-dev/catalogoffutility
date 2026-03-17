@@ -15,7 +15,7 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  // Close on Escape
+  // Close on Escape - consolidated redundant listeners (BUG-14)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !e.repeat) {
