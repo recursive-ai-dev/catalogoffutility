@@ -61,9 +61,9 @@ function initials(name: string): string {
   const username = name.split("@")[0] || "";
   // Match any word character that is either at the start of the string
   // or immediately preceded by a separator (., _, -, or space).
-  const matches = username.match(/(?:^|[._\-\s])(\w)/g);
-  if (matches && matches.length >= 2) {
-    return (matches[0].replace(/[._\-\s]/, "") + matches[1].replace(/[._\-\s]/, "")).toUpperCase();
+  const parts = username.split(/[._\-\s]+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
   }
   return username.slice(0, 2).toUpperCase();
 }
