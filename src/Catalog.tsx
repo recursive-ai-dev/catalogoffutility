@@ -424,6 +424,11 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
         null;
 
+      const isInputFocused =
+        activeElement?.tagName === "INPUT" ||
+        activeElement?.tagName === "TEXTAREA" ||
+        activeElement?.isContentEditable;
+
       if (isInDialog) return;
 
       if (e.key === "Escape") {
@@ -471,7 +476,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
+    const normalizedQuery = deferredQuery.trim().toLowerCase();
 
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
@@ -487,7 +492,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredSearchQuery, selectedTag]);
+  }, [deferredQuery, selectedTag]);
 
   const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
