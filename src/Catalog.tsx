@@ -621,6 +621,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors">
               <button
+                type="button"
                 onClick={() => searchInputRef.current?.focus()}
                 className="flex items-center justify-center text-white/40 hover:text-white/70 transition-colors cursor-pointer"
                 aria-label="Focus search input"
