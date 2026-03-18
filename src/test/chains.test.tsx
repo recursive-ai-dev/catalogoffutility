@@ -384,14 +384,13 @@ describe('Chain 12 — BackNavigation', () => {
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
     fireEvent.click(screen.getByText('Initialize'));
     const iframe = screen.getByTitle(firstNavigableEntry.title) as HTMLIFrameElement;
-    const iframe = container.querySelector('iframe')! as HTMLIFrameElement;
 
     // Trigger image modal
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
         origin: window.location.origin,
-        source: iframeEl.contentWindow,
+        source: iframe.contentWindow,
       }));
     });
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy(), { timeout: 2000 });
@@ -656,6 +655,7 @@ describe('Chain 8 — ImageHotlink', () => {
     const cases = [
       { src: 'http://evil.com/x.jpg', ok: false },
       { src: 'https://safe.com/x.jpg', ok: true },
+      { src: 'https://user:pass@safe.com/x.jpg', ok: false },
       { src: 'http://localhost:3000/x.jpg', ok: true },
       { src: 'data:image/png;base64,abc', ok: true },
       { src: 'data:image/svg+xml;base64,abc', ok: false },

@@ -28,14 +28,16 @@ function isSafeImageSrc(src: string): boolean {
   // Enforce a reasonable length limit (2MB) to prevent DoS via massive payloads.
   if (src.length > 2 * 1024 * 1024) return false;
 
-  // Short-circuit common protocols to avoid expensive URL parsing overhead.
-  // We only short-circuit https: as it is always safe. http: must proceed
-  // to hostname validation to ensure it only points to localhost (BUG-06c).
-  if (src.startsWith("https://")) return true;
+  // Short-circuit data: protocol as it does not have a hostname to validate.
   if (src.startsWith("data:")) return SAFE_DATA_URL_REGEX.test(src);
 
   try {
     const url = new URL(src);
+
+    // Block URLs with embedded credentials to prevent credential leaking
+    // and as a defense-in-depth measure against SSRF/CSRF (BUG-SEC-01).
+    if (url.username || url.password) return false;
+
     if (url.protocol === "https:") return true;
     // Allow http: only for local development (localhost or 127.0.0.1)
     if (url.protocol === "http:") {
