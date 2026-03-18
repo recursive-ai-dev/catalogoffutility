@@ -415,8 +415,9 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                   onClick={toggleFullscreen}
                   className="absolute top-6 right-6 z-30 p-3 bg-black/40 hover:bg-white/10 text-white/50 hover:text-white rounded-full border border-white/10 hover:border-white/30 transition-all backdrop-blur-md cursor-pointer"
                   title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                  aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                 >
-                  <span className="material-symbols-outlined text-sm font-light">
+                  <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                     {isFullscreen ? "fullscreen_exit" : "fullscreen"}
                   </span>
                 </button>
@@ -555,7 +556,14 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                 CRITICAL
               </span>
             </div>
-            <div className="relative h-1 bg-white/5 rounded-full overflow-hidden">
+            <div
+              className="relative h-1 bg-white/5 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={85}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Psychological Stability"
+            >
               <div className="h-full bg-white/40 w-[85%] relative">
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
               </div>

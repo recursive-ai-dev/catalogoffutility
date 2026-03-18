@@ -92,7 +92,7 @@ const UserSection = React.memo(function UserSection() {
         </p>
         <div className="flex items-center gap-3 mb-3">
           <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-white/20 font-light text-sm">
+            <span className="material-symbols-outlined text-white/20 font-light text-sm" aria-hidden="true">
               person
             </span>
           </div>
@@ -109,7 +109,7 @@ const UserSection = React.memo(function UserSection() {
           onClick={showAuthModal}
           className="w-full flex items-center justify-center gap-2 py-2 border border-white/10 hover:border-white/25 text-white/30 hover:text-white/60 text-[9px] font-mono tracking-widest uppercase rounded-lg transition-all cursor-pointer"
         >
-          <span className="material-symbols-outlined font-light text-sm">
+          <span className="material-symbols-outlined font-light text-sm" aria-hidden="true">
             fingerprint
           </span>
           Identify Yourself
@@ -424,11 +424,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
         null;
 
-      const isInputFocused =
-        activeElement?.tagName === "INPUT" ||
-        activeElement?.tagName === "TEXTAREA" ||
-        activeElement?.isContentEditable;
-
       if (isInDialog) return;
 
       if (e.key === "Escape") {
@@ -442,6 +437,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
 
       if (
         e.key === "/" &&
+        !isInputFocused &&
         !e.ctrlKey &&
         !e.metaKey &&
         !e.altKey &&
@@ -476,7 +472,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredQuery.trim().toLowerCase();
+    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
 
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
@@ -492,9 +488,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredQuery, selectedTag]);
-
-  const isLoggedIn = !!user;
+  }, [deferredSearchQuery, selectedTag]);
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
       if (entry.missing) return;
@@ -565,6 +559,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             onClick={() => {
               resetFilters();
               showNotification("Memories purged.");
+              searchInputRef.current?.focus();
             }}
           >
             <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
