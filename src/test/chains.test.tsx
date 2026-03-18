@@ -12,7 +12,7 @@ import userEvent from '@testing-library/user-event';
 import { makeFakeClock } from '../lib/clock';
 
 import App from '../App';
-import { Catalog } from '../Catalog';
+import { Catalog, initials } from '../Catalog';
 import { Chamber } from '../Chamber';
 import { ProductPage } from '../ProductPage';
 import { AppEntry, CATALOG_ENTRIES } from '../data';
@@ -384,14 +384,13 @@ describe('Chain 12 — BackNavigation', () => {
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
     fireEvent.click(screen.getByText('Initialize'));
     const iframe = screen.getByTitle(firstNavigableEntry.title) as HTMLIFrameElement;
-    const iframe = container.querySelector('iframe')! as HTMLIFrameElement;
 
     // Trigger image modal
     act(() => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
         origin: window.location.origin,
-        source: iframeEl.contentWindow,
+        source: iframe.contentWindow,
       }));
     });
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy(), { timeout: 2000 });
@@ -773,6 +772,36 @@ describe('Chain 6 — IframeLoad', () => {
     render(<Chamber app={makeApp()} onBack={vi.fn()} />);
     fireEvent.click(screen.getByText('Initialize'));
     expect(screen.getByText(/Loading Assets/i)).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Utility Tests — Catalog.tsx
+// ---------------------------------------------------------------------------
+describe('Utility — initials', () => {
+  it('extracts first letter of first two words', () => {
+    expect(initials('John Doe')).toBe('JD');
+    expect(initials('jane_smith')).toBe('JS');
+    expect(initials('alice.bob-charlie')).toBe('AB');
+  });
+
+  it('handles single word names', () => {
+    expect(initials('Entity')).toBe('EN');
+    expect(initials('a')).toBe('A');
+  });
+
+  it('handles empty or non-alphanumeric names', () => {
+    expect(initials('')).toBe('??');
+    expect(initials('...')).toBe('??');
+  });
+
+  it('strips email domain before processing', () => {
+    expect(initials('user.name@example.com')).toBe('UN');
+    expect(initials('admin@void.io')).toBe('AD');
+  });
+
+  it('handles multiple delimiters correctly', () => {
+    expect(initials('alpha...beta---gamma')).toBe('AB');
   });
 });
 
