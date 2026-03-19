@@ -424,11 +424,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
         null;
 
-      const isInputFocused =
-        activeElement?.tagName === "INPUT" ||
-        activeElement?.tagName === "TEXTAREA" ||
-        activeElement?.isContentEditable;
-
       if (isInDialog) return;
 
       if (e.key === "Escape") {
@@ -466,6 +461,9 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   const resetFilters = useCallback(() => {
     setSearchQuery("");
     setSelectedTag(DEFAULT_TAG);
+    // Maintain interaction momentum by restoring focus to the search input
+    // after a reset action (Chain 14: Forget / Clear all filters).
+    searchInputRef.current?.focus();
   }, []);
 
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
@@ -476,7 +474,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredQuery.trim().toLowerCase();
+    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
 
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
@@ -492,9 +490,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredQuery, selectedTag]);
-
-  const isLoggedIn = !!user;
+  }, [deferredSearchQuery, selectedTag]);
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
       if (entry.missing) return;
@@ -744,10 +740,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               {(searchQuery !== "" || selectedTag !== DEFAULT_TAG) && (
                 <button
                   type="button"
-                  onClick={() => {
-                    resetFilters();
-                    searchInputRef.current?.focus();
-                  }}
+                  onClick={resetFilters}
                   className="mt-2 px-6 py-2 border border-white/10 text-white/40 hover:text-white/70 hover:border-white/25 text-[10px] font-mono tracking-widest uppercase transition-colors rounded-full cursor-pointer"
                 >
                   Clear all filters
