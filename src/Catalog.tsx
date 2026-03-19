@@ -50,16 +50,15 @@ const FILTER_TAGS = [
 // Generates a deterministic two-letter avatar from a username/email.
 // Optimized to use a single regex match for initials extraction while preserving
 // underscore/dot/dash boundaries, reducing multiple array allocations.
-function initials(name: string): string {
-  // Filter out empty parts to prevent crashes on inputs like ".."
-  const parts = name
-    .replace(/@.*/, "")
-    .split(/[._\-\s]+/)
-    .filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  const fallback = name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
-  return (fallback.length > 0 ? fallback : "??").toUpperCase();
+export function initials(name: string): string {
+  const username = name.split("@")[0];
+  const matches = Array.from(username.matchAll(/(?:^|[._\-\s])(\w)/g));
+  if (matches.length >= 2) {
+    return (matches[0][1] + matches[1][1]).toUpperCase();
+  }
+  const clean = username.replace(/[^a-zA-Z0-9]/g, "");
+  if (clean.length > 0) return clean.slice(0, 2).toUpperCase();
+  return (username.slice(0, 2) || "??").toUpperCase();
 }
 
 const UserSection = React.memo(function UserSection() {
@@ -424,11 +423,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
         null;
 
-      const isInputFocused =
-        activeElement?.tagName === "INPUT" ||
-        activeElement?.tagName === "TEXTAREA" ||
-        activeElement?.isContentEditable;
-
       if (isInDialog) return;
 
       if (e.key === "Escape") {
@@ -436,9 +430,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         return;
       }
 
-      // Don't focus if focus is already in an input, textarea, or contentEditable element
-      const tagName = activeElement?.tagName;
-      const isContentEditable = activeElement?.isContentEditable;
+      if (isInputFocused) return;
 
       if (
         e.key === "/" &&
@@ -476,7 +468,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredQuery.trim().toLowerCase();
+    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
 
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
@@ -492,9 +484,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredQuery, selectedTag]);
-
-  const isLoggedIn = !!user;
+  }, [deferredSearchQuery, selectedTag]);
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
       if (entry.missing) return;
