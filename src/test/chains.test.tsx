@@ -377,13 +377,12 @@ describe('Chain 12 — BackNavigation', () => {
   });
 
   it('Escape key in chamber view closes image modal before navigating back', async () => {
-    render(<App />);
+    const { container } = render(<App />);
     fireEvent.click(screen.getByText(firstNavigableEntry.title));
     fireEvent.click(screen.getByText(/Enter Chamber/i));
 
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
     fireEvent.click(screen.getByText('Initialize'));
-    const iframe = screen.getByTitle(firstNavigableEntry.title) as HTMLIFrameElement;
     const iframe = container.querySelector('iframe')! as HTMLIFrameElement;
 
     // Trigger image modal
@@ -391,7 +390,7 @@ describe('Chain 12 — BackNavigation', () => {
       window.dispatchEvent(new MessageEvent('message', {
         data: { type: 'IMAGE_CLICKED', src: 'https://example.com/img.jpg' },
         origin: window.location.origin,
-        source: iframeEl.contentWindow,
+        source: iframe.contentWindow,
       }));
     });
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy(), { timeout: 2000 });
@@ -648,7 +647,7 @@ describe('Chain 8 — ImageHotlink', () => {
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
   });
 
-  it('isSafeImageSrc enhancement: protocol/format validation', async () => {
+  it('isSafeImageSrc enhancement: protocol/format/credential validation', async () => {
     const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
     fireEvent.click(screen.getByText('Initialize'));
     const iframe = container.querySelector('iframe')! as HTMLIFrameElement;
@@ -659,6 +658,8 @@ describe('Chain 8 — ImageHotlink', () => {
       { src: 'http://localhost:3000/x.jpg', ok: true },
       { src: 'data:image/png;base64,abc', ok: true },
       { src: 'data:image/svg+xml;base64,abc', ok: false },
+      { src: 'https://user:pass@safe.com/x.jpg', ok: false },
+      { src: 'https://user@safe.com/x.jpg', ok: false },
     ];
 
     for (const { src, ok } of cases) {
