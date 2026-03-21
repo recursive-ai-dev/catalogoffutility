@@ -383,8 +383,7 @@ describe('Chain 12 — BackNavigation', () => {
 
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
     fireEvent.click(screen.getByText('Initialize'));
-    const iframe = screen.getByTitle(firstNavigableEntry.title) as HTMLIFrameElement;
-    const iframe = container.querySelector('iframe')! as HTMLIFrameElement;
+    const iframeEl = screen.getByTitle(firstNavigableEntry.title) as HTMLIFrameElement;
 
     // Trigger image modal
     act(() => {
@@ -659,6 +658,7 @@ describe('Chain 8 — ImageHotlink', () => {
       { src: 'http://localhost:3000/x.jpg', ok: true },
       { src: 'data:image/png;base64,abc', ok: true },
       { src: 'data:image/svg+xml;base64,abc', ok: false },
+      { src: 'https://user:pass@safe.com/x.jpg', ok: false },
     ];
 
     for (const { src, ok } of cases) {
