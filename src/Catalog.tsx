@@ -424,11 +424,6 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
         null;
 
-      const isInputFocused =
-        activeElement?.tagName === "INPUT" ||
-        activeElement?.tagName === "TEXTAREA" ||
-        activeElement?.isContentEditable;
-
       if (isInDialog) return;
 
       if (e.key === "Escape") {
@@ -466,6 +461,9 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   const resetFilters = useCallback(() => {
     setSearchQuery("");
     setSelectedTag(DEFAULT_TAG);
+    // Programmatically restore focus to the primary search input after a reset
+    // to maintain interaction momentum for the user.
+    searchInputRef.current?.focus();
   }, []);
 
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
@@ -476,7 +474,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredQuery.trim().toLowerCase();
+    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
 
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
@@ -492,9 +490,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredQuery, selectedTag]);
-
-  const isLoggedIn = !!user;
+  }, [deferredSearchQuery, selectedTag]);
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
       if (entry.missing) return;
@@ -619,7 +615,13 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               <span>STATUS:</span>
               <span className="text-white/80">FADING</span>
             </div>
-            <div className="h-px w-full bg-white/10 rounded overflow-hidden">
+            <div
+              role="progressbar"
+              aria-valuenow={85}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              className="h-px w-full bg-white/10 rounded overflow-hidden"
+            >
               <div className="h-full bg-white/40 w-[85%]"></div>
             </div>
             <div className="flex justify-between items-center text-[10px] text-white/20 font-mono tracking-widest mt-1">
