@@ -555,7 +555,14 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                 CRITICAL
               </span>
             </div>
-            <div className="relative h-1 bg-white/5 rounded-full overflow-hidden">
+            <div
+              className="relative h-1 bg-white/5 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={85}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Psychological stability"
+            >
               <div className="h-full bg-white/40 w-[85%] relative">
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
               </div>
