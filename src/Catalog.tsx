@@ -505,6 +505,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
 
   // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
+  const corruption = 85;
 
   return (
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
@@ -612,16 +613,17 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             <div className="flex justify-between items-center text-[10px] text-white/40 font-mono tracking-widest">
               <span>STATUS:</span>
               <span className="text-white/80">FADING</span>
-            </div>
+            </div>            
             <div
               className="h-px w-full bg-white/10 rounded overflow-hidden"
               role="progressbar"
-              aria-valuenow={85}
+              aria-valuenow={corruption}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-label="Archive stability"
+              aria-valuetext={`${corruption}% corruption, critical`}
             >
-              <div className="h-full bg-white/40 w-[85%]"></div>
+              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
             </div>
             <div className="flex justify-between items-center text-[10px] text-white/20 font-mono tracking-widest mt-1">
               <span>ENTRIES:</span>
