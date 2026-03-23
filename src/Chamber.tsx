@@ -23,28 +23,30 @@ const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base6
  * Restricts data: URLs to safe raster formats (no SVG) to prevent potential XSS.
  * Restricts http: to localhost/127.0.0.1 to prevent mixed-content warnings.
  * Enforces a 2MB length limit to guard against client-side DoS.
+ * Rejects URLs containing embedded credentials to prevent sensitive data leakage.
  */
 function isSafeImageSrc(src: string): boolean {
   // Enforce a reasonable length limit (2MB) to prevent DoS via massive payloads.
   if (src.length > 2 * 1024 * 1024) return false;
 
-  // Short-circuit common protocols to avoid expensive URL parsing overhead.
-  // We only short-circuit https: as it is always safe. http: must proceed
-  // to hostname validation to ensure it only points to localhost (BUG-06c).
-  if (src.startsWith("https://")) return true;
-  if (src.startsWith("data:")) return SAFE_DATA_URL_REGEX.test(src);
-
   try {
     const url = new URL(src);
+
+    // Explicitly reject URLs with embedded credentials to prevent potential leakage
+    // of sensitive information if the URL is from an external origin (BUG-06d).
+    if (url.username || url.password) return false;
+
     if (url.protocol === "https:") return true;
+
     // Allow http: only for local development (localhost or 127.0.0.1)
     if (url.protocol === "http:") {
       return url.hostname === "localhost" || url.hostname === "127.0.0.1";
     }
+
     if (url.protocol === "data:") {
       // Allow only common raster image formats; explicitly block image/svg+xml
       // to mitigate potential XSS risks in certain rendering contexts.
-      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
+      return SAFE_DATA_URL_REGEX.test(src);
     }
     return false;
   } catch {
