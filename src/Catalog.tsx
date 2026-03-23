@@ -438,7 +438,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         return;
       }
 
-      if (isInputFocused) return;
+      if (activeElement?.tagName === "INPUT" || activeElement?.tagName === "TEXTAREA" || activeElement?.isContentEditable) return;
 
       if (
         e.key === "/" &&
