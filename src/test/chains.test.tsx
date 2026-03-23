@@ -383,7 +383,7 @@ describe('Chain 12 — BackNavigation', () => {
 
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
     fireEvent.click(screen.getByText('Initialize'));
-    const iframe = container.querySelector('iframe')! as HTMLIFrameElement;
+    const iframe = container.querySelector('iframe') ?? undefined
 
     // Trigger image modal
     act(() => {
