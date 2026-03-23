@@ -406,7 +406,14 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
-  const isLoggedIn = !!user;
+
+  /** Centralised filter reset — single source of truth for clearing search and tag. */
+  const resetFilters = useCallback(() => {
+    setSearchQuery("");
+    setSelectedTag(DEFAULT_TAG);
+    // Maintain interaction momentum by restoring focus to the search input.
+    searchInputRef.current?.focus();
+  }, []);
 
   // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
@@ -424,21 +431,14 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
         null;
 
-      const isInputFocused =
-        activeElement?.tagName === "INPUT" ||
-        activeElement?.tagName === "TEXTAREA" ||
-        activeElement?.isContentEditable;
-
       if (isInDialog) return;
 
       if (e.key === "Escape") {
-        setSearchQuery("");
+        resetFilters();
         return;
       }
 
-      // Don't focus if focus is already in an input, textarea, or contentEditable element
-      const tagName = activeElement?.tagName;
-      const isContentEditable = activeElement?.isContentEditable;
+      if (activeElement?.tagName === "INPUT" || activeElement?.tagName === "TEXTAREA" || activeElement?.isContentEditable) return;
 
       if (
         e.key === "/" &&
@@ -454,18 +454,12 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [resetFilters]);
 
   const showNotification = useCallback((msg: string) => {
     if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
     setNotification(msg);
     notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
-  }, []);
-
-  /** Centralised filter reset — single source of truth for clearing search and tag. */
-  const resetFilters = useCallback(() => {
-    setSearchQuery("");
-    setSelectedTag(DEFAULT_TAG);
   }, []);
 
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
@@ -476,7 +470,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
     // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredQuery.trim().toLowerCase();
+    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
 
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
@@ -492,7 +486,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredQuery, selectedTag]);
+  }, [deferredSearchQuery, selectedTag]);
 
   const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
@@ -511,6 +505,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
 
   // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
+  const corruption = 85;
 
   return (
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
@@ -618,9 +613,17 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             <div className="flex justify-between items-center text-[10px] text-white/40 font-mono tracking-widest">
               <span>STATUS:</span>
               <span className="text-white/80">FADING</span>
-            </div>
-            <div className="h-px w-full bg-white/10 rounded overflow-hidden">
-              <div className="h-full bg-white/40 w-[85%]"></div>
+            </div>            
+            <div
+              className="h-px w-full bg-white/10 rounded overflow-hidden"
+              role="progressbar"
+              aria-valuenow={corruption}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Archive stability"
+              aria-valuetext={`${corruption}% corruption, critical`}
+            >
+              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
             </div>
             <div className="flex justify-between items-center text-[10px] text-white/20 font-mono tracking-widest mt-1">
               <span>ENTRIES:</span>

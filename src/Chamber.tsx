@@ -320,6 +320,8 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       : app.htmlContent + HOTLINK_SCRIPT_TEMPLATE;
   }, [app.htmlContent]);
 
+  const corruption = 85;
+  
   return (
     <div className="font-sans bg-black text-white antialiased overflow-hidden h-screen flex flex-col selection:bg-white/20 selection:text-white relative">
       {/* Atmospheric Background */}
@@ -554,9 +556,17 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               <span className="text-[10px] text-white/50 font-mono animate-pulse tracking-widest">
                 CRITICAL
               </span>
-            </div>
-            <div className="relative h-1 bg-white/5 rounded-full overflow-hidden">
-              <div className="h-full bg-white/40 w-[85%] relative">
+            </div>            
+            <div
+              className="relative h-1 bg-white/5 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={corruption}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Psychological stability"
+              aria-valuetext={`${corruption}% corruption, critical`}
+            >
+              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
               </div>
             </div>
