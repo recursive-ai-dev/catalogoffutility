@@ -564,9 +564,9 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               aria-valuemin={0}
               aria-valuemax={100}
               aria-label="Psychological stability"
-              aria-valuetext={'${corruption}% corruption, critical'}
+              aria-valuetext={`${corruption}% corruption, critical`}
             >
-              <div className="h-full bg-white/40 relative" style={{ width: '${corruption}%' }}>
+              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
               </div>
             </div>
