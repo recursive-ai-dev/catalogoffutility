@@ -16,9 +16,18 @@ export interface Clock {
   now(): Date;
 }
 
+// Pre-configured formatter to avoid repeated Intl.DateTimeFormat allocation
+// during high-frequency timestamp generation (e.g. system logs).
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
 /** Live wall-clock; used by default in all production renders. */
 export const realClock: Clock = {
-  timeString: () => new Date().toLocaleTimeString("en-US", { hour12: false }),
+  timeString: () => timeFormatter.format(new Date()),
   now: () => new Date(),
 };
 
