@@ -647,7 +647,7 @@ describe('Chain 8 — ImageHotlink', () => {
     await waitFor(() => expect(screen.getByText(/Asset_Viewer/i)).toBeTruthy());
   });
 
-  it('isSafeImageSrc enhancement: protocol/format validation', async () => {
+  it('isSafeImageSrc enhancement: protocol/format/credential validation', async () => {
     const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
     fireEvent.click(screen.getByText('Initialize'));
     const iframe = container.querySelector('iframe')! as HTMLIFrameElement;
@@ -658,6 +658,7 @@ describe('Chain 8 — ImageHotlink', () => {
       { src: 'http://localhost:3000/x.jpg', ok: true },
       { src: 'data:image/png;base64,abc', ok: true },
       { src: 'data:image/svg+xml;base64,abc', ok: false },
+      { src: 'https://user:pass@safe.com/x.jpg', ok: false }, // Credentials rejected
     ];
 
     for (const { src, ok } of cases) {
