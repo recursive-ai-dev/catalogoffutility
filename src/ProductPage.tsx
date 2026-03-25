@@ -5,9 +5,15 @@ interface ProductPageProps {
   app: AppEntry;
   onBack: () => void;
   onEnter: () => void;
+  onTagSelect: (tag: string) => void;
 }
 
-export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
+export function ProductPage({
+  app,
+  onBack,
+  onEnter,
+  onTagSelect,
+}: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
@@ -119,12 +125,14 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
             {app.tags && app.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-8">
                 {app.tags.map((tag) => (
-                  <span
+                  <button
                     key={tag}
-                    className="px-3 py-1 border border-white/10 text-white/35 text-[9px] font-mono tracking-widest uppercase rounded-full"
+                    onClick={() => onTagSelect(tag)}
+                    aria-label={`Filter by ${tag}`}
+                    className="px-3 py-1 border border-white/10 text-white/35 text-[9px] font-mono tracking-widest uppercase rounded-full hover:border-white/30 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
                   >
                     {tag}
-                  </span>
+                  </button>
                 ))}
               </div>
             )}
