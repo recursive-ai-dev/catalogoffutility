@@ -6,6 +6,8 @@ import { Clock, realClock } from "./lib/clock";
 
 interface CatalogProps {
   onSelectApp: (app: AppEntry) => void;
+  selectedTag?: string;
+  onTagChange?: (tag: string) => void;
   /**
    * Determinism provider. Pass `makeFakeClock(fixed)` in tests to freeze
    * the mount-time log entry at a known instant.
@@ -385,10 +387,18 @@ const Card = React.memo(function Card({
   );
 });
 
-export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
+export const Catalog = React.memo(function Catalog({
+  onSelectApp,
+  selectedTag: controlledTag,
+  onTagChange,
+  clock,
+}: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const deferredSearchQuery = React.useDeferredValue(searchQuery);
-  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
+  const [internalTag, setInternalTag] = useState(DEFAULT_TAG);
+
+  const selectedTag = controlledTag ?? internalTag;
+  const setSelectedTag = onTagChange ?? setInternalTag;
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
@@ -623,7 +633,10 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               aria-label="Archive stability"
               aria-valuetext={`${corruption}% corruption, critical`}
             >
-              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
+              <div
+                className="h-full bg-white/40 relative"
+                style={{ width: `${corruption}%` }}
+              ></div>
             </div>
             <div className="flex justify-between items-center text-[10px] text-white/20 font-mono tracking-widest mt-1">
               <span>ENTRIES:</span>
