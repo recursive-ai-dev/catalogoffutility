@@ -658,6 +658,7 @@ describe('Chain 8 — ImageHotlink', () => {
       { src: 'http://localhost:3000/x.jpg', ok: true },
       { src: 'data:image/png;base64,abc', ok: true },
       { src: 'data:image/svg+xml;base64,abc', ok: false },
+      { src: 'https://user:pass@evil.com/img.jpg', ok: false },
     ];
 
     for (const { src, ok } of cases) {

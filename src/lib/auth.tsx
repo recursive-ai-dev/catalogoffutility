@@ -85,12 +85,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // This preserves any server-side username customisation the user may have
     // made; the upsert path that always overwrote `username` with the email
     // prefix was a data-integrity hazard (BUG-03).
-    const { data: updated } = await supabase
+    const { data: updated, error: updateError } = await supabase
       .from("profiles")
       .update({ last_seen_at: now })
       .eq("id", userId)
       .select()
       .maybeSingle();
+
+    if (updateError) {
+      console.warn("[void] Profile update failed — session continues.", updateError.message);
+    }
 
     if (updated) {
       setProfile(updated as Profile);
