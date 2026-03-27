@@ -623,7 +623,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               aria-label="Archive stability"
               aria-valuetext={`${corruption}% corruption, critical`}
             >
-              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
+              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }} />
             </div>
             <div className="flex justify-between items-center text-[10px] text-white/20 font-mono tracking-widest mt-1">
               <span>ENTRIES:</span>

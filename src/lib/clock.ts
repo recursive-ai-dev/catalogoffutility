@@ -16,9 +16,21 @@ export interface Clock {
   now(): Date;
 }
 
+/**
+ * Pre-allocated formatter to avoid the overhead of repeated Intl object creation.
+ * This yields a measurable performance gain in the Chamber component where
+ * logs are generated frequently (BUG-15).
+ */
+const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  hour12: false,
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+});
+
 /** Live wall-clock; used by default in all production renders. */
 export const realClock: Clock = {
-  timeString: () => new Date().toLocaleTimeString("en-US", { hour12: false }),
+  timeString: () => TIME_FORMATTER.format(new Date()),
   now: () => new Date(),
 };
 
@@ -29,7 +41,7 @@ export const realClock: Clock = {
  * when replayed with the same seed.
  */
 export function makeFakeClock(fixed: Date): Clock {
-  const ts = fixed.toLocaleTimeString("en-US", { hour12: false });
+  const ts = TIME_FORMATTER.format(fixed);
   return {
     timeString: () => ts,
     now: () => new Date(fixed.getTime()),
