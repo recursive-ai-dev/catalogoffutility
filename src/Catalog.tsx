@@ -233,7 +233,7 @@ const Card = React.memo(function Card({
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm ${
+      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
         entry.missing
           ? "opacity-40 hover:opacity-60 cursor-not-allowed"
           : isAuthLocked
@@ -537,7 +537,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
 
         <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             onClick={() => {
               const navigable = CATALOG_ENTRIES.filter(e => !e.missing && (!e.requiresAuth || user));
               if (navigable.length > 0) {
@@ -556,7 +556,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             </span>
           </button>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             onClick={() => {
               resetFilters();
               showNotification("Memories purged.");
@@ -570,7 +570,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             </span>
           </button>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             onClick={() => showNotification("Giving up is not an option.")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -582,7 +582,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           </button>
           <div className="h-px bg-white/10 my-4 w-full"></div>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             onClick={() => showNotification("Staring into the void...")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -593,7 +593,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             </span>
           </button>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             onClick={() => showNotification("Exit mechanism destroyed.")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -623,7 +623,10 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               aria-label="Archive stability"
               aria-valuetext={`${corruption}% corruption, critical`}
             >
-              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
+              <div
+                className="h-full bg-white/40 relative"
+                style={{ width: `${corruption}%` }}
+              />
             </div>
             <div className="flex justify-between items-center text-[10px] text-white/20 font-mono tracking-widest mt-1">
               <span>ENTRIES:</span>
@@ -699,7 +702,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               key={tag}
               onClick={() => setSelectedTag(tag)}
               aria-pressed={selectedTag === tag}
-              className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer ${
+              className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
                 selectedTag === tag
                   ? "bg-white/10 border-white/20 text-white"
                   : "bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white"

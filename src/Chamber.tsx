@@ -335,7 +335,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       {/* Top Navigation */}
       <header className="relative z-30 flex items-center justify-between whitespace-nowrap border-b border-white/10 bg-black/40 backdrop-blur-xl px-10 py-6">
         <button
-          className="flex items-center gap-6 text-white/70 hover:text-white cursor-pointer transition-colors group"
+          className="flex items-center gap-6 text-white/70 hover:text-white cursor-pointer transition-colors group focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
           onClick={onBack}
           title="Back to product (Esc)"
           aria-label="Back to product page"
@@ -353,7 +353,9 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
         <div className="flex items-center gap-8">
           <button
             onClick={() => setNoiseEnabled(!noiseEnabled)}
-            className={`hidden md:flex items-center gap-3 text-[10px] font-mono tracking-widest uppercase px-4 py-2 rounded-full border transition-all duration-300 ${noiseEnabled ? "border-white/20 text-white bg-white/5" : "border-transparent text-white/40 hover:text-white hover:bg-white/5"}`}
+            aria-label={noiseEnabled ? "Disable noise" : "Enable noise"}
+            aria-pressed={noiseEnabled}
+            className={`hidden md:flex items-center gap-3 text-[10px] font-mono tracking-widest uppercase px-4 py-2 rounded-full border transition-all duration-300 focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${noiseEnabled ? "border-white/20 text-white bg-white/5" : "border-transparent text-white/40 hover:text-white hover:bg-white/5"}`}
           >
             <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
               {noiseEnabled ? "grain" : "lens_blur"}
@@ -415,8 +417,10 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               {isInitialized && (
                 <button
                   onClick={toggleFullscreen}
-                  className="absolute top-6 right-6 z-30 p-3 bg-black/40 hover:bg-white/10 text-white/50 hover:text-white rounded-full border border-white/10 hover:border-white/30 transition-all backdrop-blur-md cursor-pointer"
+                  className="absolute top-6 right-6 z-30 p-3 bg-black/40 hover:bg-white/10 text-white/50 hover:text-white rounded-full border border-white/10 hover:border-white/30 transition-all backdrop-blur-md cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
                   title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                  aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                  aria-pressed={isFullscreen}
                 >
                   <span className="material-symbols-outlined text-sm font-light">
                     {isFullscreen ? "fullscreen_exit" : "fullscreen"}
@@ -585,8 +589,10 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setShowLogs(!showLogs)}
-                  className="text-white/40 hover:text-white transition-colors"
+                  className="text-white/40 hover:text-white transition-colors focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
                   title={showLogs ? "Hide Logs" : "Show Logs"}
+                  aria-label={showLogs ? "Hide Logs" : "Show Logs"}
+                  aria-pressed={showLogs}
                 >
                   <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                     {showLogs ? "visibility" : "visibility_off"}
@@ -668,7 +674,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
             <button
               onClick={onBack}
               title="Cease (Esc)"
-              className="group w-full relative h-12 bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-all duration-300 overflow-hidden flex items-center justify-center gap-4 cursor-pointer rounded-full"
+              className="group w-full relative h-12 bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-all duration-300 overflow-hidden flex items-center justify-center gap-4 cursor-pointer rounded-full focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             >
               <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light" aria-hidden="true">
                 power_settings_new
