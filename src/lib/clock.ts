@@ -16,9 +16,19 @@ export interface Clock {
   now(): Date;
 }
 
+/** Pre-allocated formatter for HH:MM:SS (24-hour, en-US locale). */
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
 /** Live wall-clock; used by default in all production renders. */
 export const realClock: Clock = {
-  timeString: () => new Date().toLocaleTimeString("en-US", { hour12: false }),
+  // Use pre-allocated formatter to avoid the overhead of repeated object
+  // creation and improve efficiency of high-frequency log generation.
+  timeString: () => timeFormatter.format(new Date()),
   now: () => new Date(),
 };
 
