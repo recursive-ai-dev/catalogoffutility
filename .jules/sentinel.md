@@ -1,0 +1,4 @@
+## 2025-05-14 - Hardening URL Validation against Credential Leakage
+**Vulnerability:** `isSafeImageSrc` used a protocol-prefix short-circuit (`src.startsWith("https://")`) which bypassed more rigorous security checks for trusted protocols.
+**Learning:** External protocols like `https:` should not be blindly trusted based on prefix alone. Malicious payloads like embedded credentials (`https://user:pass@evil.com`) can be used to leak sensitive information if the URL is not fully parsed and validated.
+**Prevention:** Always use a robust URL parser (like the `URL` constructor) to decompose and inspect all parts of a URL, especially when handling user-provided or third-party content. Specifically, check for the presence of `username` or `password` properties even on supposedly "safe" protocols.
