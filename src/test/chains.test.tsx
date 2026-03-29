@@ -682,6 +682,23 @@ describe('Chain 8 — ImageHotlink', () => {
     }
   });
 
+  it('rejects postMessage with embedded credentials (regression BUG-06d)', async () => {
+    const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByText('Initialize'));
+    const iframe = container.querySelector('iframe')!;
+
+    const insecureSrc = 'https://user:password@secure.example.com/img.jpg';
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', {
+        data: { type: 'IMAGE_CLICKED', src: insecureSrc },
+        origin: window.location.origin,
+        source: iframe.contentWindow,
+      }));
+    });
+    // Modal should NOT appear
+    expect(screen.queryByText(/Asset_Viewer/i)).toBeNull();
+  });
+
 });
 
 // ---------------------------------------------------------------------------
