@@ -632,6 +632,23 @@ describe('Chain 8 — ImageHotlink', () => {
     expect(screen.queryByText(/Asset_Viewer/i)).toBeNull();
   });
 
+  it('rejects postMessage with embedded credentials in URL (regression leakage)', async () => {
+    const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByText('Initialize'));
+    const iframe = container.querySelector('iframe')!;
+
+    const credentialsSrc = 'https://user:password@example.com/img.jpg';
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', {
+        data: { type: 'IMAGE_CLICKED', src: credentialsSrc },
+        origin: window.location.origin,
+        source: iframe.contentWindow,
+      }));
+    });
+    // Modal should NOT appear
+    expect(screen.queryByText(/Asset_Viewer/i)).toBeNull();
+  });
+
   it('accepts postMessage with localhost http: URL', async () => {
     const { container } = render(<Chamber app={makeApp()} onBack={vi.fn()} />);
     fireEvent.click(screen.getByText('Initialize'));
