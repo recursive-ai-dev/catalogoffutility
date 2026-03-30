@@ -417,6 +417,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                   onClick={toggleFullscreen}
                   className="absolute top-6 right-6 z-30 p-3 bg-black/40 hover:bg-white/10 text-white/50 hover:text-white rounded-full border border-white/10 hover:border-white/30 transition-all backdrop-blur-md cursor-pointer"
                   title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                  aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                 >
                   <span className="material-symbols-outlined text-sm font-light">
                     {isFullscreen ? "fullscreen_exit" : "fullscreen"}

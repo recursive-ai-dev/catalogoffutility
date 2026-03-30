@@ -51,7 +51,7 @@ describe('Chain 4 — ParagraphSplit', () => {
     const app = makeApp({
       longDescription: 'Paragraph one.\n\nParagraph two.\n\nParagraph three.',
     });
-    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     expect(screen.getByText('Paragraph one.')).toBeTruthy();
     expect(screen.getByText('Paragraph two.')).toBeTruthy();
     expect(screen.getByText('Paragraph three.')).toBeTruthy();
@@ -59,14 +59,14 @@ describe('Chain 4 — ParagraphSplit', () => {
 
   it('renders no paragraph section when longDescription is undefined', () => {
     const app = makeApp({ longDescription: undefined });
-    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     // CLASSIFIED_NOTES section should not appear
     expect(container.textContent).not.toContain('CLASSIFIED_NOTES');
   });
 
   it('filters empty strings produced by leading/trailing newlines', () => {
     const app = makeApp({ longDescription: '\n\nParagraph one.\n\n' });
-    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     expect(screen.getByText('Paragraph one.')).toBeTruthy();
   });
 });
@@ -79,7 +79,7 @@ describe('Chain 3 — ProductReveal', () => {
   it('starts unrevealed and reveals after 80ms', () => {
     vi.useFakeTimers();
     const app = makeApp();
-    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     const rightPanel = container.querySelector('.transition-all.duration-700');
     expect(rightPanel?.className).toContain('opacity-0');
     act(() => { vi.advanceTimersByTime(100); });
@@ -90,7 +90,7 @@ describe('Chain 3 — ProductReveal', () => {
   it('cleans up timer on unmount without error', () => {
     vi.useFakeTimers();
     const app = makeApp();
-    const { unmount } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { unmount } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     unmount();
     act(() => { vi.advanceTimersByTime(200); });
     vi.useRealTimers();
@@ -348,6 +348,43 @@ describe('Chain 12 — BackNavigation', () => {
     fireEvent.click(screen.getByRole('button', { name: /Archive/i }));
     expect(screen.getByRole('heading', { name: /The Archive/i })).toBeTruthy();
     expect(screen.queryByText(/Enter Chamber/i)).toBeNull();
+  });
+
+  it('selected tag filter persists after returning from product page', () => {
+    render(<App />);
+    // Select a tag
+    fireEvent.click(screen.getByRole('button', { name: 'Interactive' }));
+    // Navigate to a product
+    const entry = CATALOG_ENTRIES.find(e => e.tags?.includes('Interactive') && !e.missing && !e.requiresAuth)!;
+    fireEvent.click(screen.getByText(entry.title));
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
+    // Return to catalog
+    fireEvent.click(screen.getByRole('button', { name: /Archive/i }));
+    // Verify tag is still selected (Interactive entries visible, non-Interactive hidden)
+    const nonInteractive = CATALOG_ENTRIES.find(e => !e.tags?.includes('Interactive'));
+    if (nonInteractive) {
+      expect(screen.queryByText(nonInteractive.title)).toBeNull();
+    }
+  });
+
+  it('clicking a tag on product page filters catalog and navigates back', () => {
+    render(<App />);
+    // Navigate to a product that has tags
+    const entryWithTags = CATALOG_ENTRIES.find(e => e.tags && e.tags.length > 0 && !e.missing && !e.requiresAuth)!;
+    fireEvent.click(screen.getByText(entryWithTags.title));
+
+    // Click a tag on the product page
+    const tagToSelect = entryWithTags.tags![0];
+    fireEvent.click(screen.getByRole('button', { name: `Filter by ${tagToSelect}` }));
+
+    // Should be back in catalog
+    expect(screen.getByRole('heading', { name: /The Archive/i })).toBeTruthy();
+
+    // Tag should be selected
+    const nonMatchingEntry = CATALOG_ENTRIES.find(e => !e.tags?.includes(tagToSelect));
+    if (nonMatchingEntry) {
+      expect(screen.queryByText(nonMatchingEntry.title)).toBeNull();
+    }
   });
 
   it('back from chamber returns to product page', () => {
