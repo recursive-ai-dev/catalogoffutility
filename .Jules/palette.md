@@ -9,3 +9,8 @@
 
 **Learning:** When a user clears a search or filter, their intent is often to start a new search. Automatically restoring focus to the search input reduces friction and maintains interaction momentum.
 **Action:** Call `.focus()` on the relevant input after destructive actions like clearing search queries or resetting global filters.
+
+## 2025-05-15 - Persistent Filtering and Interactive Navigation
+
+**Learning:** To maintain user context and encourage exploration, detail pages should provide paths back to the primary view with relevant filters applied. Lifting the filtering state to a common parent (e.g., `App.tsx`) ensures that this state persists through navigation and can be updated from any component.
+**Action:** Lift `selectedTag` state to `App.tsx` and provide an `onTagSelect` callback to detail pages (like `ProductPage.tsx`) to allow users to filter the catalog directly from an item's tags.
