@@ -18,6 +18,15 @@ interface CatalogProps {
 // re-filter on every Catalog render.
 const LOCKED_COUNT = CATALOG_ENTRIES.filter((e) => e.requiresAuth).length;
 
+/**
+ * Pre-allocated date formatter for user profiles. Avoiding repeated object
+ * creation during re-renders of the UserSection component.
+ */
+const JOINED_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "short",
+});
+
 // Pre-calculate search blobs to avoid redundant string operations during filtering.
 // This reduces main-thread work by ~40% during active search.
 const SEARCHABLE_ENTRIES = CATALOG_ENTRIES.map((entry) => ({
@@ -121,10 +130,7 @@ const UserSection = React.memo(function UserSection() {
   const displayName =
     profile?.username ?? user.email?.split("@")[0] ?? "entity";
   const joined = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-      })
+    ? JOINED_DATE_FORMATTER.format(new Date(profile.created_at))
     : null;
 
   return (
@@ -623,7 +629,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               aria-label="Archive stability"
               aria-valuetext={`${corruption}% corruption, critical`}
             >
-              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
+              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }} />
             </div>
             <div className="flex justify-between items-center text-[10px] text-white/20 font-mono tracking-widest mt-1">
               <span>ENTRIES:</span>
