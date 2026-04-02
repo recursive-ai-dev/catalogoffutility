@@ -5,9 +5,10 @@ interface ProductPageProps {
   app: AppEntry;
   onBack: () => void;
   onEnter: () => void;
+  onTagSelect: (tag: string) => void;
 }
 
-export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
+export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
@@ -68,7 +69,7 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
           <button
             onClick={onBack}
             title="Back to catalog (Esc)"
-            className="flex items-center gap-3 text-white/50 hover:text-white transition-colors group cursor-pointer"
+            className="flex items-center gap-3 text-white/50 hover:text-white transition-colors group cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
           >
             <span className="material-symbols-outlined !text-lg font-light transition-transform group-hover:-translate-x-1" aria-hidden="true">
               arrow_back
@@ -119,12 +120,14 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
             {app.tags && app.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-8">
                 {app.tags.map((tag) => (
-                  <span
+                  <button
                     key={tag}
-                    className="px-3 py-1 border border-white/10 text-white/35 text-[9px] font-mono tracking-widest uppercase rounded-full"
+                    onClick={() => onTagSelect(tag)}
+                    aria-label={`Filter by ${tag}`}
+                    className="px-3 py-1 border border-white/10 text-white/35 hover:text-white/70 hover:border-white/30 text-[9px] font-mono tracking-widest uppercase rounded-full transition-all cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
                   >
                     {tag}
-                  </span>
+                  </button>
                 ))}
               </div>
             )}
@@ -217,7 +220,7 @@ export function ProductPage({ app, onBack, onEnter }: ProductPageProps) {
         <div className="shrink-0 px-8 py-6 border-t border-white/10 bg-black/60 backdrop-blur-xl">
           <button
             onClick={onEnter}
-            className="w-full group relative h-13 bg-white/[0.03] border border-white/20 hover:border-white/50 hover:bg-white/8 transition-all duration-500 flex items-center justify-center gap-4 cursor-pointer rounded-full overflow-hidden py-4"
+            className="w-full group relative h-13 bg-white/[0.03] border border-white/20 hover:border-white/50 hover:bg-white/8 transition-all duration-500 flex items-center justify-center gap-4 cursor-pointer rounded-full overflow-hidden py-4 focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           >
             <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light" aria-hidden="true">
               play_circle

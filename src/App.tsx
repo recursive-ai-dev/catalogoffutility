@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Catalog } from "./Catalog";
+import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
@@ -21,6 +21,7 @@ type View = "catalog" | "product" | "chamber";
 function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string>(DEFAULT_TAG);
   const { user } = useAuth();
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
@@ -63,6 +64,12 @@ function AppInner() {
     }
     setView("product");
   }, [selectedApp]);
+
+  const handleTagSelect = useCallback((tag: string) => {
+    setSelectedTag(tag);
+    setView("catalog");
+    setSelectedApp(null);
+  }, []);
 
   // Derive effective view at render time to prevent auth-gated pages from
   // flashing before the useEffect runs.
@@ -110,13 +117,18 @@ function AppInner() {
         app={selectedApp}
         onBack={handleBackToCatalog}
         onEnter={handleEnterChamber}
+        onTagSelect={handleTagSelect}
       />
     );
   }
 
   return (
     <>
-      <Catalog onSelectApp={handleSelectApp} />
+      <Catalog
+        onSelectApp={handleSelectApp}
+        selectedTag={selectedTag}
+        onTagSelect={setSelectedTag}
+      />
       {authModalVisible && <AuthModal />}
       <PrivacyBanner />
     </>

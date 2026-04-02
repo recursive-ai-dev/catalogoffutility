@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { makeFakeClock } from '../lib/clock';
 
@@ -51,7 +51,14 @@ describe('Chain 4 — ParagraphSplit', () => {
     const app = makeApp({
       longDescription: 'Paragraph one.\n\nParagraph two.\n\nParagraph three.',
     });
-    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    render(
+      <ProductPage
+        app={app}
+        onBack={vi.fn()}
+        onEnter={vi.fn()}
+        onTagSelect={vi.fn()}
+      />,
+    );
     expect(screen.getByText('Paragraph one.')).toBeTruthy();
     expect(screen.getByText('Paragraph two.')).toBeTruthy();
     expect(screen.getByText('Paragraph three.')).toBeTruthy();
@@ -59,14 +66,28 @@ describe('Chain 4 — ParagraphSplit', () => {
 
   it('renders no paragraph section when longDescription is undefined', () => {
     const app = makeApp({ longDescription: undefined });
-    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { container } = render(
+      <ProductPage
+        app={app}
+        onBack={vi.fn()}
+        onEnter={vi.fn()}
+        onTagSelect={vi.fn()}
+      />,
+    );
     // CLASSIFIED_NOTES section should not appear
     expect(container.textContent).not.toContain('CLASSIFIED_NOTES');
   });
 
   it('filters empty strings produced by leading/trailing newlines', () => {
     const app = makeApp({ longDescription: '\n\nParagraph one.\n\n' });
-    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    render(
+      <ProductPage
+        app={app}
+        onBack={vi.fn()}
+        onEnter={vi.fn()}
+        onTagSelect={vi.fn()}
+      />,
+    );
     expect(screen.getByText('Paragraph one.')).toBeTruthy();
   });
 });
@@ -79,7 +100,14 @@ describe('Chain 3 — ProductReveal', () => {
   it('starts unrevealed and reveals after 80ms', () => {
     vi.useFakeTimers();
     const app = makeApp();
-    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { container } = render(
+      <ProductPage
+        app={app}
+        onBack={vi.fn()}
+        onEnter={vi.fn()}
+        onTagSelect={vi.fn()}
+      />,
+    );
     const rightPanel = container.querySelector('.transition-all.duration-700');
     expect(rightPanel?.className).toContain('opacity-0');
     act(() => { vi.advanceTimersByTime(100); });
@@ -90,9 +118,18 @@ describe('Chain 3 — ProductReveal', () => {
   it('cleans up timer on unmount without error', () => {
     vi.useFakeTimers();
     const app = makeApp();
-    const { unmount } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { unmount } = render(
+      <ProductPage
+        app={app}
+        onBack={vi.fn()}
+        onEnter={vi.fn()}
+        onTagSelect={vi.fn()}
+      />,
+    );
     unmount();
-    act(() => { vi.advanceTimersByTime(200); });
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
     vi.useRealTimers();
   });
 });
@@ -897,6 +934,59 @@ describe('DEFAULT_TAG & resetFilters — Catalog', () => {
     const input = screen.getByPlaceholderText('Search the void...');
     await userEvent.type(input, 'xyznotfound');
     expect(screen.getByText('Clear all filters')).toBeTruthy();
+  });
+
+  it('filters persist when navigating back from product page', async () => {
+    render(<App />);
+    // Wait for initial load (UserSection and Catalog)
+    await screen.findByRole('heading', { name: /The Void/i });
+
+    // Select a tag (Simulation is safe, not auth gated)
+    fireEvent.click(screen.getByRole('button', { name: 'Simulation' }));
+
+    // Navigate to a product
+    const productCard = screen.getByText('THE WORLD THAT DOESN\'T CARE').closest('[role="button"]')!;
+    fireEvent.click(productCard);
+
+    // Wait for navigation
+    await screen.findByText(/Enter Chamber/i);
+
+    // Navigate back
+    fireEvent.click(screen.getByRole('button', { name: /Archive/i }));
+
+    // Wait for Catalog to reappear
+    await screen.findByRole('heading', { name: /The Void/i });
+
+    // Tag should still be active (verify non-simulation entry is hidden)
+    const nonSim = CATALOG_ENTRIES.find(e => !e.tags?.includes('Simulation'))!;
+    expect(screen.queryByText(nonSim.title)).toBeNull();
+  });
+
+  it('clicking a tag on the product page navigates to catalog with that filter', async () => {
+    const { container } = render(<App />);
+    // Wait for initial load
+    await screen.findByRole('heading', { name: /The Void/i });
+
+    // Navigate to a product (Simulation tagged, not auth gated)
+    const productCard = screen.getByText('THE WORLD THAT DOESN\'T CARE').closest('[role="button"]')!;
+    fireEvent.click(productCard);
+
+    // Wait for navigation
+    await screen.findByText(/Enter Chamber/i);
+
+    // Find the Simulation button in the main content area of the ProductPage
+    const productPage = container.querySelector('main');
+    const simBtn = within(productPage as HTMLElement).getByRole('button', { name: 'Filter by Simulation' });
+
+    // Click 'Simulation' tag on product page
+    fireEvent.click(simBtn);
+
+    // Wait for navigation back
+    await screen.findByRole('heading', { name: /The Void/i });
+
+    // Simulation filter should be active
+    const nonSim = CATALOG_ENTRIES.find(e => !e.tags?.includes('Simulation'))!;
+    expect(screen.queryByText(nonSim.title)).toBeNull();
   });
 });
 
