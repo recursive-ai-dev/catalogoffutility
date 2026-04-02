@@ -29,13 +29,18 @@ function isSafeImageSrc(src: string): boolean {
   if (src.length > 2 * 1024 * 1024) return false;
 
   // Short-circuit common protocols to avoid expensive URL parsing overhead.
-  // We only short-circuit https: as it is always safe. http: must proceed
-  // to hostname validation to ensure it only points to localhost (BUG-06c).
-  if (src.startsWith("https://")) return true;
+  // We only short-circuit https: if it does not contain an '@' character,
+  // which might indicate embedded credentials (BUG-06b).
+  if (src.startsWith("https://") && !src.includes("@")) return true;
   if (src.startsWith("data:")) return SAFE_DATA_URL_REGEX.test(src);
 
   try {
     const url = new URL(src);
+
+    // Explicitly reject any URL with embedded credentials to prevent
+    // authentication or SSRF bypasses via crafted image sources.
+    if (url.username || url.password) return false;
+
     if (url.protocol === "https:") return true;
     // Allow http: only for local development (localhost or 127.0.0.1)
     if (url.protocol === "http:") {
