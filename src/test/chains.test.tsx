@@ -821,7 +821,12 @@ describe('Deterministic Replay — Clock Provider', () => {
     // Freeze time at a known instant so every log entry gets the same timestamp.
     const FIXED = new Date(2000, 0, 1, 12, 0, 0); // 2000-01-01 12:00:00 local
     const fakeClock = makeFakeClock(FIXED);
-    const expectedTime = FIXED.toLocaleTimeString('en-US', { hour12: false });
+    const expectedTime = new Intl.DateTimeFormat('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(FIXED);
 
     // Perform the same action sequence and capture the log panel's text content.
     function runOnce(): string {
@@ -849,7 +854,12 @@ describe('Deterministic Replay — Clock Provider', () => {
   it('fake clock timeString is always the seeded value (not real wall-clock)', () => {
     const FIXED = new Date(2000, 0, 1, 8, 30, 0); // 08:30:00
     const fakeClock = makeFakeClock(FIXED);
-    const expected = FIXED.toLocaleTimeString('en-US', { hour12: false });
+    const expected = new Intl.DateTimeFormat('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(FIXED);
     // Multiple calls must all return the same frozen string.
     expect(fakeClock.timeString()).toBe(expected);
     expect(fakeClock.timeString()).toBe(expected);
