@@ -6,6 +6,8 @@ import { Clock, realClock } from "./lib/clock";
 
 interface CatalogProps {
   onSelectApp: (app: AppEntry) => void;
+  selectedTag?: string;
+  onTagSelect?: (tag: string) => void;
   /**
    * Determinism provider. Pass `makeFakeClock(fixed)` in tests to freeze
    * the mount-time log entry at a known instant.
@@ -107,7 +109,7 @@ const UserSection = React.memo(function UserSection() {
         </div>
         <button
           onClick={showAuthModal}
-          className="w-full flex items-center justify-center gap-2 py-2 border border-white/10 hover:border-white/25 text-white/30 hover:text-white/60 text-[9px] font-mono tracking-widest uppercase rounded-lg transition-all cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 py-2 border border-white/10 hover:border-white/25 text-white/30 hover:text-white/60 text-[9px] font-mono tracking-widest uppercase rounded-lg transition-all cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
         >
           <span className="material-symbols-outlined font-light text-sm">
             fingerprint
@@ -153,7 +155,7 @@ const UserSection = React.memo(function UserSection() {
       <button
         onClick={handleSignOut}
         disabled={signingOut}
-        className="w-full flex items-center justify-center gap-2 py-2 border border-white/5 hover:border-white/15 text-white/15 hover:text-white/35 text-[9px] font-mono tracking-widest uppercase rounded-lg transition-all cursor-pointer disabled:opacity-40"
+        className="w-full flex items-center justify-center gap-2 py-2 border border-white/5 hover:border-white/15 text-white/15 hover:text-white/35 text-[9px] font-mono tracking-widest uppercase rounded-lg transition-all cursor-pointer disabled:opacity-40 focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
       >
         <span className="material-symbols-outlined font-light text-sm">
           logout
@@ -216,9 +218,9 @@ const Card = React.memo(function Card({
   };
 
   const ariaLabel = entry.missing
-    ? `${entry.title} — unavailable`
+    ? `${entry.title} \u2014 unavailable`
     : isAuthLocked
-      ? `${entry.title} — authentication required`
+      ? `${entry.title} \u2014 authentication required`
       : `Open ${entry.title}`;
 
   return (
@@ -233,7 +235,7 @@ const Card = React.memo(function Card({
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm ${
+      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
         entry.missing
           ? "opacity-40 hover:opacity-60 cursor-not-allowed"
           : isAuthLocked
@@ -385,10 +387,14 @@ const Card = React.memo(function Card({
   );
 });
 
-export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
+export const Catalog = React.memo(function Catalog({
+  onSelectApp,
+  selectedTag = DEFAULT_TAG,
+  onTagSelect,
+  clock,
+}: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const deferredSearchQuery = React.useDeferredValue(searchQuery);
-  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
@@ -407,15 +413,15 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
 
-  /** Centralised filter reset — single source of truth for clearing search and tag. */
+  /** Centralised filter reset \u2014 single source of truth for clearing search and tag. */
   const resetFilters = useCallback(() => {
     setSearchQuery("");
-    setSelectedTag(DEFAULT_TAG);
+    onTagSelect?.(DEFAULT_TAG);
     // Maintain interaction momentum by restoring focus to the search input.
     searchInputRef.current?.focus();
-  }, []);
+  }, [onTagSelect]);
 
-  // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
+  // "/" and "Escape" shortcut handler \u2014 only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -503,7 +509,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   );
 
 
-  // Derived from the static registry — stable across all renders.
+  // Derived from the static registry \u2014 stable across all renders.
   const lockedCount = LOCKED_COUNT;
   const corruption = 85;
 
@@ -537,7 +543,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
 
         <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             onClick={() => {
               const navigable = CATALOG_ENTRIES.filter(e => !e.missing && (!e.requiresAuth || user));
               if (navigable.length > 0) {
@@ -556,7 +562,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             </span>
           </button>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             onClick={() => {
               resetFilters();
               showNotification("Memories purged.");
@@ -570,7 +576,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             </span>
           </button>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             onClick={() => showNotification("Giving up is not an option.")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -582,7 +588,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           </button>
           <div className="h-px bg-white/10 my-4 w-full"></div>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             onClick={() => showNotification("Staring into the void...")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -593,7 +599,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
             </span>
           </button>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             onClick={() => showNotification("Exit mechanism destroyed.")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -623,7 +629,10 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
               aria-label="Archive stability"
               aria-valuetext={`${corruption}% corruption, critical`}
             >
-              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
+              <div
+                className="h-full bg-white/40 relative"
+                style={{ width: `${corruption}%` }}
+              ></div>
             </div>
             <div className="flex justify-between items-center text-[10px] text-white/20 font-mono tracking-widest mt-1">
               <span>ENTRIES:</span>
@@ -697,9 +706,9 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           {FILTER_TAGS.map((tag) => (
             <button
               key={tag}
-              onClick={() => setSelectedTag(tag)}
+              onClick={() => onTagSelect?.(tag)}
               aria-pressed={selectedTag === tag}
-              className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer ${
+              className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
                 selectedTag === tag
                   ? "bg-white/10 border-white/20 text-white"
                   : "bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white"
@@ -726,7 +735,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                   {lockedCount} entries are sealed from unverified observers. The archive keeps its depths hidden from those who have not yet proven they exist.{" "}
                   <button
                     onClick={showAuthModal}
-                    className="text-white/35 hover:text-white/60 underline underline-offset-2 transition-colors cursor-pointer"
+                    className="text-white/35 hover:text-white/60 underline underline-offset-2 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
                   >
                     Identify yourself
                   </button>{" "}
@@ -764,7 +773,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                   key={entry.id}
                   entry={entry}
                   onSelect={handleCardSelect}
-                  onTagSelect={setSelectedTag}
+                  onTagSelect={(tag) => onTagSelect?.(tag)}
                   isUserLoggedIn={!!user}
                 />
               ))}
