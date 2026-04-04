@@ -6,6 +6,8 @@ import { Clock, realClock } from "./lib/clock";
 
 interface CatalogProps {
   onSelectApp: (app: AppEntry) => void;
+  selectedTag: string;
+  onTagSelect: (tag: string) => void;
   /**
    * Determinism provider. Pass `makeFakeClock(fixed)` in tests to freeze
    * the mount-time log entry at a known instant.
@@ -233,7 +235,7 @@ const Card = React.memo(function Card({
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm ${
+      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
         entry.missing
           ? "opacity-40 hover:opacity-60 cursor-not-allowed"
           : isAuthLocked
@@ -385,10 +387,9 @@ const Card = React.memo(function Card({
   );
 });
 
-export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
+export const Catalog = React.memo(function Catalog({ onSelectApp, selectedTag, onTagSelect, clock }: CatalogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const deferredSearchQuery = React.useDeferredValue(searchQuery);
-  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
@@ -410,10 +411,10 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
   /** Centralised filter reset — single source of truth for clearing search and tag. */
   const resetFilters = useCallback(() => {
     setSearchQuery("");
-    setSelectedTag(DEFAULT_TAG);
+    onTagSelect(DEFAULT_TAG);
     // Maintain interaction momentum by restoring focus to the search input.
     searchInputRef.current?.focus();
-  }, []);
+  }, [onTagSelect]);
 
   // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
@@ -698,7 +699,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           {FILTER_TAGS.map((tag) => (
             <button
               key={tag}
-              onClick={() => setSelectedTag(tag)}
+              onClick={() => onTagSelect(tag)}
               aria-pressed={selectedTag === tag}
               className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer ${
                 selectedTag === tag
@@ -765,7 +766,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                   key={entry.id}
                   entry={entry}
                   onSelect={handleCardSelect}
-                  onTagSelect={setSelectedTag}
+                  onTagSelect={onTagSelect}
                   isUserLoggedIn={!!user}
                 />
               ))}
