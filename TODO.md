@@ -22,7 +22,7 @@
 ## 🎨 UI & Aesthetics
 - [ ] **Mobile Refinement**: Audit the "Chamber" and "ProductPage" on small viewports. Ensure the sidebar navigation is intuitive on touch devices.
 - [ ] **Custom Shaders**: Experiment with more advanced GLSL noise or CRT effects in the `Chamber` backdrop for deeper immersion.
-- [ ] **Transition Polish**: Add View Transitions API support for seamless navigation between Catalog and Product pages.
+- [x] **Transition Polish**: Add View Transitions API support for seamless navigation between Catalog and Product pages.
 - [ ] **Accessibility (A11y)**: Further improve keyboard navigation in the `Chamber` (e.g., focus trapping within the iframe when active).
 
 ## 🧩 App Catalog & Content
@@ -32,8 +32,8 @@
 
 ## 🛡️ Security & Stability
 - [x] **Iframe Sandboxing**: Audit `sandbox` attributes for all apps. Consider a more restrictive default with specific overrides per app.
-- [ ] **Error Handling**: Implement a more descriptive error recovery flow for Supabase connection failures.
-- [ ] **PostMessage Validation**: Add a secondary validation layer for `postMessage` payloads to ensure they match expected JSON schemas.
+- [x] **Error Handling**: Implement a more descriptive error recovery flow for Supabase connection failures.
+- [x] **PostMessage Validation**: Add a secondary validation layer for `postMessage` payloads to ensure they match expected JSON schemas.
 
 ## 🧪 Testing & DX
 - [ ] **Visual Regression Tests**: Add Playwright or similar for visual regression testing of the "Void" aesthetic.

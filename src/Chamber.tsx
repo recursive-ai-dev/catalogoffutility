@@ -18,6 +18,26 @@ const HOTLINK_SCRIPT_TEMPLATE = `<script>
 const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i;
 
 /**
+ * Validates that a postMessage payload conforms to the expected JSON schema.
+ * Returns true only for well-formed IMAGE_CLICKED messages with a string src.
+ * Rejects payloads that are null, non-objects, missing required fields, or
+ * have unexpected field types — providing a secondary validation layer beyond
+ * origin checking (Chain 8 / PostMessage Validation TODO).
+ */
+function isValidImageClickedPayload(data: unknown): data is { type: 'IMAGE_CLICKED'; src: string } {
+  if (data === null || typeof data !== 'object') return false;
+  const d = data as Record<string, unknown>;
+  if (d['type'] !== 'IMAGE_CLICKED') return false;
+  if (typeof d['src'] !== 'string') return false;
+  // Reject payloads with unexpected extra fields that could indicate spoofing
+  const allowedKeys = new Set(['type', 'src']);
+  for (const key of Object.keys(d)) {
+    if (!allowedKeys.has(key)) return false;
+  }
+  return true;
+}
+
+/**
  * Returns true only for URL schemes that are safe to render in an <img> src.
  * Blocks javascript:, vbscript:, blob:, and other non-media schemes.
  * Restricts data: URLs to safe raster formats (no SVG) to prevent potential XSS.
@@ -227,24 +247,26 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       // from other windows or tabs (BUG-08b).
       if (!iframeRef.current || e.source !== iframeRef.current.contentWindow) return;
 
-      if (e.data && e.data.type === "IMAGE_CLICKED") {
-        // Validate src: non-empty string with a safe image URL scheme (BUG-06)
-        const src: unknown = e.data.src;
-        if (typeof src !== "string" || src.trim() === "") return;
-        if (!isSafeImageSrc(src)) return;
+      // Chain 8 (ImageHotlink): secondary schema validation — reject malformed payloads
+      // before any field access, providing defense-in-depth beyond origin checking.
+      if (!isValidImageClickedPayload(e.data)) return;
 
-        setHotlinkedImage(src);
-        setLogs((prev) =>
-          appendLog(prev, {
-            sender: "SYSTEM_MSG",
-            // Use clkRef.current so this effect never closes over a stale clock
-            // even if the clock prop changes after the initial mount.
-            time: clkRef.current.timeString(),
-            msg: `Intercepted image hotlink: ${src}`,
-            type: "warn",
-          }),
-        );
-      }
+      // Validate src: non-empty string with a safe image URL scheme (BUG-06)
+      const src = e.data.src;
+      if (src.trim() === "") return;
+      if (!isSafeImageSrc(src)) return;
+
+      setHotlinkedImage(src);
+      setLogs((prev) =>
+        appendLog(prev, {
+          sender: "SYSTEM_MSG",
+          // Use clkRef.current so this effect never closes over a stale clock
+          // even if the clock prop changes after the initial mount.
+          time: clkRef.current.timeString(),
+          msg: `Intercepted image hotlink: ${src}`,
+          type: "warn",
+        }),
+      );
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);

@@ -9,6 +9,15 @@ import { PrivacyBanner } from "./PrivacyBanner";
 
 type View = "catalog" | "product" | "chamber";
 
+/** Wraps a state update in the View Transitions API when available, falling back gracefully. */
+function withViewTransition(update: () => void): void {
+  if (typeof document !== "undefined" && "startViewTransition" in document) {
+    (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(update);
+  } else {
+    update();
+  }
+}
+
 /**
  * Manages in-app navigation and selected application state for the catalog, product, and chamber screens.
  *
@@ -37,8 +46,10 @@ function AppInner() {
         showAuthModal();
         return;
       }
-      setSelectedApp(app);
-      setView("product");
+      withViewTransition(() => {
+        setSelectedApp(app);
+        setView("product");
+      });
     },
     [isLoggedIn, showAuthModal],
   );
@@ -46,22 +57,24 @@ function AppInner() {
   const handleEnterChamber = useCallback(() => {
     // Chain 9 (EnterChamber): invariant — can only enter chamber when an app is selected
     if (!selectedApp) return;
-    setView("chamber");
+    withViewTransition(() => setView("chamber"));
   }, [selectedApp]);
 
   const handleBackToCatalog = useCallback(() => {
     // Chain 12 (BackNavigation): atomically clear selection and return to catalog
-    setView("catalog");
-    setSelectedApp(null);
+    withViewTransition(() => {
+      setView("catalog");
+      setSelectedApp(null);
+    });
   }, []);
 
   const handleBackToProduct = useCallback(() => {
     // Chain 12 (BackNavigation): invariant — can only return to product when an app is selected
     if (!selectedApp) {
-      setView("catalog");
+      withViewTransition(() => setView("catalog"));
       return;
     }
-    setView("product");
+    withViewTransition(() => setView("product"));
   }, [selectedApp]);
 
   // Derive effective view at render time to prevent auth-gated pages from

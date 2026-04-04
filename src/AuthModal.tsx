@@ -22,7 +22,7 @@ function humanizeError(raw: string): string {
 }
 
 export function AuthModal() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, connectionError } = useAuth();
   const { hideAuthModal } = useAuthModal();
 
   const [mode, setMode] = useState<Mode>("signin");
@@ -178,6 +178,25 @@ export function AuthModal() {
             <p className="text-white/30 font-light text-sm leading-relaxed">
               Check your inbox. If you exist, confirmation will arrive. The
               archive will remember you once verified.
+            </p>
+            <button
+              onClick={hideAuthModal}
+              className="mt-4 px-6 py-2 border border-white/10 text-white/40 hover:text-white/70 hover:border-white/25 text-[10px] font-mono tracking-widest uppercase transition-colors rounded-full cursor-pointer"
+            >
+              Return to the void
+            </button>
+          </div>
+        ) : connectionError ? (
+          /* Supabase connection failure state */
+          <div className="px-8 py-10 flex flex-col gap-4 items-center text-center">
+            <span className="material-symbols-outlined text-4xl text-red-400/30 font-light animate-pulse">
+              cloud_off
+            </span>
+            <p className="text-white/40 font-mono text-xs tracking-widest uppercase leading-relaxed">
+              Archive Unreachable
+            </p>
+            <p className="text-white/20 font-light text-sm leading-relaxed">
+              The authentication service is currently unavailable. Non-gated entries remain accessible.
             </p>
             <button
               onClick={hideAuthModal}
