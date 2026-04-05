@@ -17,6 +17,9 @@ const HOTLINK_SCRIPT_TEMPLATE = `<script>
 
 const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i;
 
+/** Static set of allowed keys for postMessage payload validation to avoid re-allocation. */
+const IMAGE_CLICKED_ALLOWED_KEYS = new Set(['type', 'src']);
+
 /**
  * Validates that a postMessage payload conforms to the expected JSON schema.
  * Returns true only for well-formed IMAGE_CLICKED messages with a string src.
@@ -30,9 +33,8 @@ function isValidImageClickedPayload(data: unknown): data is { type: 'IMAGE_CLICK
   if (d['type'] !== 'IMAGE_CLICKED') return false;
   if (typeof d['src'] !== 'string') return false;
   // Reject payloads with unexpected extra fields that could indicate spoofing
-  const allowedKeys = new Set(['type', 'src']);
   for (const key of Object.keys(d)) {
-    if (!allowedKeys.has(key)) return false;
+    if (!IMAGE_CLICKED_ALLOWED_KEYS.has(key)) return false;
   }
   return true;
 }
