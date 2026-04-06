@@ -670,6 +670,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                 aria-label="Search catalog entries (Press / to focus)"
                 placeholder="Search the void..."
                 value={searchQuery}
+                maxLength={200}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
               />
