@@ -34,6 +34,15 @@ const SEARCHABLE_ENTRIES = CATALOG_ENTRIES.map((entry) => ({
 /** Sentinel value representing the "show all" filter state. Single-sourced here. */
 export const DEFAULT_TAG = "All_Entries" as const;
 
+/**
+ * Pre-allocated formatter for the user profile "joined" date (e.g., "Jan 2025").
+ * Optimized to avoid redundant locale parsing and object creation in UserSection.
+ */
+const JOINED_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "short",
+});
+
 const FILTER_TAGS = [
   DEFAULT_TAG,
   "Pointless",
@@ -121,10 +130,7 @@ const UserSection = React.memo(function UserSection() {
   const displayName =
     profile?.username ?? user.email?.split("@")[0] ?? "entity";
   const joined = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-      })
+    ? JOINED_FORMATTER.format(new Date(profile.created_at))
     : null;
 
   return (
