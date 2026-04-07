@@ -123,7 +123,8 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
                   <button
                     key={tag}
                     onClick={() => onTagSelect(tag)}
-                    className="px-3 py-1 border border-white/10 text-white/35 hover:text-white/70 hover:border-white/30 text-[9px] font-mono tracking-widest uppercase rounded-full transition-all cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+                    aria-label={`Filter by ${tag}`}
+                    className="px-3 py-1 border border-white/10 text-white/35 hover:text-white/70 hover:border-white/30 transition-colors text-[9px] font-mono tracking-widest uppercase rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
                   >
                     {tag}
                   </button>

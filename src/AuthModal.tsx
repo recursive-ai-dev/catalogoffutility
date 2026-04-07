@@ -96,15 +96,16 @@ export function AuthModal() {
     setLoading(true);
 
     try {
+      const sanitizedEmail = email.trim();
       if (mode === "signin") {
-        const { error } = await signIn(email, password);
+        const { error } = await signIn(sanitizedEmail, password);
         if (error) {
           setError(humanizeError(error));
         } else {
           hideAuthModal();
         }
       } else {
-        const { error, needsConfirmation } = await signUp(email, password);
+        const { error, needsConfirmation } = await signUp(sanitizedEmail, password);
         if (error) {
           setError(humanizeError(error));
         } else if (needsConfirmation) {
@@ -229,7 +230,9 @@ export function AuthModal() {
                   id="auth-email"
                   type="email"
                   required
+                  maxLength={254}
                   value={email}
+                  maxLength={254}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@designation.void"
                   className="flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/15 tracking-wide"
@@ -252,6 +255,7 @@ export function AuthModal() {
                   type="password"
                   required
                   minLength={6}
+                  maxLength={128}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"

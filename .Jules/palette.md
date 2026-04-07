@@ -14,3 +14,7 @@
 
 **Learning:** Lifting filtering state to a common ancestor (AppInner) allows filters to persist during navigation between views. Interactive tags on product pages provide a secondary, intuitive navigation path back to a pre-filtered catalog.
 **Action:** State-lift search/filter criteria when deep links or "back" actions should preserve user context.
+## 2025-05-15 - Context Persistence via State Lifting
+
+**Learning:** Navigating between list and detail views often breaks user context if filtering state is local. Lifting search and tag state to a common ancestor (App) ensures a seamless "back" experience where the user's previous search remains intact.
+**Action:** Lift UI-driven filtering state to the router or root component when persistence across navigation is required for a smooth UX.
