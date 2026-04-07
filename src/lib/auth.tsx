@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .from("profiles")
       .insert({
         id: userId,
-        username: email.split("@")[0],
+        username: email.split("@")[0].slice(0, 32),
         last_seen_at: now,
       })
       .select()
