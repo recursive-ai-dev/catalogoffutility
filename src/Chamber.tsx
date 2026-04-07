@@ -17,6 +17,9 @@ const HOTLINK_SCRIPT_TEMPLATE = `<script>
 
 const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i;
 
+/** Static set of allowed keys for postMessage payload validation to avoid re-allocation. */
+const IMAGE_CLICKED_ALLOWED_KEYS = new Set(['type', 'src']);
+
 /**
  * Validates that a postMessage payload conforms to the expected JSON schema.
  * Returns true only for well-formed IMAGE_CLICKED messages with a string src.
@@ -30,9 +33,8 @@ function isValidImageClickedPayload(data: unknown): data is { type: 'IMAGE_CLICK
   if (d['type'] !== 'IMAGE_CLICKED') return false;
   if (typeof d['src'] !== 'string') return false;
   // Reject payloads with unexpected extra fields that could indicate spoofing
-  const allowedKeys = new Set(['type', 'src']);
   for (const key of Object.keys(d)) {
-    if (!allowedKeys.has(key)) return false;
+    if (!IMAGE_CLICKED_ALLOWED_KEYS.has(key)) return false;
   }
   return true;
 }
@@ -42,14 +44,18 @@ function isValidImageClickedPayload(data: unknown): data is { type: 'IMAGE_CLICK
  * Blocks javascript:, vbscript:, blob:, and other non-media schemes.
  * Restricts data: URLs to safe raster formats (no SVG) to prevent potential XSS.
  * Restricts http: to localhost/127.0.0.1 to prevent mixed-content warnings.
- * Enforces a 2MB length limit to guard against client-side DoS.
+ * Enforces a 2MB length limit for data URLs and 8KB for remote URLs to guard against DoS.
  */
 function isSafeImageSrc(src: string): boolean {
-  // Enforce a reasonable length limit (2MB) to prevent DoS via massive payloads.
-  if (src.length > 2 * 1024 * 1024) return false;
+  // Enforce a length limit (2MB) for data URLs.
+  if (src.startsWith("data:")) {
+    if (src.length > 2 * 1024 * 1024) return false;
+    return SAFE_DATA_URL_REGEX.test(src);
+  }
 
-  // Short-circuit data: URLs to avoid expensive URL parsing when possible.
-  if (src.startsWith("data:")) return SAFE_DATA_URL_REGEX.test(src);
+  // Remote URLs (https/http) are capped at 8KB to hinder data exfiltration
+  // via massive URL parameters.
+  if (src.length > 8192) return false;
 
   try {
     const url = new URL(src);
