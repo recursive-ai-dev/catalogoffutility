@@ -9,3 +9,8 @@
 
 **Learning:** When a user clears a search or filter, their intent is often to start a new search. Automatically restoring focus to the search input reduces friction and maintains interaction momentum.
 **Action:** Call `.focus()` on the relevant input after destructive actions like clearing search queries or resetting global filters.
+
+## 2025-05-15 - Context Persistence via State Lifting
+
+**Learning:** Navigating between list and detail views often breaks user context if filtering state is local. Lifting search and tag state to a common ancestor (App) ensures a seamless "back" experience where the user's previous search remains intact.
+**Action:** Lift UI-driven filtering state to the router or root component when persistence across navigation is required for a smooth UX.

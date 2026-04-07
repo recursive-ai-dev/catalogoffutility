@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Catalog } from "./Catalog";
+import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
@@ -30,9 +30,22 @@ function withViewTransition(update: () => void): void {
 function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string>(DEFAULT_TAG);
+  const [searchQuery, setSearchQuery] = useState("");
   const { user } = useAuth();
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
+
+  const handleTagSelect = useCallback((tag: string) => {
+    withViewTransition(() => {
+      setSelectedTag(tag);
+      setView("catalog");
+    });
+  }, []);
+
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
 
   // Stabilize handlers by depending on derived primitives (isLoggedIn) instead of the full user object.
   // This prevents the Catalog from re-rendering when irrelevant user profile properties change.
@@ -123,13 +136,20 @@ function AppInner() {
         app={selectedApp}
         onBack={handleBackToCatalog}
         onEnter={handleEnterChamber}
+        onTagSelect={handleTagSelect}
       />
     );
   }
 
   return (
     <>
-      <Catalog onSelectApp={handleSelectApp} />
+      <Catalog
+        onSelectApp={handleSelectApp}
+        selectedTag={selectedTag}
+        onTagSelect={handleTagSelect}
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
+      />
       {authModalVisible && <AuthModal />}
       <PrivacyBanner />
     </>
