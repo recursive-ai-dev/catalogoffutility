@@ -229,6 +229,7 @@ export function AuthModal() {
                   id="auth-email"
                   type="email"
                   required
+                  maxLength={320}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@designation.void"
@@ -252,6 +253,7 @@ export function AuthModal() {
                   type="password"
                   required
                   minLength={6}
+                  maxLength={256}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"

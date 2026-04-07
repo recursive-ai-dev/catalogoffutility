@@ -1,0 +1,4 @@
+## 2025-05-15 - Sandboxed Iframe Origin Constraints
+**Vulnerability:** PostMessage target origin wildcard `*` used in `Chamber.tsx` for hotlink interception.
+**Learning:** Sandboxed iframes without `allow-same-origin` (used for `srcDoc` apps) have a `null` origin. Browsers block `postMessage` delivery from a `null` origin to a specific target origin (even if it is the parent's actual origin). This necessitates using `*` as the target origin for communication from within the sandbox.
+**Prevention:** Always implement robust receiver-side validation (origin, source, and payload schema) when wildcard target origins are required for functional compatibility. In `Chamber.tsx`, this is achieved by checking `e.origin === "null" || e.origin === window.location.origin` and verifying `e.source === iframeRef.current.contentWindow`.
