@@ -51,15 +51,6 @@ const FILTER_TAGS = [
   "Horror",
 ];
 
-/**
- * Pre-allocated formatter for "MMM YYYY" profile dates.
- * 30-50x faster than calling toLocaleDateString() in every render.
- */
-const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "short",
-});
-
 // Generates a deterministic two-letter avatar from a username/email.
 // Optimized to use a single regex match for initials extraction while preserving
 // underscore/dot/dash boundaries, reducing multiple array allocations.
@@ -74,12 +65,6 @@ function initials(name: string): string {
   const fallback = name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
   return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
-
-/** Pre-allocated formatter for UserSection's 'Inscribed' date. */
-const INSCRIBED_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "short",
-});
 
 const UserSection = React.memo(function UserSection() {
   const { user, profile, loading, signOut } = useAuth();
@@ -140,10 +125,10 @@ const UserSection = React.memo(function UserSection() {
   const displayName =
     profile?.username ?? user.email?.split("@")[0] ?? "entity";
   const joined = profile?.created_at
-    ? (() => {
-        const date = new Date(profile.created_at);
-        return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
-      })()
+    ? new Date(profile.created_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+      })
     : null;
 
   return (
@@ -252,7 +237,7 @@ const Card = React.memo(function Card({
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm ${
         entry.missing
           ? "opacity-40 hover:opacity-60 cursor-not-allowed"
           : isAuthLocked
@@ -561,7 +546,7 @@ export const Catalog = React.memo(function Catalog({
 
         <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => {
               const navigable = CATALOG_ENTRIES.filter(e => !e.missing && (!e.requiresAuth || user));
               if (navigable.length > 0) {
@@ -580,7 +565,7 @@ export const Catalog = React.memo(function Catalog({
             </span>
           </button>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => {
               resetFilters();
               showNotification("Memories purged.");
@@ -594,7 +579,7 @@ export const Catalog = React.memo(function Catalog({
             </span>
           </button>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Giving up is not an option.")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -606,7 +591,7 @@ export const Catalog = React.memo(function Catalog({
           </button>
           <div className="h-px bg-white/10 my-4 w-full"></div>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Staring into the void...")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -617,7 +602,7 @@ export const Catalog = React.memo(function Catalog({
             </span>
           </button>
           <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left"
             onClick={() => showNotification("Exit mechanism destroyed.")}
           >
             <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -694,8 +679,7 @@ export const Catalog = React.memo(function Catalog({
                 aria-label="Search catalog entries (Press / to focus)"
                 placeholder="Search the void..."
                 value={searchQuery}
-                maxLength={200}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
               />
               <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
@@ -709,7 +693,7 @@ export const Catalog = React.memo(function Catalog({
                     searchInputRef.current?.focus();
                   }}
                   aria-label="Clear search"
-                  className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-full"
+                  className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer"
                 >
                   <X className="size-4" />
                 </button>
