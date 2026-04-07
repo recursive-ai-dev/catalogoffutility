@@ -62,6 +62,15 @@ function initials(name: string): string {
   return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
 
+/**
+ * Pre-allocated date formatter for observer "Inscribed" dates (e.g., "Jan 2025").
+ * Avoids repeated creation of Intl.DateTimeFormat objects on every UserSection re-render.
+ */
+const OBSERVER_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "short",
+});
+
 const UserSection = React.memo(function UserSection() {
   const { user, profile, loading, signOut } = useAuth();
   const { showAuthModal } = useAuthModal();
@@ -121,10 +130,7 @@ const UserSection = React.memo(function UserSection() {
   const displayName =
     profile?.username ?? user.email?.split("@")[0] ?? "entity";
   const joined = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-      })
+    ? OBSERVER_DATE_FORMATTER.format(new Date(profile.created_at))
     : null;
 
   return (
