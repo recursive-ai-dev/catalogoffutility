@@ -147,7 +147,7 @@ function AppInner() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         selectedTag={selectedTag}
-        onTagSelect={setSelectedTag}
+        onTagSelect={handleTagSelect}
       />
       {authModalVisible && <AuthModal />}
       <PrivacyBanner />
