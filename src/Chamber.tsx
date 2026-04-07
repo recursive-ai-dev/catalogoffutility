@@ -269,7 +269,8 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
           // Use clkRef.current so this effect never closes over a stale clock
           // even if the clock prop changes after the initial mount.
           time: clkRef.current.timeString(),
-          msg: `Intercepted image hotlink: ${src}`,
+          // Truncate the URL in the log to prevent UI performance issues and DoS from massive URLs.
+          msg: `Intercepted image hotlink: ${src.length > 100 ? src.substring(0, 97) + "..." : src}`,
           type: "warn",
         }),
       );

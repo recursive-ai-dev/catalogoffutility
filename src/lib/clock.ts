@@ -42,7 +42,13 @@ const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
 
 /** Live wall-clock; used by default in all production renders. */
 export const realClock: Clock = {
-  timeString: () => TIME_FORMATTER.format(new Date()),
+  timeString: () =>
+    new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }),
   now: () => new Date(),
 };
 
@@ -53,7 +59,12 @@ export const realClock: Clock = {
  * when replayed with the same seed.
  */
 export function makeFakeClock(fixed: Date): Clock {
-  const ts = TIME_FORMATTER.format(fixed);
+  const ts = fixed.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
   return {
     timeString: () => ts,
     now: () => new Date(fixed.getTime()),

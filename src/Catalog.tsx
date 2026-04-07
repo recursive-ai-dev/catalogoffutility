@@ -693,6 +693,7 @@ export const Catalog = React.memo(function Catalog({
                 type="text"
                 aria-label="Search catalog entries (Press / to focus)"
                 placeholder="Search the void..."
+                maxLength={100}
                 value={searchQuery}
                 maxLength={200}
                 onChange={(e) => setSearchQuery(e.target.value)}
