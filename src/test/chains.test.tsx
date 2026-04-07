@@ -51,7 +51,7 @@ describe('Chain 4 — ParagraphSplit', () => {
     const app = makeApp({
       longDescription: 'Paragraph one.\n\nParagraph two.\n\nParagraph three.',
     });
-    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     expect(screen.getByText('Paragraph one.')).toBeTruthy();
     expect(screen.getByText('Paragraph two.')).toBeTruthy();
     expect(screen.getByText('Paragraph three.')).toBeTruthy();
@@ -59,14 +59,14 @@ describe('Chain 4 — ParagraphSplit', () => {
 
   it('renders no paragraph section when longDescription is undefined', () => {
     const app = makeApp({ longDescription: undefined });
-    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     // CLASSIFIED_NOTES section should not appear
     expect(container.textContent).not.toContain('CLASSIFIED_NOTES');
   });
 
   it('filters empty strings produced by leading/trailing newlines', () => {
     const app = makeApp({ longDescription: '\n\nParagraph one.\n\n' });
-    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     expect(screen.getByText('Paragraph one.')).toBeTruthy();
   });
 });
@@ -79,7 +79,7 @@ describe('Chain 3 — ProductReveal', () => {
   it('starts unrevealed and reveals after 80ms', () => {
     vi.useFakeTimers();
     const app = makeApp();
-    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     const rightPanel = container.querySelector('.transition-all.duration-700');
     expect(rightPanel?.className).toContain('opacity-0');
     act(() => { vi.advanceTimersByTime(100); });
@@ -90,7 +90,7 @@ describe('Chain 3 — ProductReveal', () => {
   it('cleans up timer on unmount without error', () => {
     vi.useFakeTimers();
     const app = makeApp();
-    const { unmount } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { unmount } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     unmount();
     act(() => { vi.advanceTimersByTime(200); });
     vi.useRealTimers();
@@ -903,6 +903,43 @@ describe('DEFAULT_TAG & resetFilters — Catalog', () => {
     const input = screen.getByPlaceholderText('Search the void...');
     await userEvent.type(input, 'xyznotfound');
     expect(screen.getByText('Clear all filters')).toBeTruthy();
+  });
+
+  it('Product page tag click updates filter and returns to catalog', async () => {
+    render(<App />);
+    // Navigate to a product
+    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
+
+    // Find a tag on the product page and click it
+    const tagToClick = firstNavigableEntry.tags![0];
+    const tagBtn = screen.getByRole('button', { name: `Filter by ${tagToClick}` });
+    fireEvent.click(tagBtn);
+
+    // Should be back at catalog
+    expect(screen.getByRole('heading', { name: /The Archive/i })).toBeTruthy();
+    // Filter should be active
+    const selectedTagBtn = screen.getByRole('button', { name: tagToClick });
+    expect(selectedTagBtn.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('filters persist when navigating from catalog to product and back', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'world');
+    expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
+
+    // Navigate to THE WORLD THAT DOESN'T CARE product page
+    fireEvent.click(screen.getByText("THE WORLD THAT DOESN'T CARE"));
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
+
+    // Navigate back to catalog
+    fireEvent.click(screen.getByRole('button', { name: /Archive/i }));
+
+    // Search query should still be 'world'
+    const restoredInput = screen.getByPlaceholderText('Search the void...') as HTMLInputElement;
+    expect(restoredInput.value).toBe('world');
+    expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
   });
 });
 
