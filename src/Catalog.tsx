@@ -130,7 +130,10 @@ const UserSection = React.memo(function UserSection() {
   const displayName =
     profile?.username ?? user.email?.split("@")[0] ?? "entity";
   const joined = profile?.created_at
-    ? PROFILE_DATE_FORMATTER.format(new Date(profile.created_at))
+    ? (() => {
+        const date = new Date(profile.created_at);
+        return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
+      })()
     : null;
 
   return (
