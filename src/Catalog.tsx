@@ -6,10 +6,10 @@ import { Clock, realClock } from "./lib/clock";
 
 interface CatalogProps {
   onSelectApp: (app: AppEntry) => void;
-  selectedTag: string;
-  onTagSelect: (tag: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  selectedTag: string;
+  onTagSelect: (tag: string) => void;
   /**
    * Determinism provider. Pass `makeFakeClock(fixed)` in tests to freeze
    * the mount-time log entry at a known instant.
@@ -406,10 +406,10 @@ const Card = React.memo(function Card({
 
 export const Catalog = React.memo(function Catalog({
   onSelectApp,
-  selectedTag,
-  onTagSelect,
   searchQuery,
   onSearchChange,
+  selectedTag,
+  onTagSelect,
   clock,
 }: CatalogProps) {
   const deferredSearchQuery = React.useDeferredValue(searchQuery);

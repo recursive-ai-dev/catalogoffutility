@@ -30,8 +30,8 @@ function withViewTransition(update: () => void): void {
 function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
-  const [selectedTag, setSelectedTag] = useState<string>(DEFAULT_TAG);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
@@ -80,6 +80,16 @@ function AppInner() {
       setSelectedApp(null);
     });
   }, []);
+
+  const handleTagSelect = useCallback((tag: string) => {
+    setSelectedTag(tag);
+    if (view !== "catalog") {
+      withViewTransition(() => {
+        setView("catalog");
+        setSelectedApp(null);
+      });
+    }
+  }, [view]);
 
   const handleBackToProduct = useCallback(() => {
     // Chain 12 (BackNavigation): invariant — can only return to product when an app is selected
@@ -145,10 +155,10 @@ function AppInner() {
     <>
       <Catalog
         onSelectApp={handleSelectApp}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
         selectedTag={selectedTag}
         onTagSelect={handleTagSelect}
-        searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
       />
       {authModalVisible && <AuthModal />}
       <PrivacyBanner />
