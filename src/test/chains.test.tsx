@@ -850,7 +850,12 @@ describe('Deterministic Replay — Clock Provider', () => {
   it('fake clock timeString is always the seeded value (not real wall-clock)', () => {
     const FIXED = new Date(2000, 0, 1, 8, 30, 0); // 08:30:00
     const fakeClock = makeFakeClock(FIXED);
-    const expected = fakeClock.timeString();
+    const expected = new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(FIXED);
     // Multiple calls must all return the same frozen string.
     expect(fakeClock.timeString()).toBe(expected);
     expect(fakeClock.timeString()).toBe(expected);
