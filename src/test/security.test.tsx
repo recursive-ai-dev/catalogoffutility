@@ -7,7 +7,7 @@ import { AppEntry } from '../data';
 // Mock clock for deterministic testing
 const mockClock = {
   timeString: () => '12:00:00',
-  now: () => new Date(),
+  now: () => new Date('2025-01-01T12:00:00Z'),
 };
 
 const makeApp = (overrides: Partial<AppEntry> = {}): AppEntry => ({
