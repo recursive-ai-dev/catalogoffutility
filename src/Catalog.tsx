@@ -127,7 +127,9 @@ const UserSection = React.memo(function UserSection() {
   const displayName =
     profile?.username ?? user.email?.split("@")[0] ?? "entity";
   const joined = profile?.created_at
-    ? INSCRIBED_DATE_FORMATTER.format(new Date(profile.created_at))
+    ? (Number.isNaN(new Date(profile.created_at).getTime())
+        ? null
+        : INSCRIBED_DATE_FORMATTER.format(new Date(profile.created_at)))
     : null;
 
   return (
