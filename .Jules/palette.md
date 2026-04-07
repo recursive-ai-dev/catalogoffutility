@@ -9,3 +9,8 @@
 
 **Learning:** When a user clears a search or filter, their intent is often to start a new search. Automatically restoring focus to the search input reduces friction and maintains interaction momentum.
 **Action:** Call `.focus()` on the relevant input after destructive actions like clearing search queries or resetting global filters.
+
+## 2025-05-20 - Persistent Filtering & Interactive Tags
+
+**Learning:** Lifting filtering state to a common ancestor (AppInner) allows filters to persist during navigation between views. Interactive tags on product pages provide a secondary, intuitive navigation path back to a pre-filtered catalog.
+**Action:** State-lift search/filter criteria when deep links or "back" actions should preserve user context.

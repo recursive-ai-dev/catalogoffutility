@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Catalog } from "./Catalog";
+import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
@@ -30,6 +30,8 @@ function withViewTransition(update: () => void): void {
 function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
@@ -67,6 +69,16 @@ function AppInner() {
       setSelectedApp(null);
     });
   }, []);
+
+  const handleTagSelect = useCallback((tag: string) => {
+    setSelectedTag(tag);
+    if (view !== "catalog") {
+      withViewTransition(() => {
+        setView("catalog");
+        setSelectedApp(null);
+      });
+    }
+  }, [view]);
 
   const handleBackToProduct = useCallback(() => {
     // Chain 12 (BackNavigation): invariant — can only return to product when an app is selected
@@ -123,13 +135,20 @@ function AppInner() {
         app={selectedApp}
         onBack={handleBackToCatalog}
         onEnter={handleEnterChamber}
+        onTagSelect={handleTagSelect}
       />
     );
   }
 
   return (
     <>
-      <Catalog onSelectApp={handleSelectApp} />
+      <Catalog
+        onSelectApp={handleSelectApp}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        selectedTag={selectedTag}
+        onTagSelect={setSelectedTag}
+      />
       {authModalVisible && <AuthModal />}
       <PrivacyBanner />
     </>

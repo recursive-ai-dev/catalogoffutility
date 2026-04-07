@@ -6,6 +6,10 @@ import { Clock, realClock } from "./lib/clock";
 
 interface CatalogProps {
   onSelectApp: (app: AppEntry) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  selectedTag: string;
+  onTagSelect: (tag: string) => void;
   /**
    * Determinism provider. Pass `makeFakeClock(fixed)` in tests to freeze
    * the mount-time log entry at a known instant.
@@ -385,10 +389,15 @@ const Card = React.memo(function Card({
   );
 });
 
-export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: CatalogProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+export const Catalog = React.memo(function Catalog({
+  onSelectApp,
+  searchQuery,
+  onSearchChange,
+  selectedTag,
+  onTagSelect,
+  clock,
+}: CatalogProps) {
   const deferredSearchQuery = React.useDeferredValue(searchQuery);
-  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
@@ -409,11 +418,11 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
 
   /** Centralised filter reset — single source of truth for clearing search and tag. */
   const resetFilters = useCallback(() => {
-    setSearchQuery("");
-    setSelectedTag(DEFAULT_TAG);
+    onSearchChange("");
+    onTagSelect(DEFAULT_TAG);
     // Maintain interaction momentum by restoring focus to the search input.
     searchInputRef.current?.focus();
-  }, []);
+  }, [onSearchChange, onTagSelect]);
 
   // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
@@ -670,7 +679,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                 aria-label="Search catalog entries (Press / to focus)"
                 placeholder="Search the void..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
               />
               <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
@@ -680,7 +689,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                 <button
                   type="button"
                   onClick={() => {
-                    setSearchQuery("");
+                    onSearchChange("");
                     searchInputRef.current?.focus();
                   }}
                   aria-label="Clear search"
@@ -698,9 +707,9 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
           {FILTER_TAGS.map((tag) => (
             <button
               key={tag}
-              onClick={() => setSelectedTag(tag)}
+              onClick={() => onTagSelect(tag)}
               aria-pressed={selectedTag === tag}
-              className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer ${
+              className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
                 selectedTag === tag
                   ? "bg-white/10 border-white/20 text-white"
                   : "bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white"
@@ -765,7 +774,7 @@ export const Catalog = React.memo(function Catalog({ onSelectApp, clock }: Catal
                   key={entry.id}
                   entry={entry}
                   onSelect={handleCardSelect}
-                  onTagSelect={setSelectedTag}
+                  onTagSelect={onTagSelect}
                   isUserLoggedIn={!!user}
                 />
               ))}
