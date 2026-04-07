@@ -932,7 +932,8 @@ describe('DEFAULT_TAG & resetFilters — Catalog', () => {
     fireEvent.click(screen.getByRole('button', { name: /Archive/i }));
 
     // Search query should still be 'world'
-    expect((input as HTMLInputElement).value).toBe('world');
+    const restoredInput = screen.getByPlaceholderText('Search the void...') as HTMLInputElement;
+    expect(restoredInput.value).toBe('world');
     expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
   });
 });
