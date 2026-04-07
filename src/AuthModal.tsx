@@ -232,6 +232,7 @@ export function AuthModal() {
                   required
                   maxLength={254}
                   value={email}
+                  maxLength={254}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@designation.void"
                   className="flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/15 tracking-wide"
