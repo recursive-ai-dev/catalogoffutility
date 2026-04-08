@@ -50,6 +50,8 @@ function isSafeImageSrc(src: string): boolean {
   // Enforce a length limit (2MB) for data URLs.
   if (src.startsWith("data:")) {
     if (src.length > 2 * 1024 * 1024) return false;
+    // Allow only common raster image formats; explicitly block image/svg+xml
+    // to mitigate potential XSS risks in certain rendering contexts.
     return SAFE_DATA_URL_REGEX.test(src);
   }
 
@@ -65,15 +67,12 @@ function isSafeImageSrc(src: string): boolean {
     if (url.username || url.password) return false;
 
     if (url.protocol === "https:") return true;
+
     // Allow http: only for local development (localhost or 127.0.0.1)
     if (url.protocol === "http:") {
       return url.hostname === "localhost" || url.hostname === "127.0.0.1";
     }
-    if (url.protocol === "data:") {
-      // Allow only common raster image formats; explicitly block image/svg+xml
-      // to mitigate potential XSS risks in certain rendering contexts.
-      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
-    }
+
     return false;
   } catch {
     // Parsing failed; reject.
@@ -756,6 +755,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
             <img
               src={hotlinkedImage}
               alt="Intercepted asset from the void"
+              referrerPolicy="no-referrer"
               className="max-w-full max-h-[75vh] object-contain rounded-lg"
             />
           </div>
