@@ -18,3 +18,8 @@
 
 **Learning:** Navigating between list and detail views often breaks user context if filtering state is local. Lifting search and tag state to a common ancestor (App) ensures a seamless "back" experience where the user's previous search remains intact.
 **Action:** Lift UI-driven filtering state to the router or root component when persistence across navigation is required for a smooth UX.
+
+## 2025-04-08 - Password Visibility and Brutalist Styling
+
+**Learning:** In a brutalist UI with specific typography (like `tracking-widest` for passwords), toggling visibility to plain text requires adjusting letter-spacing (e.g., to `tracking-wide`) to maintain readability while preserving the aesthetic. Resetting visibility state on mode switch (signin/signup) is a critical security-UX pattern to ensure a safe default.
+**Action:** Always pair `type` toggles with appropriate CSS class adjustments for the revealed state, and synchronize visibility state with navigation or mode changes.

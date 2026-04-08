@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth, useAuthModal } from "./lib/auth";
 
 type Mode = "signin" | "signup";
@@ -28,6 +29,7 @@ export function AuthModal() {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -74,6 +76,7 @@ export function AuthModal() {
     setError(null);
     setConfirmed(false);
     setPassword("");
+    setShowPassword(false);
   };
 
   // Close on backdrop click
@@ -232,7 +235,6 @@ export function AuthModal() {
                   required
                   maxLength={254}
                   value={email}
-                  maxLength={254}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@designation.void"
                   className="flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/15 tracking-wide"
@@ -252,18 +254,32 @@ export function AuthModal() {
                 </span>
                 <input
                   id="auth-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
                   maxLength={128}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/20 tracking-widest"
+                  className={`flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/20 ${
+                    showPassword ? "tracking-wide" : "tracking-widest"
+                  }`}
                   autoComplete={
                     mode === "signin" ? "current-password" : "new-password"
                   }
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-white/20 hover:text-white/50 transition-colors cursor-pointer focus:outline-none"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </button>
               </div>
             </div>
 
