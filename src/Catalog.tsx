@@ -75,12 +75,6 @@ function initials(name: string): string {
   return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
 
-/** Pre-allocated formatter for UserSection's 'Inscribed' date. */
-const INSCRIBED_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "short",
-});
-
 const UserSection = React.memo(function UserSection() {
   const { user, profile, loading, signOut } = useAuth();
   const { showAuthModal } = useAuthModal();
@@ -693,10 +687,9 @@ export const Catalog = React.memo(function Catalog({
                 type="text"
                 aria-label="Search catalog entries (Press / to focus)"
                 placeholder="Search the void..."
-                maxLength={100}
                 value={searchQuery}
                 maxLength={200}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
               />
               <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">

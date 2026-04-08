@@ -7,3 +7,8 @@
 
 **Learning:** Repeatedly calling `toLocaleTimeString` or `toLocaleDateString` on `Date` objects incurs significant overhead from locale parsing and formatter initialization. Pre-allocating a static `Intl.DateTimeFormat` instance and using its `.format()` method is ~50x faster (~30ms vs ~1500ms for 10k ops in benchmark).
 **Action:** Always pre-allocate `Intl.DateTimeFormat` for frequently called formatting tasks. When used for HH:MM:SS, explicitly set `hour: '2-digit', minute: '2-digit', second: '2-digit'` and `hour12: false` to ensure cross-platform consistency and avoid 12/24h toggle regressions.
+
+## 2025-05-22 - Auditing Duplicate Static Allocations
+
+**Learning:** Static pre-allocations (like `Intl.DateTimeFormat`) are only effective if they are actually used and not shadowed by duplicate declarations or superseded by inline calls (e.g., `toLocaleTimeString`). Redundant formatters for the same locale/options (like `PROFILE_DATE_FORMATTER` vs `INSCRIBED_DATE_FORMATTER`) increase memory footprint without benefit.
+**Action:** Always `grep` for similar `Intl.DateTimeFormat` configurations when adding a new one. Ensure existing utility functions (like `realClock.timeString`) are updated to use the pre-allocated instance.

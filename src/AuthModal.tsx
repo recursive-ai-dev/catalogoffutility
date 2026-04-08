@@ -230,7 +230,6 @@ export function AuthModal() {
                   id="auth-email"
                   type="email"
                   required
-                  maxLength={254}
                   value={email}
                   maxLength={254}
                   onChange={(e) => setEmail(e.target.value)}
