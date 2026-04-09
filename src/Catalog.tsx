@@ -64,22 +64,22 @@ const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
 // Optimized to use a single regex match for initials extraction while preserving
 // underscore/dot/dash boundaries, reducing multiple array allocations.
 function initials(name: string): string {
-  // Filter out empty parts to prevent crashes on inputs like ".."
-  const parts = name
-    .replace(/@.*/, "")
-    .split(/[._\-\s]+/)
-    .filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  const fallback = name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
+  // Use a single regex match to extract initials while preserving word boundaries
+  // (dots, underscores, dashes, spaces). This avoids multiple array allocations
+  // from split/filter/map chains.
+  const handle = name.replace(/@.*/, "");
+  const matches = Array.from(handle.matchAll(/(?:^|[._\-\s])(\w)/g), (m) => m[1]);
+
+  if (matches.length >= 2) {
+    return (matches[0] + matches[1]).toUpperCase();
+  }
+  if (matches.length === 1) {
+    return handle.slice(0, 2).toUpperCase();
+  }
+  const fallback = handle.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
   return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
 
-/** Pre-allocated formatter for UserSection's 'Inscribed' date. */
-const INSCRIBED_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "short",
-});
 
 const UserSection = React.memo(function UserSection() {
   const { user, profile, loading, signOut } = useAuth();
@@ -693,10 +693,9 @@ export const Catalog = React.memo(function Catalog({
                 type="text"
                 aria-label="Search catalog entries (Press / to focus)"
                 placeholder="Search the void..."
-                maxLength={100}
                 value={searchQuery}
                 maxLength={200}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
               />
               <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
