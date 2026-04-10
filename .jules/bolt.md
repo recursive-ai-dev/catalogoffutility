@@ -7,3 +7,8 @@
 
 **Learning:** Repeatedly calling `toLocaleTimeString` or `toLocaleDateString` on `Date` objects incurs significant overhead from locale parsing and formatter initialization. Pre-allocating a static `Intl.DateTimeFormat` instance and using its `.format()` method is ~50x faster (~30ms vs ~1500ms for 10k ops in benchmark).
 **Action:** Always pre-allocate `Intl.DateTimeFormat` for frequently called formatting tasks. When used for HH:MM:SS, explicitly set `hour: '2-digit', minute: '2-digit', second: '2-digit'` and `hour12: false` to ensure cross-platform consistency and avoid 12/24h toggle regressions.
+
+## 2026-04-10 - Consolidating Static Formatters & Regex Initials Optimization
+
+**Learning:** Consolidating identical static formatters (e.g., merging `INSCRIBED_DATE_FORMATTER` into `PROFILE_DATE_FORMATTER`) reduces memory overhead. For string extraction like initials, a single `matchAll` with a targeted regex `/(?:^|[._\-\s])(\w)/g` is significantly more efficient than chaining `split`, `filter`, and `map` as it avoids multiple intermediate array allocations.
+**Action:** Audit codebase for redundant static formatters and replace complex string-to-array chains with targeted regex matches for performance-critical utilities.

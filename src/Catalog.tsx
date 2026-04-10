@@ -54,6 +54,7 @@ const FILTER_TAGS = [
 /**
  * Pre-allocated formatter for "MMM YYYY" profile dates.
  * 30-50x faster than calling toLocaleDateString() in every render.
+ * Reused for both profile and inscription dates to reduce memory overhead.
  */
 const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
@@ -64,22 +65,18 @@ const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
 // Optimized to use a single regex match for initials extraction while preserving
 // underscore/dot/dash boundaries, reducing multiple array allocations.
 function initials(name: string): string {
-  // Filter out empty parts to prevent crashes on inputs like ".."
-  const parts = name
-    .replace(/@.*/, "")
-    .split(/[._\-\s]+/)
-    .filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  const fallback = name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
+  const cleanName = name.replace(/@.*/, "");
+  const matches = cleanName.matchAll(/(?:^|[._\-\s])(\w)/g);
+  let res = "";
+  for (const match of matches) {
+    res += match[1];
+    if (res.length === 2) break;
+  }
+  if (res.length >= 2) return res.toUpperCase();
+  if (res.length === 1) return cleanName.slice(0, 2).toUpperCase();
+  const fallback = cleanName.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
   return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
-
-/** Pre-allocated formatter for UserSection's 'Inscribed' date. */
-const INSCRIBED_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "short",
-});
 
 const UserSection = React.memo(function UserSection() {
   const { user, profile, loading, signOut } = useAuth();
@@ -695,8 +692,7 @@ export const Catalog = React.memo(function Catalog({
                 placeholder="Search the void..."
                 maxLength={100}
                 value={searchQuery}
-                maxLength={200}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
               />
               <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
