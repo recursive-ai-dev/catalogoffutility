@@ -281,6 +281,7 @@ const Card = React.memo(function Card({
             ref={imgRef}
             alt={entry.title}
             loading="lazy"
+            referrerPolicy="no-referrer"
             className={`w-full h-full object-cover transition-transform duration-700 ease-out mix-blend-luminosity ${
               isAuthLocked
                 ? "opacity-15 group-hover:opacity-20"
@@ -693,10 +694,9 @@ export const Catalog = React.memo(function Catalog({
                 type="text"
                 aria-label="Search catalog entries (Press / to focus)"
                 placeholder="Search the void..."
-                maxLength={100}
                 value={searchQuery}
-                maxLength={200}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                maxLength={100}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
               />
               <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">

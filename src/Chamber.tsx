@@ -755,6 +755,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
             </div>
             <img
               src={hotlinkedImage}
+              referrerPolicy="no-referrer"
               alt="Intercepted asset from the void"
               className="max-w-full max-h-[75vh] object-contain rounded-lg"
             />
