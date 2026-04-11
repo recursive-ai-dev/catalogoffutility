@@ -28,6 +28,7 @@ export function AuthModal() {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -74,6 +75,7 @@ export function AuthModal() {
     setError(null);
     setConfirmed(false);
     setPassword("");
+    setShowPassword(false);
   };
 
   // Close on backdrop click
@@ -232,7 +234,6 @@ export function AuthModal() {
                   required
                   maxLength={254}
                   value={email}
-                  maxLength={254}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@designation.void"
                   className="flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/15 tracking-wide"
@@ -252,18 +253,28 @@ export function AuthModal() {
                 </span>
                 <input
                   id="auth-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
                   maxLength={128}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/20 tracking-widest"
+                  className={`flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/20 ${showPassword ? "tracking-wide" : "tracking-widest"}`}
                   autoComplete={
                     mode === "signin" ? "current-password" : "new-password"
                   }
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-white/20 hover:text-white/50 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
+                  aria-label={showPassword ? "Hide passphrase" : "Show passphrase"}
+                >
+                  <span className="material-symbols-outlined font-light text-base" aria-hidden="true">
+                    {showPassword ? "visibility" : "visibility_off"}
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -285,7 +296,7 @@ export function AuthModal() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 bg-white/[0.03] border border-white/15 hover:border-white/40 hover:bg-white/7 transition-all duration-500 flex items-center justify-center gap-3 cursor-pointer rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full h-11 bg-white/[0.03] border border-white/15 hover:border-white/40 hover:bg-white/7 transition-all duration-500 flex items-center justify-center gap-3 cursor-pointer rounded-full disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             >
               {loading ? (
                 <>
@@ -318,7 +329,7 @@ export function AuthModal() {
                 onClick={() =>
                   switchMode(mode === "signin" ? "signup" : "signin")
                 }
-                className="text-white/50 hover:text-white font-mono text-[10px] tracking-widest uppercase underline underline-offset-4 transition-colors cursor-pointer"
+                className="text-white/50 hover:text-white font-mono text-[10px] tracking-widest uppercase underline underline-offset-4 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
               >
                 {mode === "signin" ? "Register existence" : "Authenticate"}
               </button>

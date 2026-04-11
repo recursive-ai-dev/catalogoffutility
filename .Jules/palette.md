@@ -18,3 +18,8 @@
 
 **Learning:** Navigating between list and detail views often breaks user context if filtering state is local. Lifting search and tag state to a common ancestor (App) ensures a seamless "back" experience where the user's previous search remains intact.
 **Action:** Lift UI-driven filtering state to the router or root component when persistence across navigation is required for a smooth UX.
+
+## 2025-05-25 - Secure Defaults in State Transitions
+
+**Learning:** In authentication UI, visibility states (like "show password") should be explicitly reset to a secure default (hidden) when the user transitions between modes (e.g., Sign In to Sign Up). This prevents accidental exposure of a new password or a previous one in a different context.
+**Action:** Reset visibility toggles to `false` in state transition handlers like `switchMode`.

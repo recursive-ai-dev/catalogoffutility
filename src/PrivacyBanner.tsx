@@ -49,7 +49,7 @@ export function PrivacyBanner() {
       </div>
       <button
         onClick={dismiss}
-        className="shrink-0 px-5 py-2 border border-white/15 hover:border-white/40 text-white/40 hover:text-white text-[9px] font-mono tracking-widest uppercase transition-all rounded-full cursor-pointer"
+        className="shrink-0 px-5 py-2 border border-white/15 hover:border-white/40 text-white/40 hover:text-white text-[9px] font-mono tracking-widest uppercase transition-all rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
       >
         Acknowledge
       </button>
