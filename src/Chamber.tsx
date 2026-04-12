@@ -446,8 +446,9 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               {isInitialized && (
                 <button
                   onClick={toggleFullscreen}
-                  className="absolute top-6 right-6 z-30 p-3 bg-black/40 hover:bg-white/10 text-white/50 hover:text-white rounded-full border border-white/10 hover:border-white/30 transition-all backdrop-blur-md cursor-pointer"
+                  className="absolute top-6 right-6 z-30 p-3 bg-black/40 hover:bg-white/10 text-white/50 hover:text-white rounded-full border border-white/10 hover:border-white/30 transition-all backdrop-blur-md cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
                   title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                  aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                 >
                   <span className="material-symbols-outlined text-sm font-light">
                     {isFullscreen ? "fullscreen_exit" : "fullscreen"}
@@ -666,7 +667,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                     }),
                   )
                 }
-                className="w-full flex items-center gap-3 text-white/30 hover:text-white/70 transition-colors cursor-pointer"
+                className="w-full flex items-center gap-3 text-white/30 hover:text-white/70 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
               >
                 <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">lock</span>
                 <span className="text-[10px] font-mono uppercase tracking-widest">
@@ -684,7 +685,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                     }),
                   )
                 }
-                className="w-full flex items-center gap-3 text-white/30 hover:text-white/70 transition-colors cursor-pointer"
+                className="w-full flex items-center gap-3 text-white/30 hover:text-white/70 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
               >
                 <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                   add_circle
@@ -699,7 +700,8 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
             <button
               onClick={onBack}
               title="Cease (Esc)"
-              className="group w-full relative h-12 bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-all duration-300 overflow-hidden flex items-center justify-center gap-4 cursor-pointer rounded-full"
+              aria-label="Cease session and return to product page"
+              className="group w-full relative h-12 bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-all duration-300 overflow-hidden flex items-center justify-center gap-4 cursor-pointer rounded-full focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
             >
               <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light" aria-hidden="true">
                 power_settings_new
