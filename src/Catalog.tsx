@@ -287,6 +287,7 @@ const Card = React.memo(function Card({
                 : "opacity-60 group-hover:opacity-100 group-hover:mix-blend-normal"
             }`}
             src={entry.image}
+            referrerPolicy="no-referrer"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none"></div>
@@ -695,8 +696,7 @@ export const Catalog = React.memo(function Catalog({
                 placeholder="Search the void..."
                 maxLength={100}
                 value={searchQuery}
-                maxLength={200}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
               />
               <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
