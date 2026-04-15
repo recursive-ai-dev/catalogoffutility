@@ -413,7 +413,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex overflow-hidden relative z-20">
+      <main id="main-content" className="flex-1 flex overflow-hidden relative z-20">
         {/* Game Viewport Area */}
         <section className="flex-1 flex flex-col items-center justify-center relative p-6 md:p-10 lg:p-14">
           {/* Vignette */}
@@ -448,6 +448,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                   onClick={toggleFullscreen}
                   className="absolute top-6 right-6 z-30 p-3 bg-black/40 hover:bg-white/10 text-white/50 hover:text-white rounded-full border border-white/10 hover:border-white/30 transition-all backdrop-blur-md cursor-pointer"
                   title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                  aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                 >
                   <span className="material-symbols-outlined text-sm font-light">
                     {isFullscreen ? "fullscreen_exit" : "fullscreen"}
@@ -618,6 +619,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
                   onClick={() => setShowLogs(!showLogs)}
                   className="text-white/40 hover:text-white transition-colors"
                   title={showLogs ? "Hide Logs" : "Show Logs"}
+                  aria-label={showLogs ? "Hide system logs" : "Show system logs"}
                 >
                   <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                     {showLogs ? "visibility" : "visibility_off"}

@@ -18,3 +18,8 @@
 
 **Learning:** Navigating between list and detail views often breaks user context if filtering state is local. Lifting search and tag state to a common ancestor (App) ensures a seamless "back" experience where the user's previous search remains intact.
 **Action:** Lift UI-driven filtering state to the router or root component when persistence across navigation is required for a smooth UX.
+
+## 2025-05-25 - Keyboard Navigation & Screen Reader Support
+
+**Learning:** Interactive sidebars in complex SPAs can create significant friction for keyboard users if they have to tab through every navigation item to reach the primary content. Additionally, icon-only buttons with "title" attributes are insufficient for screen readers; "aria-label" is necessary for proper accessible identification.
+**Action:** Always provide a "Skip to main content" link at the root of the app and ensure all icon-only buttons have descriptive ARIA labels.

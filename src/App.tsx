@@ -37,11 +37,14 @@ function AppInner() {
   const { authModalVisible, showAuthModal } = useAuthModal();
 
   const handleTagSelect = useCallback((tag: string) => {
-    withViewTransition(() => {
-      setSelectedTag(tag);
-      setView("catalog");
-    });
-  }, []);
+    setSelectedTag(tag);
+    if (view !== "catalog") {
+      withViewTransition(() => {
+        setView("catalog");
+        setSelectedApp(null);
+      });
+    }
+  }, [view]);
 
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
@@ -80,16 +83,6 @@ function AppInner() {
       setSelectedApp(null);
     });
   }, []);
-
-  const handleTagSelect = useCallback((tag: string) => {
-    setSelectedTag(tag);
-    if (view !== "catalog") {
-      withViewTransition(() => {
-        setView("catalog");
-        setSelectedApp(null);
-      });
-    }
-  }, [view]);
 
   const handleBackToProduct = useCallback(() => {
     // Chain 12 (BackNavigation): invariant — can only return to product when an app is selected
@@ -136,23 +129,23 @@ function AppInner() {
 
   // Use effectiveView in render (not raw `view`) so that auth-gated pages
   // never flash for a frame before the useEffect above fires on logout.
-  if (effectiveView === "chamber" && selectedApp) {
-    return <Chamber app={selectedApp} onBack={handleBackToProduct} />;
-  }
+  const content = (() => {
+    if (effectiveView === "chamber" && selectedApp) {
+      return <Chamber app={selectedApp} onBack={handleBackToProduct} />;
+    }
 
-  if (effectiveView === "product" && selectedApp) {
+    if (effectiveView === "product" && selectedApp) {
+      return (
+        <ProductPage
+          app={selectedApp}
+          onBack={handleBackToCatalog}
+          onEnter={handleEnterChamber}
+          onTagSelect={handleTagSelect}
+        />
+      );
+    }
+
     return (
-      <ProductPage
-        app={selectedApp}
-        onBack={handleBackToCatalog}
-        onEnter={handleEnterChamber}
-        onTagSelect={handleTagSelect}
-      />
-    );
-  }
-
-  return (
-    <>
       <Catalog
         onSelectApp={handleSelectApp}
         searchQuery={searchQuery}
@@ -160,6 +153,18 @@ function AppInner() {
         selectedTag={selectedTag}
         onTagSelect={handleTagSelect}
       />
+    );
+  })();
+
+  return (
+    <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-6 focus:left-6 focus:z-[100] focus:px-6 focus:py-3 focus:bg-white focus:text-black focus:font-mono focus:text-[10px] focus:tracking-widest focus:uppercase focus:rounded-full focus:shadow-2xl transition-all"
+      >
+        Skip to Content
+      </a>
+      {content}
       {authModalVisible && <AuthModal />}
       <PrivacyBanner />
     </>

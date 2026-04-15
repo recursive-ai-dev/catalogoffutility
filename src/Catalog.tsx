@@ -693,10 +693,9 @@ export const Catalog = React.memo(function Catalog({
                 type="text"
                 aria-label="Search catalog entries (Press / to focus)"
                 placeholder="Search the void..."
-                maxLength={100}
                 value={searchQuery}
                 maxLength={200}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
               />
               <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
@@ -738,7 +737,7 @@ export const Catalog = React.memo(function Catalog({
         </div>
 
         {/* Grid Content */}
-        <main className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll">
+        <main id="main-content" className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll">
           {/* Anonymous access callout */}
           {!user && (
             <div className="mb-8 flex items-start gap-4 px-6 py-4 border border-white/5 rounded-xl bg-white/[0.01] group">

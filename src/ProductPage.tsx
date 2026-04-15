@@ -86,7 +86,7 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
         </header>
 
         {/* Scrollable body */}
-        <main className="flex-1 overflow-y-auto void-scroll">
+        <main id="main-content" className="flex-1 overflow-y-auto void-scroll">
           {/* Mobile hero thumbnail */}
           <div className="lg:hidden relative h-48 w-full overflow-hidden">
             <img
