@@ -18,3 +18,8 @@
 
 **Learning:** Navigating between list and detail views often breaks user context if filtering state is local. Lifting search and tag state to a common ancestor (App) ensures a seamless "back" experience where the user's previous search remains intact.
 **Action:** Lift UI-driven filtering state to the router or root component when persistence across navigation is required for a smooth UX.
+
+## 2025-05-22 - Password Visibility State Management
+
+**Learning:** When a component handles multiple authentication modes (e.g., sign-in vs. sign-up) within the same modal, persistent password visibility state can lead to unexpected exposure or insecure defaults. Resetting visibility on mode switch ensures a "secure by default" experience.
+**Action:** Reset sensitive UI states (like password visibility or error messages) when the user transitions between distinct operational modes in a shared container.

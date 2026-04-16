@@ -28,6 +28,7 @@ export function AuthModal() {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -74,6 +75,7 @@ export function AuthModal() {
     setError(null);
     setConfirmed(false);
     setPassword("");
+    setShowPassword(false);
   };
 
   // Close on backdrop click
@@ -232,7 +234,6 @@ export function AuthModal() {
                   required
                   maxLength={254}
                   value={email}
-                  maxLength={254}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@designation.void"
                   className="flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/15 tracking-wide"
@@ -243,27 +244,47 @@ export function AuthModal() {
 
             {/* Password field */}
             <div className="flex flex-col gap-2">
-              <label htmlFor="auth-password" className="text-[9px] font-mono text-white/30 tracking-widest uppercase">
+              <label
+                htmlFor="auth-password"
+                className="text-[9px] font-mono text-white/30 tracking-widest uppercase"
+              >
                 Passphrase
               </label>
               <div className="flex items-center gap-3 bg-black/50 border border-white/8 focus-within:border-white/20 rounded-lg px-4 py-3 transition-colors">
-                <span className="material-symbols-outlined text-white/20 font-light text-base" aria-hidden="true">
+                <span
+                  className="material-symbols-outlined text-white/20 font-light text-base"
+                  aria-hidden="true"
+                >
                   key
                 </span>
                 <input
                   id="auth-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
                   maxLength={128}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/20 tracking-widest"
+                  placeholder={showPassword ? "Your passphrase" : "••••••••••••"}
+                  className={`flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/20 ${showPassword ? "tracking-wide" : "tracking-widest"}`}
                   autoComplete={
                     mode === "signin" ? "current-password" : "new-password"
                   }
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-white/20 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-full flex items-center justify-center p-1"
+                  aria-label={showPassword ? "Hide passphrase" : "Show passphrase"}
+                  title={showPassword ? "Hide passphrase" : "Show passphrase"}
+                >
+                  <span
+                    className="material-symbols-outlined font-light text-base"
+                    aria-hidden="true"
+                  >
+                    {showPassword ? "visibility_off" : "visibility"}
+                  </span>
+                </button>
               </div>
             </div>
 
