@@ -18,3 +18,7 @@
 
 **Learning:** Navigating between list and detail views often breaks user context if filtering state is local. Lifting search and tag state to a common ancestor (App) ensures a seamless "back" experience where the user's previous search remains intact.
 **Action:** Lift UI-driven filtering state to the router or root component when persistence across navigation is required for a smooth UX.
+
+## 2026-04-17 - Keyboard Navigation Efficiency
+**Learning:** For SPAs with persistent sidebars or long navigation menus, a visually hidden 'Skip to Content' link is essential for keyboard and screen reader users to efficiently reach the primary content without tabbing through every navigation item.
+**Action:** Implement a focusable skip link at the top of the DOM that targets the unique ID of the main content area.
