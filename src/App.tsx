@@ -36,13 +36,6 @@ function AppInner() {
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
 
-  const handleTagSelect = useCallback((tag: string) => {
-    withViewTransition(() => {
-      setSelectedTag(tag);
-      setView("catalog");
-    });
-  }, []);
-
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
   }, []);
@@ -81,15 +74,18 @@ function AppInner() {
     });
   }, []);
 
-  const handleTagSelect = useCallback((tag: string) => {
-    setSelectedTag(tag);
-    if (view !== "catalog") {
+  const handleTagSelect = useCallback(
+    (tag: string) => {
       withViewTransition(() => {
-        setView("catalog");
-        setSelectedApp(null);
+        setSelectedTag(tag);
+        if (view !== "catalog") {
+          setView("catalog");
+          setSelectedApp(null);
+        }
       });
-    }
-  }, [view]);
+    },
+    [view],
+  );
 
   const handleBackToProduct = useCallback(() => {
     // Chain 12 (BackNavigation): invariant — can only return to product when an app is selected
