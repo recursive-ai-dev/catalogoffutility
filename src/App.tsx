@@ -40,6 +40,7 @@ function AppInner() {
     withViewTransition(() => {
       setSelectedTag(tag);
       setView("catalog");
+      setSelectedApp(null);
     });
   }, []);
 
@@ -80,16 +81,6 @@ function AppInner() {
       setSelectedApp(null);
     });
   }, []);
-
-  const handleTagSelect = useCallback((tag: string) => {
-    setSelectedTag(tag);
-    if (view !== "catalog") {
-      withViewTransition(() => {
-        setView("catalog");
-        setSelectedApp(null);
-      });
-    }
-  }, [view]);
 
   const handleBackToProduct = useCallback(() => {
     // Chain 12 (BackNavigation): invariant — can only return to product when an app is selected
