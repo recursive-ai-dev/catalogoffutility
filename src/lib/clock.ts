@@ -41,9 +41,10 @@ export const realClock: Clock = {
  * when replayed with the same seed.
  */
 export function makeFakeClock(fixed: Date): Clock {
-  const ts = TIME_FORMATTER.format(fixed);
+  const fixedMs = fixed.getTime();
+  const ts = TIME_FORMATTER.format(new Date(fixedMs));
   return {
     timeString: () => ts,
-    now: () => new Date(fixed.getTime()),
+    now: () => new Date(fixedMs),
   };
 }
