@@ -3,7 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-if (!supabaseUrl || !supabaseAnonKey) {
+export const supabaseAvailable = !!(supabaseUrl && supabaseAnonKey);
+
+if (!supabaseAvailable) {
   if (import.meta.env.PROD) {
     throw new Error(
       "[void] Supabase credentials missing. The archive cannot initialize in production.",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Catalog } from "./Catalog";
+import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
@@ -8,6 +8,15 @@ import { AuthModal } from "./AuthModal";
 import { PrivacyBanner } from "./PrivacyBanner";
 
 type View = "catalog" | "product" | "chamber";
+
+/** Wraps a state update in the View Transitions API when available, falling back gracefully. */
+function withViewTransition(update: () => void): void {
+  if (typeof document !== "undefined" && "startViewTransition" in document) {
+    (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(update);
+  } else {
+    update();
+  }
+}
 
 /**
  * Manages in-app navigation and selected application state for the catalog, product, and chamber screens.
@@ -21,12 +30,30 @@ type View = "catalog" | "product" | "chamber";
 function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
 
+  const handleTagSelect = useCallback(
+    (tag: string) => {
+      withViewTransition(() => {
+        setSelectedTag(tag);
+        if (view !== "catalog" || selectedApp !== null) {
+          setView("catalog");
+          setSelectedApp(null);
+        }
+      });
+    },
+    [view, selectedApp],
+  );
+
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
+
   // Stabilize handlers by depending on derived primitives (isLoggedIn) instead of the full user object.
   // This prevents the Catalog from re-rendering when irrelevant user profile properties change.
-  const isLoggedIn = !!user;
   const handleSelectApp = useCallback(
     (app: AppEntry) => {
       // Chain 2 (AppSelection): single authoritative guard — missing entries are never navigated to.
@@ -37,8 +64,10 @@ function AppInner() {
         showAuthModal();
         return;
       }
-      setSelectedApp(app);
-      setView("product");
+      withViewTransition(() => {
+        setSelectedApp(app);
+        setView("product");
+      });
     },
     [isLoggedIn, showAuthModal],
   );
@@ -46,22 +75,24 @@ function AppInner() {
   const handleEnterChamber = useCallback(() => {
     // Chain 9 (EnterChamber): invariant — can only enter chamber when an app is selected
     if (!selectedApp) return;
-    setView("chamber");
+    withViewTransition(() => setView("chamber"));
   }, [selectedApp]);
 
   const handleBackToCatalog = useCallback(() => {
     // Chain 12 (BackNavigation): atomically clear selection and return to catalog
-    setView("catalog");
-    setSelectedApp(null);
+    withViewTransition(() => {
+      setView("catalog");
+      setSelectedApp(null);
+    });
   }, []);
 
   const handleBackToProduct = useCallback(() => {
     // Chain 12 (BackNavigation): invariant — can only return to product when an app is selected
     if (!selectedApp) {
-      setView("catalog");
+      withViewTransition(() => setView("catalog"));
       return;
     }
-    setView("product");
+    withViewTransition(() => setView("product"));
   }, [selectedApp]);
 
   // Derive effective view at render time to prevent auth-gated pages from
@@ -110,13 +141,20 @@ function AppInner() {
         app={selectedApp}
         onBack={handleBackToCatalog}
         onEnter={handleEnterChamber}
+        onTagSelect={handleTagSelect}
       />
     );
   }
 
   return (
     <>
-      <Catalog onSelectApp={handleSelectApp} />
+      <Catalog
+        onSelectApp={handleSelectApp}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        selectedTag={selectedTag}
+        onTagSelect={handleTagSelect}
+      />
       {authModalVisible && <AuthModal />}
       <PrivacyBanner />
     </>

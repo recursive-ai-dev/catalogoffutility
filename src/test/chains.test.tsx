@@ -51,7 +51,7 @@ describe('Chain 4 — ParagraphSplit', () => {
     const app = makeApp({
       longDescription: 'Paragraph one.\n\nParagraph two.\n\nParagraph three.',
     });
-    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     expect(screen.getByText('Paragraph one.')).toBeTruthy();
     expect(screen.getByText('Paragraph two.')).toBeTruthy();
     expect(screen.getByText('Paragraph three.')).toBeTruthy();
@@ -59,14 +59,14 @@ describe('Chain 4 — ParagraphSplit', () => {
 
   it('renders no paragraph section when longDescription is undefined', () => {
     const app = makeApp({ longDescription: undefined });
-    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     // CLASSIFIED_NOTES section should not appear
     expect(container.textContent).not.toContain('CLASSIFIED_NOTES');
   });
 
   it('filters empty strings produced by leading/trailing newlines', () => {
     const app = makeApp({ longDescription: '\n\nParagraph one.\n\n' });
-    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     expect(screen.getByText('Paragraph one.')).toBeTruthy();
   });
 });
@@ -79,7 +79,7 @@ describe('Chain 3 — ProductReveal', () => {
   it('starts unrevealed and reveals after 80ms', () => {
     vi.useFakeTimers();
     const app = makeApp();
-    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { container } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     const rightPanel = container.querySelector('.transition-all.duration-700');
     expect(rightPanel?.className).toContain('opacity-0');
     act(() => { vi.advanceTimersByTime(100); });
@@ -90,7 +90,7 @@ describe('Chain 3 — ProductReveal', () => {
   it('cleans up timer on unmount without error', () => {
     vi.useFakeTimers();
     const app = makeApp();
-    const { unmount } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} />);
+    const { unmount } = render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
     unmount();
     act(() => { vi.advanceTimersByTime(200); });
     vi.useRealTimers();
@@ -377,7 +377,7 @@ describe('Chain 12 — BackNavigation', () => {
   });
 
   it('Escape key in chamber view closes image modal before navigating back', async () => {
-    render(<App />);
+    const { container } = render(<App />);
     fireEvent.click(screen.getByText(firstNavigableEntry.title));
     fireEvent.click(screen.getByText(/Enter Chamber/i));
 
@@ -658,6 +658,7 @@ describe('Chain 8 — ImageHotlink', () => {
       { src: 'http://localhost:3000/x.jpg', ok: true },
       { src: 'data:image/png;base64,abc', ok: true },
       { src: 'data:image/svg+xml;base64,abc', ok: false },
+      { src: 'https://user:pass@safe.com/x.jpg', ok: false },
     ];
 
     for (const { src, ok } of cases) {
@@ -821,7 +822,7 @@ describe('Deterministic Replay — Clock Provider', () => {
     // Freeze time at a known instant so every log entry gets the same timestamp.
     const FIXED = new Date(2000, 0, 1, 12, 0, 0); // 2000-01-01 12:00:00 local
     const fakeClock = makeFakeClock(FIXED);
-    const expectedTime = FIXED.toLocaleTimeString('en-US', { hour12: false });
+    const expectedTime = fakeClock.timeString();
 
     // Perform the same action sequence and capture the log panel's text content.
     function runOnce(): string {
@@ -849,7 +850,12 @@ describe('Deterministic Replay — Clock Provider', () => {
   it('fake clock timeString is always the seeded value (not real wall-clock)', () => {
     const FIXED = new Date(2000, 0, 1, 8, 30, 0); // 08:30:00
     const fakeClock = makeFakeClock(FIXED);
-    const expected = FIXED.toLocaleTimeString('en-US', { hour12: false });
+    const expected = new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(FIXED);
     // Multiple calls must all return the same frozen string.
     expect(fakeClock.timeString()).toBe(expected);
     expect(fakeClock.timeString()).toBe(expected);
@@ -897,6 +903,43 @@ describe('DEFAULT_TAG & resetFilters — Catalog', () => {
     const input = screen.getByPlaceholderText('Search the void...');
     await userEvent.type(input, 'xyznotfound');
     expect(screen.getByText('Clear all filters')).toBeTruthy();
+  });
+
+  it('Product page tag click updates filter and returns to catalog', async () => {
+    render(<App />);
+    // Navigate to a product
+    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
+
+    // Find a tag on the product page and click it
+    const tagToClick = firstNavigableEntry.tags![0];
+    const tagBtn = screen.getByRole('button', { name: `Filter by ${tagToClick}` });
+    fireEvent.click(tagBtn);
+
+    // Should be back at catalog
+    expect(screen.getByRole('heading', { name: /The Archive/i })).toBeTruthy();
+    // Filter should be active
+    const selectedTagBtn = screen.getByRole('button', { name: tagToClick });
+    expect(selectedTagBtn.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('filters persist when navigating from catalog to product and back', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'world');
+    expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
+
+    // Navigate to THE WORLD THAT DOESN'T CARE product page
+    fireEvent.click(screen.getByText("THE WORLD THAT DOESN'T CARE"));
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
+
+    // Navigate back to catalog
+    fireEvent.click(screen.getByRole('button', { name: /Archive/i }));
+
+    // Search query should still be 'world'
+    const restoredInput = screen.getByPlaceholderText('Search the void...') as HTMLInputElement;
+    expect(restoredInput.value).toBe('world');
+    expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
   });
 });
 

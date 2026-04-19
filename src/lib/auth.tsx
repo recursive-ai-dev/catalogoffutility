@@ -7,7 +7,7 @@ import React, {
   useMemo,
 } from "react";
 import type { User, Session } from "@supabase/supabase-js";
-import { supabase, Profile } from "./supabase";
+import { supabase, supabaseAvailable, Profile } from "./supabase";
 
 // ---------------------------------------------------------------------------
 // Auth Context — user/session/profile state only.
@@ -20,6 +20,8 @@ interface AuthContextValue {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
+  /** Non-null when Supabase is unreachable or credentials are invalid. */
+  connectionError: string | null;
   signIn: (
     email: string,
     password: string,
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const fetchProfile = useCallback(async (userId: string, email: string) => {
     const now = new Date().toISOString();
@@ -102,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .from("profiles")
       .insert({
         id: userId,
-        username: email.split("@")[0],
+        username: email.split("@")[0].slice(0, 32),
         last_seen_at: now,
       })
       .select()
@@ -118,24 +121,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // If Supabase is not configured, degrade gracefully — auth is unavailable
+    // but the rest of the app (non-gated entries) remains fully functional.
+    if (!supabaseAvailable) {
+      setConnectionError("Authentication service is unavailable. Non-gated entries remain accessible.");
+      setLoading(false);
+      return;
+    }
+
     // In Supabase v2, onAuthStateChange fires INITIAL_SESSION on subscribe,
     // making a separate getSession() call redundant. Using both causes fetchProfile
     // to be invoked twice concurrently on every session restore (LC-A). This single
     // listener is the sole authoritative source for session and profile state.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id, session.user.email ?? "");
-      } else {
-        setProfile(null);
-      }
+    let subscription: { unsubscribe: () => void } | null = null;
+    try {
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id, session.user.email ?? "");
+        } else {
+          setProfile(null);
+        }
+        setConnectionError(null);
+        setLoading(false);
+      });
+      subscription = data.subscription;
+    } catch (err) {
+      // Supabase client threw during subscription setup — surface as a recoverable error.
+      const msg = err instanceof Error ? err.message : "Unknown connection error";
+      console.error("[void] Auth subscription failed:", msg);
+      setConnectionError(`Authentication service connection failed: ${msg}`);
       setLoading(false);
-    });
+    }
 
-    return () => subscription.unsubscribe();
+    return () => subscription?.unsubscribe();
   }, [fetchProfile]);
 
   const signIn = useCallback(
@@ -143,12 +163,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: string,
       password: string,
     ): Promise<{ error: string | null }> => {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) return { error: error.message };
-      return { error: null };
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) return { error: error.message };
+        return { error: null };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Connection failed";
+        setConnectionError(`Sign-in failed: ${msg}`);
+        return { error: "Authentication service is unreachable. Please try again later." };
+      }
     },
     [],
   );
@@ -158,12 +184,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: string,
       password: string,
     ): Promise<{ error: string | null; needsConfirmation: boolean }> => {
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) return { error: error.message, needsConfirmation: false };
-      // If email confirmation is required, identities will be empty
-      const needsConfirmation =
-        !data.session && !data.user?.confirmed_at;
-      return { error: null, needsConfirmation };
+      try {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) return { error: error.message, needsConfirmation: false };
+        // If email confirmation is required, identities will be empty
+        const needsConfirmation =
+          !data.session && !data.user?.confirmed_at;
+        return { error: null, needsConfirmation };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Connection failed";
+        setConnectionError(`Sign-up failed: ${msg}`);
+        return { error: "Authentication service is unreachable. Please try again later.", needsConfirmation: false };
+      }
     },
     [],
   );
@@ -181,11 +213,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       profile,
       loading,
+      connectionError,
       signIn,
       signUp,
       signOut,
     }),
-    [user, session, profile, loading, signIn, signUp, signOut],
+    [user, session, profile, loading, connectionError, signIn, signUp, signOut],
   );
 
   return (

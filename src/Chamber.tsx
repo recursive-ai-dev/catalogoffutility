@@ -17,25 +17,53 @@ const HOTLINK_SCRIPT_TEMPLATE = `<script>
 
 const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i;
 
+/** Static set of allowed keys for postMessage payload validation to avoid re-allocation. */
+const IMAGE_CLICKED_ALLOWED_KEYS = new Set(['type', 'src']);
+
+/**
+ * Validates that a postMessage payload conforms to the expected JSON schema.
+ * Returns true only for well-formed IMAGE_CLICKED messages with a string src.
+ * Rejects payloads that are null, non-objects, missing required fields, or
+ * have unexpected field types — providing a secondary validation layer beyond
+ * origin checking (Chain 8 / PostMessage Validation TODO).
+ */
+function isValidImageClickedPayload(data: unknown): data is { type: 'IMAGE_CLICKED'; src: string } {
+  if (data === null || typeof data !== 'object') return false;
+  const d = data as Record<string, unknown>;
+  if (d['type'] !== 'IMAGE_CLICKED') return false;
+  if (typeof d['src'] !== 'string') return false;
+  // Reject payloads with unexpected extra fields that could indicate spoofing
+  for (const key of Object.keys(d)) {
+    if (!IMAGE_CLICKED_ALLOWED_KEYS.has(key)) return false;
+  }
+  return true;
+}
+
 /**
  * Returns true only for URL schemes that are safe to render in an <img> src.
  * Blocks javascript:, vbscript:, blob:, and other non-media schemes.
  * Restricts data: URLs to safe raster formats (no SVG) to prevent potential XSS.
  * Restricts http: to localhost/127.0.0.1 to prevent mixed-content warnings.
- * Enforces a 2MB length limit to guard against client-side DoS.
+ * Enforces a 2MB length limit for data URLs and 8KB for remote URLs to guard against DoS.
  */
 function isSafeImageSrc(src: string): boolean {
-  // Enforce a reasonable length limit (2MB) to prevent DoS via massive payloads.
-  if (src.length > 2 * 1024 * 1024) return false;
+  // Enforce a length limit (2MB) for data URLs.
+  if (src.startsWith("data:")) {
+    if (src.length > 2 * 1024 * 1024) return false;
+    return SAFE_DATA_URL_REGEX.test(src);
+  }
 
-  // Short-circuit common protocols to avoid expensive URL parsing overhead.
-  // We only short-circuit https: as it is always safe. http: must proceed
-  // to hostname validation to ensure it only points to localhost (BUG-06c).
-  if (src.startsWith("https://")) return true;
-  if (src.startsWith("data:")) return SAFE_DATA_URL_REGEX.test(src);
+  // Remote URLs (https/http) are capped at 8KB to hinder data exfiltration
+  // via massive URL parameters.
+  if (src.length > 8192) return false;
 
   try {
     const url = new URL(src);
+
+    // Reject URLs with embedded credentials to prevent spoofing and SSRF-like
+    // redirection patterns (e.g., https://user:pass@legit.com).
+    if (url.username || url.password) return false;
+
     if (url.protocol === "https:") return true;
     // Allow http: only for local development (localhost or 127.0.0.1)
     if (url.protocol === "http:") {
@@ -225,24 +253,27 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       // from other windows or tabs (BUG-08b).
       if (!iframeRef.current || e.source !== iframeRef.current.contentWindow) return;
 
-      if (e.data && e.data.type === "IMAGE_CLICKED") {
-        // Validate src: non-empty string with a safe image URL scheme (BUG-06)
-        const src: unknown = e.data.src;
-        if (typeof src !== "string" || src.trim() === "") return;
-        if (!isSafeImageSrc(src)) return;
+      // Chain 8 (ImageHotlink): secondary schema validation — reject malformed payloads
+      // before any field access, providing defense-in-depth beyond origin checking.
+      if (!isValidImageClickedPayload(e.data)) return;
 
-        setHotlinkedImage(src);
-        setLogs((prev) =>
-          appendLog(prev, {
-            sender: "SYSTEM_MSG",
-            // Use clkRef.current so this effect never closes over a stale clock
-            // even if the clock prop changes after the initial mount.
-            time: clkRef.current.timeString(),
-            msg: `Intercepted image hotlink: ${src}`,
-            type: "warn",
-          }),
-        );
-      }
+      // Validate src: non-empty string with a safe image URL scheme (BUG-06)
+      const src = e.data.src;
+      if (src.trim() === "") return;
+      if (!isSafeImageSrc(src)) return;
+
+      setHotlinkedImage(src);
+      setLogs((prev) =>
+        appendLog(prev, {
+          sender: "SYSTEM_MSG",
+          // Use clkRef.current so this effect never closes over a stale clock
+          // even if the clock prop changes after the initial mount.
+          time: clkRef.current.timeString(),
+          // Truncate the URL in the log to prevent UI performance issues and DoS from massive URLs.
+          msg: `Intercepted image hotlink: ${src.length > 100 ? src.substring(0, 97) + "..." : src}`,
+          type: "warn",
+        }),
+      );
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
@@ -320,6 +351,8 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       : app.htmlContent + HOTLINK_SCRIPT_TEMPLATE;
   }, [app.htmlContent]);
 
+  const corruption = 85;
+  
   return (
     <div className="font-sans bg-black text-white antialiased overflow-hidden h-screen flex flex-col selection:bg-white/20 selection:text-white relative">
       {/* Atmospheric Background */}
@@ -554,9 +587,17 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               <span className="text-[10px] text-white/50 font-mono animate-pulse tracking-widest">
                 CRITICAL
               </span>
-            </div>
-            <div className="relative h-1 bg-white/5 rounded-full overflow-hidden">
-              <div className="h-full bg-white/40 w-[85%] relative">
+            </div>            
+            <div
+              className="relative h-1 bg-white/5 rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={corruption}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Psychological stability"
+              aria-valuetext={`${corruption}% corruption, critical`}
+            >
+              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
               </div>
             </div>
@@ -575,8 +616,10 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setShowLogs(!showLogs)}
-                  className="text-white/40 hover:text-white transition-colors"
+                  className="text-white/40 hover:text-white transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
                   title={showLogs ? "Hide Logs" : "Show Logs"}
+                  aria-label={showLogs ? "Hide logs" : "Show logs"}
+                  aria-pressed={showLogs}
                 >
                   <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                     {showLogs ? "visibility" : "visibility_off"}

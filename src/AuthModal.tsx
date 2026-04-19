@@ -22,12 +22,13 @@ function humanizeError(raw: string): string {
 }
 
 export function AuthModal() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, connectionError } = useAuth();
   const { hideAuthModal } = useAuthModal();
 
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -74,6 +75,7 @@ export function AuthModal() {
     setError(null);
     setConfirmed(false);
     setPassword("");
+    setShowPassword(false);
   };
 
   // Close on backdrop click
@@ -96,15 +98,16 @@ export function AuthModal() {
     setLoading(true);
 
     try {
+      const sanitizedEmail = email.trim();
       if (mode === "signin") {
-        const { error } = await signIn(email, password);
+        const { error } = await signIn(sanitizedEmail, password);
         if (error) {
           setError(humanizeError(error));
         } else {
           hideAuthModal();
         }
       } else {
-        const { error, needsConfirmation } = await signUp(email, password);
+        const { error, needsConfirmation } = await signUp(sanitizedEmail, password);
         if (error) {
           setError(humanizeError(error));
         } else if (needsConfirmation) {
@@ -186,6 +189,25 @@ export function AuthModal() {
               Return to the void
             </button>
           </div>
+        ) : connectionError ? (
+          /* Supabase connection failure state */
+          <div className="px-8 py-10 flex flex-col gap-4 items-center text-center">
+            <span className="material-symbols-outlined text-4xl text-red-400/30 font-light animate-pulse">
+              cloud_off
+            </span>
+            <p className="text-white/40 font-mono text-xs tracking-widest uppercase leading-relaxed">
+              Archive Unreachable
+            </p>
+            <p className="text-white/20 font-light text-sm leading-relaxed">
+              The authentication service is currently unavailable. Non-gated entries remain accessible.
+            </p>
+            <button
+              onClick={hideAuthModal}
+              className="mt-4 px-6 py-2 border border-white/10 text-white/40 hover:text-white/70 hover:border-white/25 text-[10px] font-mono tracking-widest uppercase transition-colors rounded-full cursor-pointer"
+            >
+              Return to the void
+            </button>
+          </div>
         ) : (
           /* Form */
           <form onSubmit={handleSubmit} className="px-8 py-8 flex flex-col gap-6">
@@ -210,6 +232,7 @@ export function AuthModal() {
                   id="auth-email"
                   type="email"
                   required
+                  maxLength={254}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@designation.void"
@@ -230,17 +253,30 @@ export function AuthModal() {
                 </span>
                 <input
                   id="auth-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
+                  maxLength={128}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/20 tracking-widest"
+                  placeholder={showPassword ? "your passphrase" : "••••••••••••"}
+                  className={`flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/20 ${showPassword ? "tracking-wide" : "tracking-widest"}`}
                   autoComplete={
                     mode === "signin" ? "current-password" : "new-password"
                   }
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-white/20 hover:text-white/50 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm px-1"
+                  aria-label="Show passphrase"
+                  aria-pressed={showPassword}
+                  aria-controls="auth-password"
+                >
+                  <span className="material-symbols-outlined font-light text-base" aria-hidden="true">
+                    {showPassword ? "visibility_off" : "visibility"}
+                  </span>
+                </button>
               </div>
             </div>
 
