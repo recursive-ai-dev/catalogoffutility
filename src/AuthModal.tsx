@@ -269,9 +269,11 @@ export function AuthModal() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="text-white/20 hover:text-white/50 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm px-1"
-                  aria-label={showPassword ? "Hide passphrase" : "Show passphrase"}
+                  aria-label="Show passphrase"
+                  aria-pressed={showPassword}
+                  aria-controls="auth-password"
                 >
-                  <span className="material-symbols-outlined font-light text-base">
+                  <span className="material-symbols-outlined font-light text-base" aria-hidden="true">
                     {showPassword ? "visibility_off" : "visibility"}
                   </span>
                 </button>
