@@ -33,7 +33,6 @@ function AppInner() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
-  const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
 
   const handleTagSelect = useCallback(

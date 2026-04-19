@@ -456,10 +456,9 @@ export const Catalog = React.memo(function Catalog({
         return;
       }
 
-      if (activeElement?.tagName === "INPUT" || activeElement?.tagName === "TEXTAREA" || activeElement?.isContentEditable) return;
-
       if (
         e.key === "/" &&
+        !isInputFocused &&
         !e.ctrlKey &&
         !e.metaKey &&
         !e.altKey &&
