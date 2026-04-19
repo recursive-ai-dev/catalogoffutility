@@ -73,7 +73,7 @@ function initials(name: string): string {
   }
 
   if (parts.length >= 2) return (parts[0] + parts[1]).toUpperCase();
-  if (parts.length === 1) return cleanName.slice(0, 2).toUpperCase();
+  if (parts.length === 1) return cleanName.replace(/^[._\-\s]+/, "").slice(0, 2).toUpperCase();
   const fallback = cleanName.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
   return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
