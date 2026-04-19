@@ -34,16 +34,28 @@ function AppInner() {
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
+  const isLoggedIn = !!user;
 
   const handleTagSelect = useCallback(
     (tag: string) => {
-      withViewTransition(() => {
+      // Optimization: only use the heavy View Transitions API when actually
+      // navigating back to the catalog. Tag filtering within the catalog
+      // should be as fast as possible without the snapshot overhead.
+      const needsTransition = view !== "catalog" || selectedApp !== null;
+
+      const update = () => {
         setSelectedTag(tag);
-        if (view !== "catalog" || selectedApp !== null) {
+        if (needsTransition) {
           setView("catalog");
           setSelectedApp(null);
         }
-      });
+      };
+
+      if (needsTransition) {
+        withViewTransition(update);
+      } else {
+        update();
+      }
     },
     [view, selectedApp],
   );
