@@ -44,8 +44,7 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
       >
         <img
           src={app.image}
-          alt={app.title}
-          referrerPolicy="no-referrer"
+          alt={app.title} referrerPolicy="no-referrer"
           className="absolute inset-0 w-full h-full object-cover scale-110 opacity-25 mix-blend-luminosity"
           style={{ filter: "blur(3px)" }}
         />
@@ -92,8 +91,7 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
           <div className="lg:hidden relative h-48 w-full overflow-hidden">
             <img
               src={app.image}
-              alt={app.title}
-              referrerPolicy="no-referrer"
+              alt={app.title} referrerPolicy="no-referrer"
               className="w-full h-full object-cover opacity-30"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent pointer-events-none"></div>

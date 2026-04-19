@@ -38,15 +38,15 @@ function AppInner() {
 
   const handleTagSelect = useCallback(
     (tag: string) => {
-      setSelectedTag(tag);
-      if (view !== "catalog") {
-        withViewTransition(() => {
+      withViewTransition(() => {
+        setSelectedTag(tag);
+        if (view !== "catalog" || selectedApp !== null) {
           setView("catalog");
           setSelectedApp(null);
-        });
-      }
+        }
+      });
     },
-    [view],
+    [view, selectedApp],
   );
 
   const handleSearchChange = useCallback((query: string) => {

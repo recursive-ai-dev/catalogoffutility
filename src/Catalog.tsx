@@ -64,14 +64,17 @@ const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
 // Optimized to use a single regex match for initials extraction while preserving
 // underscore/dot/dash boundaries, reducing multiple array allocations.
 function initials(name: string): string {
-  // Filter out empty parts to prevent crashes on inputs like ".."
-  const parts = name
-    .replace(/@.*/, "")
-    .split(/[._\-\s]+/)
-    .filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  const fallback = name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
+  const cleanName = name.replace(/@.*/, "");
+  const matches = cleanName.matchAll(/(?:^|[._\-\s])([\p{L}\p{N}_])/gu);
+  const parts: string[] = [];
+  for (const match of matches) {
+    parts.push(match[1]);
+    if (parts.length === 2) break;
+  }
+
+  if (parts.length >= 2) return (parts[0] + parts[1]).toUpperCase();
+  if (parts.length === 1) return cleanName.replace(/^[._\-\s]+/, "").slice(0, 2).toUpperCase();
+  const fallback = cleanName.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
   return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
 
@@ -274,8 +277,7 @@ const Card = React.memo(function Card({
           <img
             ref={imgRef}
             alt={entry.title}
-            loading="lazy"
-            referrerPolicy="no-referrer"
+            loading="lazy" referrerPolicy="no-referrer"
             className={`w-full h-full object-cover transition-transform duration-700 ease-out mix-blend-luminosity ${
               isAuthLocked
                 ? "opacity-15 group-hover:opacity-20"
@@ -457,10 +459,9 @@ export const Catalog = React.memo(function Catalog({
         return;
       }
 
-      if (activeElement?.tagName === "INPUT" || activeElement?.tagName === "TEXTAREA" || activeElement?.isContentEditable) return;
-
       if (
         e.key === "/" &&
+        !isInputFocused &&
         !e.ctrlKey &&
         !e.metaKey &&
         !e.altKey &&
@@ -528,6 +529,14 @@ export const Catalog = React.memo(function Catalog({
 
   return (
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
+      {/* Accessibility: Skip to main content link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only fixed top-4 left-4 z-[100] px-6 py-3 bg-white text-black font-mono text-xs tracking-widest uppercase rounded-full shadow-2xl transition-all"
+      >
+        Skip to main content
+      </a>
+
       {/* Atmospheric Background */}
       <div className="absolute inset-0 z-0 pointer-events-none atmosphere"></div>
 
@@ -688,7 +697,7 @@ export const Catalog = React.memo(function Catalog({
                 type="text"
                 aria-label="Search catalog entries (Press / to focus)"
                 placeholder="Search the void..."
-                maxLength={100}
+                maxLength={200}
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
@@ -732,7 +741,10 @@ export const Catalog = React.memo(function Catalog({
         </div>
 
         {/* Grid Content */}
-        <main className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll">
+        <main
+          id="main-content"
+          className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll"
+        >
           {/* Anonymous access callout */}
           {!user && (
             <div className="mb-8 flex items-start gap-4 px-6 py-4 border border-white/5 rounded-xl bg-white/[0.01] group">

@@ -28,6 +28,7 @@ export function AuthModal() {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -74,6 +75,7 @@ export function AuthModal() {
     setError(null);
     setConfirmed(false);
     setPassword("");
+    setShowPassword(false);
   };
 
   // Close on backdrop click
@@ -251,18 +253,30 @@ export function AuthModal() {
                 </span>
                 <input
                   id="auth-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
                   maxLength={128}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/20 tracking-widest"
+                  placeholder={showPassword ? "your passphrase" : "••••••••••••"}
+                  className={`flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/20 ${showPassword ? "tracking-wide" : "tracking-widest"}`}
                   autoComplete={
                     mode === "signin" ? "current-password" : "new-password"
                   }
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-white/20 hover:text-white/50 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm px-1"
+                  aria-label="Show passphrase"
+                  aria-pressed={showPassword}
+                  aria-controls="auth-password"
+                >
+                  <span className="material-symbols-outlined font-light text-base" aria-hidden="true">
+                    {showPassword ? "visibility_off" : "visibility"}
+                  </span>
+                </button>
               </div>
             </div>
 
