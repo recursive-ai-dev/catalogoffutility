@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 
 interface ProductPageProps {
@@ -10,11 +10,19 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleCopyId = useCallback(() => {
+    navigator.clipboard.writeText(app.id).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [app.id]);
 
   // Close on Escape - consolidated redundant listeners (BUG-14)
   useEffect(() => {
@@ -79,10 +87,25 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
-          </div>
+          <button
+            onClick={handleCopyId}
+            className="flex items-center gap-2 text-[9px] font-mono text-white/20 hover:text-white/50 tracking-widest uppercase transition-colors group cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm px-2 py-1 bg-white/[0.02] border border-white/5 hover:border-white/10"
+            title="Copy Entry ID"
+            aria-label={`Copy entry ID ${app.id}`}
+          >
+            <span>
+              Entry //{" "}
+              <span className="text-white/40 group-hover:text-white/70 transition-colors">
+                {app.id.toUpperCase()}
+              </span>
+            </span>
+            <span
+              className={`material-symbols-outlined !text-[10px] font-light transition-all ${copied ? "text-green-500/50" : "text-white/20 group-hover:text-white/40"}`}
+              aria-hidden="true"
+            >
+              {copied ? "check" : "content_copy"}
+            </span>
+          </button>
         </header>
 
         {/* Scrollable body */}
