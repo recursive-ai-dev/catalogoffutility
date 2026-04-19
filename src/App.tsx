@@ -33,18 +33,20 @@ function AppInner() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
-  const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
 
-  const handleTagSelect = useCallback((tag: string) => {
-    setSelectedTag(tag);
-    if (view !== "catalog") {
+  const handleTagSelect = useCallback(
+    (tag: string) => {
       withViewTransition(() => {
-        setView("catalog");
-        setSelectedApp(null);
+        setSelectedTag(tag);
+        if (view !== "catalog" || selectedApp !== null) {
+          setView("catalog");
+          setSelectedApp(null);
+        }
       });
-    }
-  }, [view]);
+    },
+    [view, selectedApp],
+  );
 
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);

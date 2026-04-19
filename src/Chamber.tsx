@@ -616,8 +616,10 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setShowLogs(!showLogs)}
-                  className="text-white/40 hover:text-white transition-colors"
+                  className="text-white/40 hover:text-white transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
                   title={showLogs ? "Hide Logs" : "Show Logs"}
+                  aria-label={showLogs ? "Hide logs" : "Show logs"}
+                  aria-pressed={showLogs}
                 >
                   <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                     {showLogs ? "visibility" : "visibility_off"}
