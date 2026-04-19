@@ -64,14 +64,17 @@ const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
 // Optimized to use a single regex match for initials extraction while preserving
 // underscore/dot/dash boundaries, reducing multiple array allocations.
 function initials(name: string): string {
-  // Filter out empty parts to prevent crashes on inputs like ".."
-  const parts = name
-    .replace(/@.*/, "")
-    .split(/[._\-\s]+/)
-    .filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  const fallback = name.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
+  const cleanName = name.replace(/@.*/, "");
+  const matches = cleanName.matchAll(/(?:^|[._\-\s])([\p{L}\p{N}_])/gu);
+  const parts: string[] = [];
+  for (const match of matches) {
+    parts.push(match[1]);
+    if (parts.length === 2) break;
+  }
+
+  if (parts.length >= 2) return (parts[0] + parts[1]).toUpperCase();
+  if (parts.length === 1) return cleanName.replace(/^[._\-\s]+/, "").slice(0, 2).toUpperCase();
+  const fallback = cleanName.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
   return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
 
