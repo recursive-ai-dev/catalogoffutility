@@ -259,7 +259,7 @@ export function AuthModal() {
                   maxLength={128}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder={showPassword ? "your passphrase" : "••••••••••••"}
                   className={`flex-1 bg-transparent border-none outline-none text-white/80 font-mono text-xs placeholder:text-white/20 ${showPassword ? "tracking-wide" : "tracking-widest"}`}
                   autoComplete={
                     mode === "signin" ? "current-password" : "new-password"
@@ -268,10 +268,12 @@ export function AuthModal() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-white/20 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-full p-1"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="text-white/20 hover:text-white/50 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm px-1"
+                  aria-label="Show passphrase"
+                  aria-pressed={showPassword}
+                  aria-controls="auth-password"
                 >
-                  <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
+                  <span className="material-symbols-outlined font-light text-base" aria-hidden="true">
                     {showPassword ? "visibility_off" : "visibility"}
                   </span>
                 </button>
