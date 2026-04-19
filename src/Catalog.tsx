@@ -65,7 +65,7 @@ const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
 // underscore/dot/dash boundaries, reducing multiple array allocations.
 function initials(name: string): string {
   const cleanName = name.replace(/@.*/, "");
-  const matches = cleanName.matchAll(/(?:^|[._\-\s])(\w)/g);
+  const matches = cleanName.matchAll(/(?:^|[._\-\s])([\p{L}\p{N}_])/gu);
   const parts: string[] = [];
   for (const match of matches) {
     parts.push(match[1]);
