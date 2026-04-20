@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 
 interface ProductPageProps {
@@ -10,6 +10,17 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyId = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(app.id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.warn("Failed to copy entry ID:", err);
+    }
+  }, [app.id]);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
@@ -79,9 +90,22 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
+          <div className="flex items-center gap-4">
+            <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
+              Entry // <span className="text-white/40">{app.id.toUpperCase()}</span>
+            </div>
+            <button
+              onClick={handleCopyId}
+              className={`flex items-center justify-center transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm p-1 ${
+                copied ? "text-green-500/50" : "text-white/20 hover:text-white/50"
+              }`}
+              aria-label={copied ? "Copied" : "Copy Entry ID"}
+              title="Copy Entry ID"
+            >
+              <span className="material-symbols-outlined !text-sm font-light">
+                {copied ? "check" : "content_copy"}
+              </span>
+            </button>
           </div>
         </header>
 
