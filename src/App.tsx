@@ -35,8 +35,18 @@ function AppInner() {
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
 
+  // Stabilize auth status as a primitive to prevent unnecessary re-renders
+  // and callback re-creations when non-essential user profile fields update.
+  const isLoggedIn = !!user;
+
   const handleTagSelect = useCallback(
     (tag: string) => {
+      // Optimization: Skip transition and redundant state updates if the tag
+      // is already selected and we're already in the catalog view.
+      if (tag === selectedTag && view === "catalog" && selectedApp === null) {
+        return;
+      }
+
       withViewTransition(() => {
         setSelectedTag(tag);
         if (view !== "catalog" || selectedApp !== null) {
@@ -45,7 +55,7 @@ function AppInner() {
         }
       });
     },
-    [view, selectedApp],
+    [view, selectedApp, selectedTag],
   );
 
   const handleSearchChange = useCallback((query: string) => {

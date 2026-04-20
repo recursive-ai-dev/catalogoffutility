@@ -482,6 +482,15 @@ export const Catalog = React.memo(function Catalog({
     notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
   }, []);
 
+  // Optimization: Extract the normalized search query (trimmed and lowercased)
+  // into its own memo. This ensures that filteredEntries (and the O(N) filter)
+  // only re-runs when the *meaning* of the search changes, not on every
+  // keystroke that just adds/removes trailing whitespace or changes case.
+  const normalizedQuery = useMemo(
+    () => deferredSearchQuery.trim().toLowerCase(),
+    [deferredSearchQuery],
+  );
+
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
@@ -489,9 +498,6 @@ export const Catalog = React.memo(function Catalog({
   // expensive filtering operations.
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
-    // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
-
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
     if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
@@ -506,7 +512,7 @@ export const Catalog = React.memo(function Catalog({
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredSearchQuery, selectedTag]);
+  }, [normalizedQuery, selectedTag]);
 
   const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
