@@ -26,3 +26,8 @@
 ## 2025-05-15 - Adaptive Tracking for Password Toggles
 **Learning:** In brutalist UIs using monospaced fonts, password fields often use heavy letter-spacing (`tracking-widest`) to make the masking characters (dots) look intentional and distinct. However, this same spacing can make plain text unreadable when the password is toggled to visible.
 **Action:** Use conditional Tailwind classes to switch between `tracking-widest` (hidden) and `tracking-wide` (visible) to preserve readability while maintaining the aesthetic.
+
+## 2025-05-30 - Transient Success States for Clipboard Actions
+
+**Learning:** When providing a copy-to-clipboard action, visual confirmation is essential but should not permanently alter the UI. A 2000ms transient state that swaps the icon (e.g., `content_copy` to `check`) and applies a success color (e.g., `text-green-500/50`) provides clear, delightful feedback without requiring manual dismissal.
+**Action:** Implement a `copied` state with a `setTimeout` to revert UI changes, ensuring `aria-label` also reflects the current state for screen readers.

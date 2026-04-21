@@ -64,6 +64,27 @@ describe('Chain 4 — ParagraphSplit', () => {
     expect(container.textContent).not.toContain('CLASSIFIED_NOTES');
   });
 
+  it('Copy ID button is present and copies ID to clipboard', async () => {
+    const app = makeApp({ id: 'target-id' });
+    const writeText = vi.fn().mockImplementation(() => Promise.resolve());
+    Object.assign(navigator, {
+      clipboard: { writeText },
+    });
+
+    render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
+    const copyBtn = screen.getByLabelText('Copy entry ID');
+    expect(copyBtn).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(copyBtn);
+    });
+    expect(writeText).toHaveBeenCalledWith('target-id');
+
+    // Visual feedback
+    expect(screen.getByLabelText('ID copied')).toBeTruthy();
+    expect(screen.getByText('check')).toBeTruthy();
+  });
+
   it('filters empty strings produced by leading/trailing newlines', () => {
     const app = makeApp({ longDescription: '\n\nParagraph one.\n\n' });
     render(<ProductPage app={app} onBack={vi.fn()} onEnter={vi.fn()} onTagSelect={vi.fn()} />);
