@@ -34,23 +34,22 @@ function AppInner() {
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
+  const isLoggedIn = !!user;
 
   const handleTagSelect = useCallback(
     (tag: string) => {
-      withViewTransition(() => {
+      if (view === "catalog" && selectedApp === null) {
         setSelectedTag(tag);
-        if (view !== "catalog" || selectedApp !== null) {
+      } else {
+        withViewTransition(() => {
+          setSelectedTag(tag);
           setView("catalog");
           setSelectedApp(null);
-        }
-      });
+        });
+      }
     },
     [view, selectedApp],
   );
-
-  const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query);
-  }, []);
 
   // Stabilize handlers by depending on derived primitives (isLoggedIn) instead of the full user object.
   // This prevents the Catalog from re-rendering when irrelevant user profile properties change.
