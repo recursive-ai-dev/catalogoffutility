@@ -7,3 +7,8 @@
 
 **Learning:** Repeatedly calling `toLocaleTimeString` or `toLocaleDateString` on `Date` objects incurs significant overhead from locale parsing and formatter initialization. Pre-allocating a static `Intl.DateTimeFormat` instance and using its `.format()` method is ~50x faster (~30ms vs ~1500ms for 10k ops in benchmark).
 **Action:** Always pre-allocate `Intl.DateTimeFormat` for frequently called formatting tasks. When used for HH:MM:SS, explicitly set `hour: '2-digit', minute: '2-digit', second: '2-digit'` and `hour12: false` to ensure cross-platform consistency and avoid 12/24h toggle regressions.
+
+## 2025-05-20 - Optimized Search Deferral & Profile Memoization
+
+**Learning:** Passing raw input directly to `useDeferredValue` can trigger unnecessary re-renders for non-functional changes (e.g., adding trailing spaces or changing character case). Normalizing the query (trim/lowercase) *before* deferral ensures the heavy filtering logic only executes when the actual search intent changes. Additionally, memoizing derived profile data (`displayName`, `initialsLabel`) prevents redundant string operations during unrelated re-renders of the `UserSection`.
+**Action:** Always normalize search queries before passing them to `useDeferredValue`. Memoize all derived string and date formatting in frequently re-rendered components like headers and profile sections.
