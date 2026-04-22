@@ -10,11 +10,19 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (copied) {
+      const timeout = setTimeout(() => setCopied(false), 2000);
+      return () => clearTimeout(timeout);
+    }
+  }, [copied]);
 
   // Close on Escape - consolidated redundant listeners (BUG-14)
   useEffect(() => {
@@ -26,6 +34,16 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onBack]);
+
+  const handleCopy = async () => {
+    if (!navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(app.id);
+      setCopied(true);
+    } catch (err) {
+      console.error("Failed to copy Entry ID:", err);
+    }
+  };
 
   // Memoize paragraph splitting to avoid redundant string operations on every render.
   const paragraphs = useMemo(
@@ -79,10 +97,23 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
-          </div>
+          <button
+            onClick={handleCopy}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/5 transition-all duration-300 focus-visible:ring-1 focus-visible:ring-white/30 outline-none cursor-pointer ${
+              copied
+                ? "bg-green-500/5 border-green-500/20 text-green-500/60"
+                : "bg-black/40 hover:bg-white/5 hover:border-white/10 text-white/20 hover:text-white/40"
+            }`}
+            aria-label={copied ? "ID copied to clipboard" : `Copy Entry ID: ${app.id}`}
+            title={copied ? "Copied" : "Copy ID"}
+          >
+            <span className="material-symbols-outlined !text-xs font-light" aria-hidden="true">
+              {copied ? "check" : "content_copy"}
+            </span>
+            <span className="text-[9px] font-mono tracking-widest uppercase">
+              Entry // <span className={copied ? "text-green-500/70" : "text-white/40"}>{app.id.toUpperCase()}</span>
+            </span>
+          </button>
         </header>
 
         {/* Scrollable body */}

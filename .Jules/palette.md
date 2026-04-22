@@ -26,3 +26,8 @@
 ## 2025-05-15 - Adaptive Tracking for Password Toggles
 **Learning:** In brutalist UIs using monospaced fonts, password fields often use heavy letter-spacing (`tracking-widest`) to make the masking characters (dots) look intentional and distinct. However, this same spacing can make plain text unreadable when the password is toggled to visible.
 **Action:** Use conditional Tailwind classes to switch between `tracking-widest` (hidden) and `tracking-wide` (visible) to preserve readability while maintaining the aesthetic.
+
+## 2025-05-30 - Interactive Metadata & Feedback
+
+**Learning:** Technical metadata (like Entry IDs) can be made functional to aid power users or developers. Providing a "Click to Copy" interaction with clear visual and accessible feedback (icon swap + color shift) transforms a static label into a helpful utility.
+**Action:** Identify static identifiers in detail views and evaluate if making them copyable improves the workflow. Always accompany with 2000ms visual confirmation and dynamic ARIA labels.
