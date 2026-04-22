@@ -256,7 +256,7 @@ export function AuthModal() {
                   type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
-                  maxLength={128}
+                  maxLength={256}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={showPassword ? "your passphrase" : "••••••••••••"}
