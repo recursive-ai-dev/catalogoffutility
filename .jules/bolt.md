@@ -7,3 +7,7 @@
 
 **Learning:** Repeatedly calling `toLocaleTimeString` or `toLocaleDateString` on `Date` objects incurs significant overhead from locale parsing and formatter initialization. Pre-allocating a static `Intl.DateTimeFormat` instance and using its `.format()` method is ~50x faster (~30ms vs ~1500ms for 10k ops in benchmark).
 **Action:** Always pre-allocate `Intl.DateTimeFormat` for frequently called formatting tasks. When used for HH:MM:SS, explicitly set `hour: '2-digit', minute: '2-digit', second: '2-digit'` and `hour12: false` to ensure cross-platform consistency and avoid 12/24h toggle regressions.
+
+## 2026-04-06 - Double-Memoization for Search Normalization
+**Learning:** Normalizing search queries (trimming/lowercasing) inside an O(N) filter's dependency array causes the filter to re-run even when the functional query hasn't changed (e.g., adding a space). Breaking the normalization into its own `useMemo` prevents this redundant work by ensuring the filter only re-triggers on actual changes to the normalized search string.
+**Action:** Implement 'double-memoization' for search inputs: normalize the raw query in a dedicated `useMemo` before using it in expensive filtering logic to avoid O(N) overhead for non-functional input updates.

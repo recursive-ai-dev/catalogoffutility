@@ -83,6 +83,25 @@ const UserSection = React.memo(function UserSection() {
   const { showAuthModal } = useAuthModal();
   const [signingOut, setSigningOut] = useState(false);
 
+  const derivedProfile = useMemo(() => {
+    if (!user) return null;
+    const name = profile?.username ?? user.email?.split("@")[0] ?? "entity";
+    const joined = profile?.created_at
+      ? (() => {
+          const date = new Date(profile.created_at);
+          return Number.isNaN(date.getTime())
+            ? null
+            : PROFILE_DATE_FORMATTER.format(date);
+        })()
+      : null;
+
+    return {
+      displayName: name,
+      initialsLabel: initials(name),
+      joinedDate: joined,
+    };
+  }, [user?.email, profile?.username, profile?.created_at]);
+
   const handleSignOut = async () => {
     setSigningOut(true);
     await signOut();
@@ -100,7 +119,7 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  if (!user) {
+  if (!user || !derivedProfile) {
     return (
       <div className="px-4 py-4 border-t border-white/5">
         <p className="text-[9px] font-mono text-white/20 tracking-widest uppercase mb-3">
@@ -134,14 +153,7 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  const displayName =
-    profile?.username ?? user.email?.split("@")[0] ?? "entity";
-  const joined = profile?.created_at
-    ? (() => {
-        const date = new Date(profile.created_at);
-        return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
-      })()
-    : null;
+  const { displayName, initialsLabel, joinedDate } = derivedProfile;
 
   return (
     <div className="px-4 py-4 border-t border-white/5">
@@ -152,16 +164,16 @@ const UserSection = React.memo(function UserSection() {
         {/* Avatar — initials in a dim circle */}
         <div className="w-8 h-8 rounded-full bg-white/5 border border-white/15 flex items-center justify-center shrink-0">
           <span className="text-white/50 font-mono text-[10px] font-light tracking-wider select-none">
-            {initials(displayName)}
+            {initialsLabel}
           </span>
         </div>
         <div className="min-w-0">
           <p className="text-white/70 font-mono text-[10px] tracking-widest uppercase truncate">
             {displayName}
           </p>
-          {joined && (
+          {joinedDate && (
             <p className="text-white/20 font-mono text-[8px] tracking-widest">
-              Inscribed {joined}
+              Inscribed {joinedDate}
             </p>
           )}
         </div>
@@ -488,10 +500,14 @@ export const Catalog = React.memo(function Catalog({
   // React 19: Uses deferredSearchQuery to prioritize input responsiveness over
   // expensive filtering operations.
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
-  const filteredEntries = useMemo(() => {
-    // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
+  // Pre-normalize the search query (trim/lowercase) to prevent O(N) filtering from
+  // re-triggering when non-functional changes occur (e.g. trailing whitespace).
+  const normalizedQuery = useMemo(
+    () => deferredSearchQuery.trim().toLowerCase(),
+    [deferredSearchQuery],
+  );
 
+  const filteredEntries = useMemo(() => {
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
     if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
@@ -506,7 +522,7 @@ export const Catalog = React.memo(function Catalog({
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredSearchQuery, selectedTag]);
+  }, [normalizedQuery, selectedTag]);
 
   const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
