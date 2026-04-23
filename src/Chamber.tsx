@@ -64,10 +64,15 @@ function isSafeImageSrc(src: string): boolean {
     // redirection patterns (e.g., https://user:pass@legit.com).
     if (url.username || url.password) return false;
 
-    if (url.protocol === "https:") return true;
+    if (url.protocol === "https:") {
+      // Explicitly block remote SVGs via extension check as they can contain
+      // embedded scripts (XSS vector).
+      return !url.pathname.toLowerCase().endsWith(".svg");
+    }
     // Allow http: only for local development (localhost or 127.0.0.1)
     if (url.protocol === "http:") {
-      return url.hostname === "localhost" || url.hostname === "127.0.0.1";
+      const isLocal = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+      return isLocal && !url.pathname.toLowerCase().endsWith(".svg");
     }
     if (url.protocol === "data:") {
       // Allow only common raster image formats; explicitly block image/svg+xml
@@ -759,6 +764,7 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
               src={hotlinkedImage}
               alt="Intercepted asset from the void"
               className="max-w-full max-h-[75vh] object-contain rounded-lg"
+              referrerPolicy="no-referrer"
             />
           </div>
         </div>

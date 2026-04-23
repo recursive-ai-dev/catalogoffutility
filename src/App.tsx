@@ -35,6 +35,8 @@ function AppInner() {
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
 
+  const isLoggedIn = !!user;
+
   const handleTagSelect = useCallback(
     (tag: string) => {
       withViewTransition(() => {
@@ -151,7 +153,7 @@ function AppInner() {
       <Catalog
         onSelectApp={handleSelectApp}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         selectedTag={selectedTag}
         onTagSelect={handleTagSelect}
       />
