@@ -10,6 +10,7 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
@@ -32,6 +33,18 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
     () => (app.longDescription ? app.longDescription.split("\n\n").filter(Boolean) : []),
     [app.longDescription],
   );
+
+  const handleCopyId = async () => {
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(app.id);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy entry ID:", err);
+      }
+    }
+  };
 
   return (
     <div className="relative flex h-screen w-full bg-black font-sans text-white antialiased overflow-hidden">
@@ -79,9 +92,23 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
+          <div className="flex items-center gap-3">
+            <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
+              Entry //{" "}
+              <span className="text-white/40">{app.id.toUpperCase()}</span>
+            </div>
+            <button
+              onClick={handleCopyId}
+              className={`flex items-center justify-center transition-all duration-300 cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm p-1 ${
+                copied ? "text-green-500/50" : "text-white/20 hover:text-white/50"
+              }`}
+              aria-label={copied ? "Copied" : "Copy Entry ID"}
+              title={copied ? "Copied" : "Copy Entry ID"}
+            >
+              <span className="material-symbols-outlined !text-sm font-light">
+                {copied ? "check" : "content_copy"}
+              </span>
+            </button>
           </div>
         </header>
 
