@@ -60,12 +60,15 @@ const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
   month: "short",
 });
 
+// Pre-allocated regex for initials extraction.
+const INITIALS_REGEX = /(?:^|[._\-\s])([\p{L}\p{N}_])/gu;
+
 // Generates a deterministic two-letter avatar from a username/email.
 // Optimized to use a single regex match for initials extraction while preserving
 // underscore/dot/dash boundaries, reducing multiple array allocations.
 function initials(name: string): string {
   const cleanName = name.replace(/@.*/, "");
-  const matches = cleanName.matchAll(/(?:^|[._\-\s])([\p{L}\p{N}_])/gu);
+  const matches = cleanName.matchAll(INITIALS_REGEX);
   const parts: string[] = [];
   for (const match of matches) {
     parts.push(match[1]);
@@ -88,6 +91,25 @@ const UserSection = React.memo(function UserSection() {
     await signOut();
     setSigningOut(false);
   };
+
+  // Performance: Memoize derived profile data to avoid redundant computations on re-render.
+  const { displayName, joined, initialsLabel } = useMemo(() => {
+    if (!user) return { displayName: "", joined: null, initialsLabel: "??" };
+
+    const name = profile?.username ?? user.email?.split("@")[0] ?? "entity";
+    const dateStr = profile?.created_at
+      ? (() => {
+          const date = new Date(profile.created_at);
+          return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
+        })()
+      : null;
+
+    return {
+      displayName: name,
+      joined: dateStr,
+      initialsLabel: initials(name),
+    };
+  }, [user, profile]);
 
   if (loading) {
     return (
@@ -134,15 +156,6 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  const displayName =
-    profile?.username ?? user.email?.split("@")[0] ?? "entity";
-  const joined = profile?.created_at
-    ? (() => {
-        const date = new Date(profile.created_at);
-        return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
-      })()
-    : null;
-
   return (
     <div className="px-4 py-4 border-t border-white/5">
       <p className="text-[9px] font-mono text-white/20 tracking-widest uppercase mb-3">
@@ -152,7 +165,7 @@ const UserSection = React.memo(function UserSection() {
         {/* Avatar — initials in a dim circle */}
         <div className="w-8 h-8 rounded-full bg-white/5 border border-white/15 flex items-center justify-center shrink-0">
           <span className="text-white/50 font-mono text-[10px] font-light tracking-wider select-none">
-            {initials(displayName)}
+            {initialsLabel}
           </span>
         </div>
         <div className="min-w-0">
@@ -409,7 +422,14 @@ export const Catalog = React.memo(function Catalog({
   onTagSelect,
   clock,
 }: CatalogProps) {
-  const deferredSearchQuery = React.useDeferredValue(searchQuery);
+  // Performance: Normalize search query in a memo before deferring. This ensures
+  // that expensive O(N) filtering only re-triggers on functional changes,
+  // ignoring irrelevant whitespace or casing updates.
+  const normalizedSearchQuery = useMemo(
+    () => searchQuery.trim().toLowerCase(),
+    [searchQuery],
+  );
+  const deferredSearchQuery = React.useDeferredValue(normalizedSearchQuery);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
@@ -487,10 +507,8 @@ export const Catalog = React.memo(function Catalog({
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
   // React 19: Uses deferredSearchQuery to prioritize input responsiveness over
   // expensive filtering operations.
-  // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
-    // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
+    const normalizedQuery = deferredSearchQuery;
 
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
