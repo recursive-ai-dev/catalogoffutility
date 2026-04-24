@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 
 interface ProductPageProps {
@@ -10,6 +10,18 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyId = useCallback(async () => {
+    if (!navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(app.id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.warn("Failed to copy ID:", err);
+    }
+  }, [app.id]);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
@@ -79,10 +91,28 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
-          </div>
+          <button
+            onClick={handleCopyId}
+            className={`group/id flex items-center gap-2 px-3 py-1.5 border border-white/5 rounded-lg transition-all duration-300 cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+              copied ? "border-green-500/20 bg-green-500/5" : "hover:border-white/10 hover:bg-white/5"
+            }`}
+            aria-label={`Copy entry ID: ${app.id}`}
+          >
+            <span className="text-[9px] font-mono text-white/20 tracking-widest uppercase transition-colors group-hover/id:text-white/40">
+              Entry //{" "}
+              <span className={`transition-colors ${copied ? "text-green-500/50" : "text-white/40"}`}>
+                {app.id.toUpperCase()}
+              </span>
+            </span>
+            <span
+              className={`material-symbols-outlined !text-xs font-light transition-all ${
+                copied ? "text-green-500/50 scale-110" : "text-white/20 group-hover/id:text-white/40"
+              }`}
+              aria-hidden="true"
+            >
+              {copied ? "check" : "content_copy"}
+            </span>
+          </button>
         </header>
 
         {/* Scrollable body */}
