@@ -60,12 +60,15 @@ const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
   month: "short",
 });
 
+// Performance Pattern: pre-allocate regex at module level to avoid redundant compilation.
+const INITIALS_REGEX = /(?:^|[._\-\s])([\p{L}\p{N}_])/gu;
+
 // Generates a deterministic two-letter avatar from a username/email.
 // Optimized to use a single regex match for initials extraction while preserving
 // underscore/dot/dash boundaries, reducing multiple array allocations.
 function initials(name: string): string {
   const cleanName = name.replace(/@.*/, "");
-  const matches = cleanName.matchAll(/(?:^|[._\-\s])([\p{L}\p{N}_])/gu);
+  const matches = cleanName.matchAll(INITIALS_REGEX);
   const parts: string[] = [];
   for (const match of matches) {
     parts.push(match[1]);
@@ -134,14 +137,23 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  const displayName =
-    profile?.username ?? user.email?.split("@")[0] ?? "entity";
-  const joined = profile?.created_at
-    ? (() => {
-        const date = new Date(profile.created_at);
-        return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
-      })()
-    : null;
+  // Performance Pattern: memoize derived profile data to avoid redundant string operations
+  // and Intl.DateTimeFormat calls on every render.
+  const { displayName, joined, initialsLabel } = useMemo(() => {
+    const name = profile?.username ?? user.email?.split("@")[0] ?? "entity";
+    const dateStr = profile?.created_at
+      ? (() => {
+          const date = new Date(profile.created_at);
+          return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
+        })()
+      : null;
+
+    return {
+      displayName: name,
+      joined: dateStr,
+      initialsLabel: initials(name)
+    };
+  }, [profile, user.email]);
 
   return (
     <div className="px-4 py-4 border-t border-white/5">
@@ -152,7 +164,7 @@ const UserSection = React.memo(function UserSection() {
         {/* Avatar — initials in a dim circle */}
         <div className="w-8 h-8 rounded-full bg-white/5 border border-white/15 flex items-center justify-center shrink-0">
           <span className="text-white/50 font-mono text-[10px] font-light tracking-wider select-none">
-            {initials(displayName)}
+            {initialsLabel}
           </span>
         </div>
         <div className="min-w-0">
@@ -482,6 +494,15 @@ export const Catalog = React.memo(function Catalog({
     notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
   }, []);
 
+  // Performance Pattern: implement "double-memoization" for search filtering.
+  // Normalizing the query in its own useMemo allows the second useMemo to skip
+  // the O(N) filter operation entirely if the functional query hasn't changed
+  // (e.g., adding whitespace or changing character case).
+  const normalizedQuery = useMemo(
+    () => deferredSearchQuery.trim().toLowerCase(),
+    [deferredSearchQuery]
+  );
+
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
@@ -489,9 +510,6 @@ export const Catalog = React.memo(function Catalog({
   // expensive filtering operations.
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
-    // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
-
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
     if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
@@ -506,7 +524,7 @@ export const Catalog = React.memo(function Catalog({
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredSearchQuery, selectedTag]);
+  }, [normalizedQuery, selectedTag]);
 
   const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
