@@ -278,6 +278,7 @@ const Card = React.memo(function Card({
             ref={imgRef}
             alt={entry.title}
             loading="lazy"
+            referrerPolicy="no-referrer"
             className={`w-full h-full object-cover transition-transform duration-700 ease-out mix-blend-luminosity ${
               isAuthLocked
                 ? "opacity-15 group-hover:opacity-20"
