@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 
 interface ProductPageProps {
@@ -10,11 +10,22 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleCopyId = useCallback(() => {
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(app.id).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      // Silently fail if clipboard is blocked
+    });
+  }, [app.id]);
 
   // Close on Escape - consolidated redundant listeners (BUG-14)
   useEffect(() => {
@@ -79,10 +90,30 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
-          </div>
+          <button
+            onClick={handleCopyId}
+            className="group flex items-center gap-3 px-3 py-1.5 border border-white/5 hover:border-white/15 bg-white/[0.01] hover:bg-white/[0.03] transition-all duration-300 rounded-lg cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+            aria-label={copied ? "ID copied to clipboard" : `Copy entry ID: ${app.id}`}
+          >
+            <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
+              Entry //{" "}
+              <span className={`transition-colors duration-300 ${copied ? "text-green-500/60" : "text-white/40 group-hover:text-white/60"}`}>
+                {app.id.toUpperCase()}
+              </span>
+            </div>
+            <div className="flex items-center justify-center w-4 h-4">
+              <span
+                className={`material-symbols-outlined !text-xs font-light transition-all duration-300 ${
+                  copied
+                    ? "text-green-500/60 scale-110"
+                    : "text-white/10 group-hover:text-white/30"
+                }`}
+                aria-hidden="true"
+              >
+                {copied ? "check" : "content_copy"}
+              </span>
+            </div>
+          </button>
         </header>
 
         {/* Scrollable body */}
