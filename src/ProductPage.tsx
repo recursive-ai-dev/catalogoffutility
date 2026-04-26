@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 
 interface ProductPageProps {
@@ -10,6 +10,18 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyId = useCallback(async () => {
+    if (!navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(app.id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.warn("Failed to copy ID:", err);
+    }
+  }, [app.id]);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
@@ -79,10 +91,28 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
-          </div>
+          <button
+            type="button"
+            onClick={handleCopyId}
+            className={`flex items-center justify-between gap-2 px-3 py-1.5 border rounded-lg transition-all duration-300 group/id cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none min-w-[120px] ${
+              copied
+                ? "bg-green-500/10 border-green-500/30 text-green-500/70"
+                : "bg-white/5 border-white/5 hover:border-white/15 text-white/20 hover:text-white/40"
+            }`}
+            title="Copy entry ID"
+          >
+            <span className="text-[9px] font-mono tracking-widest uppercase">
+              {copied ? "COPIED" : `Entry // ${app.id.toUpperCase()}`}
+            </span>
+            <span
+              className={`material-symbols-outlined !text-xs font-light transition-all ${
+                copied ? "opacity-100 scale-110" : "opacity-0 group-hover/id:opacity-100 scale-90 group-hover/id:scale-100"
+              }`}
+              aria-hidden="true"
+            >
+              {copied ? "check" : "content_copy"}
+            </span>
+          </button>
         </header>
 
         {/* Scrollable body */}

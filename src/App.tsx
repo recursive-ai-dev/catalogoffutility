@@ -34,11 +34,12 @@ function AppInner() {
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
+  const isLoggedIn = !!user;
 
   const handleTagSelect = useCallback(
     (tag: string) => {
       withViewTransition(() => {
-        setSelectedTag(tag);
+        setSelectedTag((prev) => (prev === tag ? DEFAULT_TAG : tag));
         if (view !== "catalog" || selectedApp !== null) {
           setView("catalog");
           setSelectedApp(null);
