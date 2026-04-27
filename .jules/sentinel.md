@@ -15,3 +15,8 @@
 **Vulnerability:** Unbounded input lengths and overly permissive remote image URL validation.
 **Learning:** Client-side input validation (maxLength) and strict length limits on remote URLs are essential first lines of defense against UI-level DoS and data exfiltration via URI parameters.
 **Prevention:** Always enforce standard length limits (e.g., RFC 5321 for emails) and restrict remote asset URLs to reasonable sizes (e.g., 8KB) to minimize the attack surface.
+
+## 2026-04-27 - Security Logic Restoration & Defense in Depth
+**Vulnerability:** Reference errors in authentication gating logic.
+**Learning:** Broken variable references in core navigation and auth-gate handlers (e.g., `isLoggedIn`) can silently disable intended security constraints, allowing unauthorized access or breaking UI-level protections.
+**Prevention:** Always verify that state-derived security flags are correctly scoped and defined within the components that consume them. Supplement logic fixes with passive defense-in-depth measures like hardening CSP and Referrer-Policy.
