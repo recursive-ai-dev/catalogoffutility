@@ -35,15 +35,24 @@ function AppInner() {
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
 
+  // Stabilize handlers by depending on a derived primitive instead of the full user object.
+  const isLoggedIn = !!user;
+
   const handleTagSelect = useCallback(
     (tag: string) => {
-      withViewTransition(() => {
-        setSelectedTag(tag);
-        if (view !== "catalog" || selectedApp !== null) {
+      const isCurrentlyInCatalog = view === "catalog" && selectedApp === null;
+
+      if (isCurrentlyInCatalog) {
+        // Intuitive toggling: if clicking the active tag, revert to default.
+        // No view transition needed for simple filter changes within the catalog.
+        setSelectedTag((prev) => (prev === tag ? DEFAULT_TAG : tag));
+      } else {
+        withViewTransition(() => {
+          setSelectedTag(tag);
           setView("catalog");
           setSelectedApp(null);
-        }
-      });
+        });
+      }
     },
     [view, selectedApp],
   );
@@ -151,7 +160,7 @@ function AppInner() {
       <Catalog
         onSelectApp={handleSelectApp}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         selectedTag={selectedTag}
         onTagSelect={handleTagSelect}
       />
