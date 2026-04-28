@@ -134,14 +134,18 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  const displayName =
-    profile?.username ?? user.email?.split("@")[0] ?? "entity";
-  const joined = profile?.created_at
-    ? (() => {
-        const date = new Date(profile.created_at);
-        return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
-      })()
-    : null;
+  const displayName = useMemo(
+    () => profile?.username ?? user.email?.split("@")[0] ?? "entity",
+    [profile?.username, user.email],
+  );
+
+  const initialsLabel = useMemo(() => initials(displayName), [displayName]);
+
+  const joined = useMemo(() => {
+    if (!profile?.created_at) return null;
+    const date = new Date(profile.created_at);
+    return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
+  }, [profile?.created_at]);
 
   return (
     <div className="px-4 py-4 border-t border-white/5">
@@ -152,7 +156,7 @@ const UserSection = React.memo(function UserSection() {
         {/* Avatar — initials in a dim circle */}
         <div className="w-8 h-8 rounded-full bg-white/5 border border-white/15 flex items-center justify-center shrink-0">
           <span className="text-white/50 font-mono text-[10px] font-light tracking-wider select-none">
-            {initials(displayName)}
+            {initialsLabel}
           </span>
         </div>
         <div className="min-w-0">
@@ -409,7 +413,10 @@ export const Catalog = React.memo(function Catalog({
   onTagSelect,
   clock,
 }: CatalogProps) {
-  const deferredSearchQuery = React.useDeferredValue(searchQuery);
+  // Normalize the query (trim, lowercase) before deferring it.
+  // This ensures that expensive O(N) filtering only re-runs when the functional query changes.
+  const normalizedSearchQuery = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery]);
+  const deferredSearchQuery = React.useDeferredValue(normalizedSearchQuery);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
@@ -489,18 +496,15 @@ export const Catalog = React.memo(function Catalog({
   // expensive filtering operations.
   // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
-    // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
-
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
-    if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
+    if (deferredSearchQuery === "" && selectedTag === DEFAULT_TAG) {
       return SEARCHABLE_ENTRIES;
     }
 
     return SEARCHABLE_ENTRIES.filter((entry) => {
       const matchesSearch =
-        normalizedQuery === "" || entry.searchBlob.includes(normalizedQuery);
+        deferredSearchQuery === "" || entry.searchBlob.includes(deferredSearchQuery);
       const matchesTag =
         selectedTag === DEFAULT_TAG ||
         (entry.tags && entry.tags.includes(selectedTag));

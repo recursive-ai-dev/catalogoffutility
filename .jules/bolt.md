@@ -7,3 +7,7 @@
 
 **Learning:** Repeatedly calling `toLocaleTimeString` or `toLocaleDateString` on `Date` objects incurs significant overhead from locale parsing and formatter initialization. Pre-allocating a static `Intl.DateTimeFormat` instance and using its `.format()` method is ~50x faster (~30ms vs ~1500ms for 10k ops in benchmark).
 **Action:** Always pre-allocate `Intl.DateTimeFormat` for frequently called formatting tasks. When used for HH:MM:SS, explicitly set `hour: '2-digit', minute: '2-digit', second: '2-digit'` and `hour12: false` to ensure cross-platform consistency and avoid 12/24h toggle regressions.
+
+## 2025-05-16 - Search Normalization & Selective Transitions
+**Learning:** Normalizing search queries (trim/lowercase) before deferral avoids redundant O(N) filtering on whitespace-only changes. Selective use of View Transitions prevents layout overhead when state updates don't change the primary view.
+**Action:** Use a normalization `useMemo` before `useDeferredValue`. Guard `withViewTransition` with condition checks.
