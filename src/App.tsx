@@ -34,16 +34,20 @@ function AppInner() {
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
+  const isLoggedIn = !!user;
 
   const handleTagSelect = useCallback(
     (tag: string) => {
-      withViewTransition(() => {
-        setSelectedTag(tag);
-        if (view !== "catalog" || selectedApp !== null) {
+      const needsTransition = view !== "catalog" || selectedApp !== null;
+      if (needsTransition) {
+        withViewTransition(() => {
+          setSelectedTag(tag);
           setView("catalog");
           setSelectedApp(null);
-        }
-      });
+        });
+      } else {
+        setSelectedTag(tag);
+      }
     },
     [view, selectedApp],
   );
@@ -148,6 +152,13 @@ function AppInner() {
 
   return (
     <>
+      {/* Accessibility: Skip to main content link — available globally across all views */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only fixed top-4 left-4 z-[100] px-6 py-3 bg-white text-black font-mono text-xs tracking-widest uppercase rounded-full shadow-2xl transition-all"
+      >
+        Skip to main content
+      </a>
       <Catalog
         onSelectApp={handleSelectApp}
         searchQuery={searchQuery}

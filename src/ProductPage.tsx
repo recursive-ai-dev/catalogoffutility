@@ -10,6 +10,19 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyId = async () => {
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(app.id);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error("Failed to copy entry ID:", err);
+      }
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
@@ -79,14 +92,34 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
-          </div>
+          <button
+            onClick={handleCopyId}
+            className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-all duration-300 group/copy cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+              copied
+                ? "bg-green-500/5 border-green-500/20 text-green-500/50"
+                : "bg-white/5 border-white/8 hover:border-white/20 text-white/20 hover:text-white/40"
+            }`}
+            aria-label={copied ? "ID copied" : "Copy entry ID"}
+          >
+            <span className="text-[9px] font-mono tracking-widest uppercase pointer-events-none">
+              Entry //{" "}
+              <span className={copied ? "text-green-500/60" : "text-white/40"}>
+                {copied ? "COPIED" : app.id.toUpperCase()}
+              </span>
+            </span>
+            <span
+              className={`material-symbols-outlined !text-xs font-light transition-all ${
+                copied ? "scale-110" : "group-hover/copy:scale-110"
+              }`}
+              aria-hidden="true"
+            >
+              {copied ? "check" : "content_copy"}
+            </span>
+          </button>
         </header>
 
         {/* Scrollable body */}
-        <main className="flex-1 overflow-y-auto void-scroll">
+        <main id="main-content" className="flex-1 overflow-y-auto void-scroll">
           {/* Mobile hero thumbnail */}
           <div className="lg:hidden relative h-48 w-full overflow-hidden">
             <img
