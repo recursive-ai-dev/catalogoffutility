@@ -35,15 +35,23 @@ function AppInner() {
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
 
+  const isLoggedIn = !!user;
+
   const handleTagSelect = useCallback(
     (tag: string) => {
-      withViewTransition(() => {
-        setSelectedTag(tag);
+      const update = () => {
+        setSelectedTag((prev) => (prev === tag ? DEFAULT_TAG : tag));
         if (view !== "catalog" || selectedApp !== null) {
           setView("catalog");
           setSelectedApp(null);
         }
-      });
+      };
+
+      if (view !== "catalog" || selectedApp !== null) {
+        withViewTransition(update);
+      } else {
+        update();
+      }
     },
     [view, selectedApp],
   );

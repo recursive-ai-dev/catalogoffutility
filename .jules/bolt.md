@@ -7,3 +7,8 @@
 
 **Learning:** Repeatedly calling `toLocaleTimeString` or `toLocaleDateString` on `Date` objects incurs significant overhead from locale parsing and formatter initialization. Pre-allocating a static `Intl.DateTimeFormat` instance and using its `.format()` method is ~50x faster (~30ms vs ~1500ms for 10k ops in benchmark).
 **Action:** Always pre-allocate `Intl.DateTimeFormat` for frequently called formatting tasks. When used for HH:MM:SS, explicitly set `hour: '2-digit', minute: '2-digit', second: '2-digit'` and `hour12: false` to ensure cross-platform consistency and avoid 12/24h toggle regressions.
+
+## 2026-05-20 - Search Input Double-Memoization
+
+**Learning:** Implementing "double-memoization" for search inputs—normalizing the raw query (trim, lowercase) in a `useMemo` *before* passing it to `useDeferredValue`—is significantly more efficient than normalizing inside the filtering `useMemo`. This prevents `useDeferredValue` from triggering a low-priority render cycle entirely when the user only types or deletes whitespace, saving redundant O(N) filter iterations.
+**Action:** Always normalize search state in a dedicated `useMemo` before deferring or using it in expensive computation chains to filter out functional no-ops.
