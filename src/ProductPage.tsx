@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 
 interface ProductPageProps {
@@ -10,6 +10,24 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyId = useCallback(async () => {
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(app.id);
+        setCopied(true);
+      } catch (err) {
+        console.error("Failed to copy ID:", err);
+      }
+    }
+  }, [app.id]);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
@@ -79,10 +97,22 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
-          </div>
+          <button
+            onClick={handleCopyId}
+            className={`flex items-center gap-2 text-[9px] font-mono tracking-widest uppercase transition-all duration-300 cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm px-2 py-1 border ${
+              copied
+                ? "text-green-500/50 border-green-500/20 bg-green-500/5"
+                : "text-white/20 border-transparent hover:border-white/10 hover:text-white/40"
+            }`}
+            aria-label={copied ? "ID copied" : "Copy entry ID"}
+          >
+            <span className="material-symbols-outlined !text-[14px] font-light">
+              {copied ? "check" : "content_copy"}
+            </span>
+            <span>
+              {copied ? "COPIED" : `Entry // ${app.id.toUpperCase()}`}
+            </span>
+          </button>
         </header>
 
         {/* Scrollable body */}

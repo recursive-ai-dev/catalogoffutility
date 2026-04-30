@@ -26,3 +26,8 @@
 ## 2025-05-15 - Adaptive Tracking for Password Toggles
 **Learning:** In brutalist UIs using monospaced fonts, password fields often use heavy letter-spacing (`tracking-widest`) to make the masking characters (dots) look intentional and distinct. However, this same spacing can make plain text unreadable when the password is toggled to visible.
 **Action:** Use conditional Tailwind classes to switch between `tracking-widest` (hidden) and `tracking-wide` (visible) to preserve readability while maintaining the aesthetic.
+
+## 2025-05-30 - Safe Transient UI Timers
+
+**Learning:** When implementing transient UI states with timers (e.g., success messages or 'copied' feedback), using a raw `setTimeout` inside a callback can lead to state updates on unmounted components or memory leaks if the component unmounts before the timer fires.
+**Action:** Manage transient state resets within a `useEffect` hook that depends on the state being reset, and always include a cleanup function calling `clearTimeout`.
