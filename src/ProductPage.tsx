@@ -10,6 +10,24 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Success feedback timer for clipboard actions
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const handleCopyId = async () => {
+    if (!navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(app.id);
+      setCopied(true);
+    } catch (err) {
+      console.error("Failed to copy entry ID:", err);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
@@ -79,10 +97,25 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
-          </div>
+          <button
+            onClick={handleCopyId}
+            className="flex items-center justify-end gap-2 text-[9px] font-mono tracking-widest uppercase transition-all min-w-[140px] group/copy cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
+            aria-label={copied ? "ID copied" : "Copy entry ID"}
+          >
+            <span className="text-white/20 group-hover/copy:text-white/40 transition-colors">
+              {copied ? "COPIED" : "Entry //"}
+            </span>
+            <span className={`transition-colors ${copied ? "text-green-500/50" : "text-white/40 group-hover/copy:text-white"}`}>
+              {copied ? (
+                <span className="material-symbols-outlined !text-xs">check</span>
+              ) : (
+                <>
+                  <span className="mr-1">{app.id.toUpperCase()}</span>
+                  <span className="material-symbols-outlined !text-xs opacity-0 group-hover/copy:opacity-100 transition-opacity">content_copy</span>
+                </>
+              )}
+            </span>
+          </button>
         </header>
 
         {/* Scrollable body */}

@@ -26,3 +26,7 @@
 ## 2025-05-15 - Adaptive Tracking for Password Toggles
 **Learning:** In brutalist UIs using monospaced fonts, password fields often use heavy letter-spacing (`tracking-widest`) to make the masking characters (dots) look intentional and distinct. However, this same spacing can make plain text unreadable when the password is toggled to visible.
 **Action:** Use conditional Tailwind classes to switch between `tracking-widest` (hidden) and `tracking-wide` (visible) to preserve readability while maintaining the aesthetic.
+
+## 2026-05-01 - Stable Feedback Buttons
+**Learning:** In high-density brutalist UIs, switching button text for feedback (e.g., "Entry ID" to "COPIED") can cause jarring layout shifts if the container isn't size-stabilized.
+**Action:** Apply a stable `min-width` (e.g., `min-w-[140px]`) to buttons that provide success feedback to maintain UI consistency during state transitions.
