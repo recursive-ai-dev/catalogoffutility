@@ -284,6 +284,7 @@ const Card = React.memo(function Card({
                 : "opacity-60 group-hover:opacity-100 group-hover:mix-blend-normal"
             }`}
             src={entry.image}
+            referrerPolicy="no-referrer"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none"></div>
