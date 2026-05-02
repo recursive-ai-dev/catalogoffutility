@@ -33,6 +33,7 @@ function AppInner() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
+  const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
 
   const handleTagSelect = useCallback(
@@ -151,7 +152,7 @@ function AppInner() {
       <Catalog
         onSelectApp={handleSelectApp}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         selectedTag={selectedTag}
         onTagSelect={handleTagSelect}
       />
