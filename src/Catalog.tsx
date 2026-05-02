@@ -529,14 +529,6 @@ export const Catalog = React.memo(function Catalog({
 
   return (
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
-      {/* Accessibility: Skip to main content link */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only fixed top-4 left-4 z-[100] px-6 py-3 bg-white text-black font-mono text-xs tracking-widest uppercase rounded-full shadow-2xl transition-all"
-      >
-        Skip to main content
-      </a>
-
       {/* Atmospheric Background */}
       <div className="absolute inset-0 z-0 pointer-events-none atmosphere"></div>
 

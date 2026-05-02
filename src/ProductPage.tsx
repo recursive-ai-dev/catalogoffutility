@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 
 interface ProductPageProps {
@@ -10,6 +10,7 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
@@ -26,6 +27,22 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onBack]);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const handleCopyId = useCallback(async () => {
+    if (!navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(app.id);
+      setCopied(true);
+    } catch (err) {
+      console.error("Failed to copy ID:", err);
+    }
+  }, [app.id]);
 
   // Memoize paragraph splitting to avoid redundant string operations on every render.
   const paragraphs = useMemo(
@@ -79,14 +96,24 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
-          </div>
+          <button
+            onClick={handleCopyId}
+            aria-label={copied ? "ID copied" : "Copy entry ID"}
+            className="flex items-center justify-center min-w-[140px] px-3 py-1.5 border border-white/5 hover:border-white/20 bg-white/[0.02] hover:bg-white/[0.05] rounded-full transition-all duration-300 group cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          >
+            <div className="flex items-center gap-2">
+              <span className={`material-symbols-outlined !text-[14px] font-light transition-colors ${copied ? "text-white/80" : "text-white/20 group-hover:text-white/40"}`} aria-hidden="true">
+                {copied ? "check" : "content_copy"}
+              </span>
+              <span className={`text-[9px] font-mono tracking-widest uppercase transition-colors ${copied ? "text-white/80" : "text-white/20 group-hover:text-white/40"}`}>
+                {copied ? "COPIED" : `ID: ${app.id.toUpperCase()}`}
+              </span>
+            </div>
+          </button>
         </header>
 
         {/* Scrollable body */}
-        <main className="flex-1 overflow-y-auto void-scroll">
+        <main id="main-content" className="flex-1 overflow-y-auto void-scroll">
           {/* Mobile hero thumbnail */}
           <div className="lg:hidden relative h-48 w-full overflow-hidden">
             <img

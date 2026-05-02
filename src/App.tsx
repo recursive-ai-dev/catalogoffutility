@@ -9,6 +9,21 @@ import { PrivacyBanner } from "./PrivacyBanner";
 
 type View = "catalog" | "product" | "chamber";
 
+/**
+ * Shared skip-to-content link for keyboard accessibility.
+ * Renders a visually hidden link that becomes visible on focus.
+ */
+function SkipLink() {
+  return (
+    <a
+      href="#main-content"
+      className="sr-only focus:not-sr-only fixed top-4 left-4 z-[100] px-6 py-3 bg-white text-black font-mono text-xs tracking-widest uppercase rounded-full shadow-2xl transition-all"
+    >
+      Skip to main content
+    </a>
+  );
+}
+
 /** Wraps a state update in the View Transitions API when available, falling back gracefully. */
 function withViewTransition(update: () => void): void {
   if (typeof document !== "undefined" && "startViewTransition" in document) {
@@ -34,6 +49,7 @@ function AppInner() {
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
+  const isLoggedIn = !!user;
 
   const handleTagSelect = useCallback(
     (tag: string) => {
@@ -148,6 +164,7 @@ function AppInner() {
 
   return (
     <>
+      <SkipLink />
       <Catalog
         onSelectApp={handleSelectApp}
         searchQuery={searchQuery}
