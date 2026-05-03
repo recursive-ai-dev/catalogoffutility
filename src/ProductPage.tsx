@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 
 interface ProductPageProps {
@@ -10,6 +10,25 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Success feedback timer for clipboard actions
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const handleCopyId = useCallback(async () => {
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(app.id);
+        setCopied(true);
+      }
+    } catch (err) {
+      console.error("Failed to copy ID:", err);
+    }
+  }, [app.id]);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
@@ -79,9 +98,25 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
+          <div className="flex items-center gap-4">
+            <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
+              Entry //{" "}
+              <span className="text-white/40">{app.id.toUpperCase()}</span>
+            </div>
+            <button
+              onClick={handleCopyId}
+              aria-label={copied ? "ID copied" : "Copy entry ID"}
+              className={`flex items-center gap-2 px-3 py-1 border transition-all duration-300 rounded-lg font-mono text-[9px] uppercase tracking-widest cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none min-w-[100px] justify-center ${
+                copied
+                  ? "bg-white/10 border-white/40 text-white"
+                  : "bg-transparent border-white/5 text-white/20 hover:border-white/20 hover:text-white/40"
+              }`}
+            >
+              <span className="material-symbols-outlined !text-sm font-light">
+                {copied ? "check" : "content_copy"}
+              </span>
+              <span>{copied ? "COPIED" : "COPY ID"}</span>
+            </button>
           </div>
         </header>
 
