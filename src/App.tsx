@@ -35,6 +35,8 @@ function AppInner() {
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
 
+  const isLoggedIn = !!user;
+
   const handleTagSelect = useCallback(
     (tag: string) => {
       withViewTransition(() => {

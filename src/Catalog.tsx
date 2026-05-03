@@ -134,14 +134,23 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  const displayName =
-    profile?.username ?? user.email?.split("@")[0] ?? "entity";
-  const joined = profile?.created_at
-    ? (() => {
-        const date = new Date(profile.created_at);
-        return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
-      })()
-    : null;
+  // Performance Pattern: Memoize derived profile data to avoid redundant
+  // string operations and Intl.DateTimeFormat calls on re-renders.
+  const { displayName, joined, initialsLabel } = useMemo(() => {
+    const name = profile?.username ?? user.email?.split("@")[0] ?? "entity";
+    const dateStr = profile?.created_at
+      ? (() => {
+          const date = new Date(profile.created_at);
+          return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
+        })()
+      : null;
+
+    return {
+      displayName: name,
+      joined: dateStr,
+      initialsLabel: initials(name),
+    };
+  }, [user.email, profile?.username, profile?.created_at]);
 
   return (
     <div className="px-4 py-4 border-t border-white/5">
@@ -152,7 +161,7 @@ const UserSection = React.memo(function UserSection() {
         {/* Avatar — initials in a dim circle */}
         <div className="w-8 h-8 rounded-full bg-white/5 border border-white/15 flex items-center justify-center shrink-0">
           <span className="text-white/50 font-mono text-[10px] font-light tracking-wider select-none">
-            {initials(displayName)}
+            {initialsLabel}
           </span>
         </div>
         <div className="min-w-0">
@@ -409,7 +418,14 @@ export const Catalog = React.memo(function Catalog({
   onTagSelect,
   clock,
 }: CatalogProps) {
-  const deferredSearchQuery = React.useDeferredValue(searchQuery);
+  // Performance Pattern: Normalize query once per functional change to avoid
+  // expensive filtering on non-functional keystrokes (e.g. trailing spaces).
+  const normalizedSearchQuery = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery]);
+
+  // React 19: Use deferred normalized value to maintain input responsiveness
+  // while prioritizing high-latency filter operations on the low-priority lane.
+  const deferredNormalizedQuery = React.useDeferredValue(normalizedSearchQuery);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
@@ -482,31 +498,27 @@ export const Catalog = React.memo(function Catalog({
     notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
   }, []);
 
-  // Memoize so the O(n) filter only re-runs when the query or tag changes,
+  // Memoize so the O(n) filter only re-runs when the functional query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
-  // React 19: Uses deferredSearchQuery to prioritize input responsiveness over
+  // React 19: Uses deferredNormalizedQuery to prioritize input responsiveness over
   // expensive filtering operations.
-  // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
-    // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
-
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
-    if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
+    if (deferredNormalizedQuery === "" && selectedTag === DEFAULT_TAG) {
       return SEARCHABLE_ENTRIES;
     }
 
     return SEARCHABLE_ENTRIES.filter((entry) => {
       const matchesSearch =
-        normalizedQuery === "" || entry.searchBlob.includes(normalizedQuery);
+        deferredNormalizedQuery === "" || entry.searchBlob.includes(deferredNormalizedQuery);
       const matchesTag =
         selectedTag === DEFAULT_TAG ||
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredSearchQuery, selectedTag]);
+  }, [deferredNormalizedQuery, selectedTag]);
 
   const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
