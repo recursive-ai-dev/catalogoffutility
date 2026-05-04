@@ -15,3 +15,7 @@
 **Vulnerability:** Unbounded input lengths and overly permissive remote image URL validation.
 **Learning:** Client-side input validation (maxLength) and strict length limits on remote URLs are essential first lines of defense against UI-level DoS and data exfiltration via URI parameters.
 **Prevention:** Always enforce standard length limits (e.g., RFC 5321 for emails) and restrict remote asset URLs to reasonable sizes (e.g., 8KB) to minimize the attack surface.
+## 2025-05-15 - Dependency and Scope Stability
+**Vulnerability:** ReferenceError regressions during refactoring.
+**Learning:** When refactoring components to use derived state (like `isLoggedIn` from `user`), ensure the derived variable is defined within the component scope before it is used in hook dependency arrays or event handlers.
+**Prevention:** Always run `pnpm test` and `pnpm lint` after refactors to catch scope errors that may not be apparent in isolated diffs.
