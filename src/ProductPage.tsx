@@ -10,11 +10,29 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const handleCopyId = async () => {
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(app.id);
+        setCopied(true);
+      } catch (err) {
+        console.error("Failed to copy ID:", err);
+      }
+    }
+  };
 
   // Close on Escape - consolidated redundant listeners (BUG-14)
   useEffect(() => {
@@ -79,9 +97,26 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
+          <div className="flex items-center gap-3">
+            <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
+              Entry // <span className="text-white/40">{app.id.toUpperCase()}</span>
+            </div>
+            <button
+              onClick={handleCopyId}
+              aria-label={copied ? "ID copied" : "Copy entry ID"}
+              className={`flex items-center justify-center gap-2 px-3 py-1.5 border rounded-full transition-all duration-300 min-w-[100px] cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+                copied
+                  ? "border-white/40 bg-white/10 text-white"
+                  : "border-white/10 text-white/30 hover:border-white/30 hover:text-white/60"
+              }`}
+            >
+              <span className="material-symbols-outlined !text-sm font-light">
+                {copied ? "check" : "content_copy"}
+              </span>
+              <span className="text-[8px] font-mono tracking-widest uppercase">
+                {copied ? "COPIED" : "COPY ID"}
+              </span>
+            </button>
           </div>
         </header>
 
