@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
@@ -35,17 +35,38 @@ function AppInner() {
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
 
+  // Stabilize derived auth state to prevent handlers from re-calculating on
+  // every profile update or token refresh.
+  const isLoggedIn = !!user;
+
+  // Use refs for navigation state to stabilize handlers that are passed to
+  // the Catalog. This prevents the entire Catalog (and all its cards) from
+  // re-rendering whenever the user moves between views.
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const selectedAppRef = useRef(selectedApp);
+  selectedAppRef.current = selectedApp;
+
   const handleTagSelect = useCallback(
     (tag: string) => {
-      withViewTransition(() => {
+      const update = () => {
         setSelectedTag(tag);
-        if (view !== "catalog" || selectedApp !== null) {
+        if (viewRef.current !== "catalog" || selectedAppRef.current !== null) {
           setView("catalog");
           setSelectedApp(null);
         }
-      });
+      };
+
+      // Transition overhead is only justified when the viewport actually changes.
+      // Clicking a tag while already in the catalog view (with no app selected)
+      // should be a zero-latency update.
+      if (viewRef.current !== "catalog" || selectedAppRef.current !== null) {
+        withViewTransition(update);
+      } else {
+        update();
+      }
     },
-    [view, selectedApp],
+    [],
   );
 
   const handleSearchChange = useCallback((query: string) => {
@@ -151,7 +172,7 @@ function AppInner() {
       <Catalog
         onSelectApp={handleSelectApp}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         selectedTag={selectedTag}
         onTagSelect={handleTagSelect}
       />

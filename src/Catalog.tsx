@@ -134,14 +134,23 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  const displayName =
-    profile?.username ?? user.email?.split("@")[0] ?? "entity";
-  const joined = profile?.created_at
-    ? (() => {
-        const date = new Date(profile.created_at);
-        return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
-      })()
-    : null;
+  // Memoize derived profile strings to avoid redundant string operations
+  // and formatter calls on every re-render of UserSection.
+  const { displayName, joined, initialsLabel } = useMemo(() => {
+    const name = profile?.username ?? user.email?.split("@")[0] ?? "entity";
+    let joinedDate = null;
+    if (profile?.created_at) {
+      const date = new Date(profile.created_at);
+      if (!Number.isNaN(date.getTime())) {
+        joinedDate = PROFILE_DATE_FORMATTER.format(date);
+      }
+    }
+    return {
+      displayName: name,
+      joined: joinedDate,
+      initialsLabel: initials(name),
+    };
+  }, [profile, user.email]);
 
   return (
     <div className="px-4 py-4 border-t border-white/5">
@@ -152,7 +161,7 @@ const UserSection = React.memo(function UserSection() {
         {/* Avatar — initials in a dim circle */}
         <div className="w-8 h-8 rounded-full bg-white/5 border border-white/15 flex items-center justify-center shrink-0">
           <span className="text-white/50 font-mono text-[10px] font-light tracking-wider select-none">
-            {initials(displayName)}
+            {initialsLabel}
           </span>
         </div>
         <div className="min-w-0">
@@ -482,16 +491,19 @@ export const Catalog = React.memo(function Catalog({
     notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
   }, []);
 
+  // Implement "double-memoization" for the search query to keep the O(N)
+  // filtering logic stable during non-functional typing (e.g. trailing spaces).
+  const normalizedQuery = useMemo(
+    () => deferredSearchQuery.trim().toLowerCase(),
+    [deferredSearchQuery],
+  );
+
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
   // React 19: Uses deferredSearchQuery to prioritize input responsiveness over
   // expensive filtering operations.
-  // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
-    // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
-
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
     if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
@@ -499,14 +511,17 @@ export const Catalog = React.memo(function Catalog({
     }
 
     return SEARCHABLE_ENTRIES.filter((entry) => {
-      const matchesSearch =
-        normalizedQuery === "" || entry.searchBlob.includes(normalizedQuery);
+      // Prioritize tag matching as it is cheaper than string blob searching.
       const matchesTag =
         selectedTag === DEFAULT_TAG ||
         (entry.tags && entry.tags.includes(selectedTag));
-      return matchesSearch && matchesTag;
+      if (!matchesTag) return false;
+
+      return (
+        normalizedQuery === "" || entry.searchBlob.includes(normalizedQuery)
+      );
     });
-  }, [deferredSearchQuery, selectedTag]);
+  }, [normalizedQuery, selectedTag]);
 
   const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
