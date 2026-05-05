@@ -34,16 +34,24 @@ function AppInner() {
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
+  const isLoggedIn = !!user;
 
   const handleTagSelect = useCallback(
     (tag: string) => {
-      withViewTransition(() => {
+      const needsTransition = view !== "catalog" || selectedApp !== null;
+      const update = () => {
         setSelectedTag(tag);
-        if (view !== "catalog" || selectedApp !== null) {
+        if (needsTransition) {
           setView("catalog");
           setSelectedApp(null);
         }
-      });
+      };
+
+      if (needsTransition) {
+        withViewTransition(update);
+      } else {
+        update();
+      }
     },
     [view, selectedApp],
   );
@@ -151,7 +159,7 @@ function AppInner() {
       <Catalog
         onSelectApp={handleSelectApp}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         selectedTag={selectedTag}
         onTagSelect={handleTagSelect}
       />

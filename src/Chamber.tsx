@@ -72,7 +72,7 @@ function isSafeImageSrc(src: string): boolean {
     if (url.protocol === "data:") {
       // Allow only common raster image formats; explicitly block image/svg+xml
       // to mitigate potential XSS risks in certain rendering contexts.
-      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
+      return SAFE_DATA_URL_REGEX.test(src);
     }
     return false;
   } catch {

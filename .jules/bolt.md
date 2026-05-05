@@ -7,3 +7,8 @@
 
 **Learning:** Repeatedly calling `toLocaleTimeString` or `toLocaleDateString` on `Date` objects incurs significant overhead from locale parsing and formatter initialization. Pre-allocating a static `Intl.DateTimeFormat` instance and using its `.format()` method is ~50x faster (~30ms vs ~1500ms for 10k ops in benchmark).
 **Action:** Always pre-allocate `Intl.DateTimeFormat` for frequently called formatting tasks. When used for HH:MM:SS, explicitly set `hour: '2-digit', minute: '2-digit', second: '2-digit'` and `hour12: false` to ensure cross-platform consistency and avoid 12/24h toggle regressions.
+
+## 2025-05-18 - Search Input Double-Memoization & Filtering Order
+
+**Learning:** When using `useDeferredValue` for search inputs, normalizing the query in a dedicated `useMemo` BEFORE it reaches the deferred value prevents redundant deferred updates when non-functional changes occur (e.g., trailing whitespace). Furthermore, reordering the filtering loop to check cheaper conditions (like tag membership) before expensive string searches (`includes` on large blobs) significantly reduces main-thread pressure during active filtering.
+**Action:** Always wrap raw search input state in a normalizing `useMemo` before deferring it. Prioritize O(1) or cheap O(k) checks over O(N) string operations in filter loops.
