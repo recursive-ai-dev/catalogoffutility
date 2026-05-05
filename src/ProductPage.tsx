@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 
 interface ProductPageProps {
@@ -10,11 +10,28 @@ interface ProductPageProps {
 
 export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const handleCopyId = useCallback(async () => {
+    if (!navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(app.id);
+      setCopied(true);
+    } catch (err) {
+      console.error("Failed to copy ID:", err);
+    }
+  }, [app.id]);
 
   // Close on Escape - consolidated redundant listeners (BUG-14)
   useEffect(() => {
@@ -79,10 +96,29 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
-          </div>
+          <button
+            onClick={handleCopyId}
+            className={`min-w-[140px] flex items-center justify-end gap-2 text-[9px] font-mono tracking-widest uppercase transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm ${
+              copied ? "text-white/60" : "text-white/20 hover:text-white/40"
+            }`}
+            aria-label={copied ? "ID copied" : "Copy entry ID"}
+          >
+            {copied ? (
+              <>
+                <span>COPIED</span>
+                <span className="material-symbols-outlined !text-sm font-light">
+                  check
+                </span>
+              </>
+            ) : (
+              <>
+                <span>Entry // {app.id.toUpperCase()}</span>
+                <span className="material-symbols-outlined !text-sm font-light">
+                  content_copy
+                </span>
+              </>
+            )}
+          </button>
         </header>
 
         {/* Scrollable body */}
