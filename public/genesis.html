@@ -1978,6 +1978,11 @@ class GenesisEngine {
 
 // ═══════════════ UI CONTROLLER ═══════════════
 const $ = id => document.getElementById(id);
+const esc = str => {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+};
 let engine = null;
 
 // Setup screen
@@ -2033,26 +2038,31 @@ function addMessage(msg) {
   const container = $('messages');
   const div = document.createElement('div');
 
+  const safeText = esc(msg.text)
+    .replace(/&lt;em&gt;/g, '<em>')
+    .replace(/&lt;\/em&gt;/g, '</em>')
+    .replace(/&lt;br&gt;/g, '<br>');
+
   switch (msg.type) {
     case 'system':
       div.className = 'msg msg-system';
-      div.innerHTML = msg.text.replace(/\n/g, '<br>');
+      div.innerHTML = safeText.replace(/\n/g, '<br>');
       break;
     case 'narrator':
       div.className = 'msg msg-narrator';
-      div.innerHTML = `<span class="msg-source">Narrator</span><span class="msg-text">${msg.text}</span>`;
+      div.innerHTML = `<span class="msg-source">Narrator</span><span class="msg-text">${safeText}</span>`;
       break;
     case 'env':
       div.className = 'msg msg-env';
-      div.innerHTML = msg.text;
+      div.innerHTML = safeText;
       break;
     case 'npc':
       div.className = 'msg msg-npc';
-      div.innerHTML = `<span class="msg-source">${msg.speaker}</span><span class="msg-text">${msg.text}</span>`;
+      div.innerHTML = `<span class="msg-source">${esc(msg.speaker)}</span><span class="msg-text">${safeText}</span>`;
       break;
     case 'player':
       div.className = 'msg msg-player';
-      div.innerHTML = `<span class="msg-text">${msg.text}</span>`;
+      div.innerHTML = `<span class="msg-text">${safeText}</span>`;
       break;
   }
 
