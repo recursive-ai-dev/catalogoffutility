@@ -26,3 +26,7 @@
 ## 2025-05-15 - Adaptive Tracking for Password Toggles
 **Learning:** In brutalist UIs using monospaced fonts, password fields often use heavy letter-spacing (`tracking-widest`) to make the masking characters (dots) look intentional and distinct. However, this same spacing can make plain text unreadable when the password is toggled to visible.
 **Action:** Use conditional Tailwind classes to switch between `tracking-widest` (hidden) and `tracking-wide` (visible) to preserve readability while maintaining the aesthetic.
+
+## 2025-05-26 - Global Accessibility Orchestration
+**Learning:** Skip links are often implemented locally, leading to broken accessibility when navigating between single-page views. Globalizing the skip link at the root component level while ensuring all primary views share a common target ID (`main-content`) provides a consistent, robust accessibility experience.
+**Action:** Lift the skip link to the application root and enforce a standard ID naming convention for main containers across all view components.

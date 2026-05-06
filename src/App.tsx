@@ -34,6 +34,7 @@ function AppInner() {
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
   const { user } = useAuth();
   const { authModalVisible, showAuthModal } = useAuthModal();
+  const isLoggedIn = !!user;
 
   const handleTagSelect = useCallback(
     (tag: string) => {
@@ -131,30 +132,34 @@ function AppInner() {
 
   // Use effectiveView in render (not raw `view`) so that auth-gated pages
   // never flash for a frame before the useEffect above fires on logout.
-  if (effectiveView === "chamber" && selectedApp) {
-    return <Chamber app={selectedApp} onBack={handleBackToProduct} />;
-  }
-
-  if (effectiveView === "product" && selectedApp) {
-    return (
-      <ProductPage
-        app={selectedApp}
-        onBack={handleBackToCatalog}
-        onEnter={handleEnterChamber}
-        onTagSelect={handleTagSelect}
-      />
-    );
-  }
-
   return (
     <>
-      <Catalog
-        onSelectApp={handleSelectApp}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        selectedTag={selectedTag}
-        onTagSelect={handleTagSelect}
-      />
+      {/* Accessibility: Skip to main content link — globalized for all views */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only fixed top-4 left-4 z-[100] px-6 py-3 bg-white text-black font-mono text-xs tracking-widest uppercase rounded-full shadow-2xl transition-all"
+      >
+        Skip to main content
+      </a>
+
+      {effectiveView === "chamber" && selectedApp ? (
+        <Chamber app={selectedApp} onBack={handleBackToProduct} />
+      ) : effectiveView === "product" && selectedApp ? (
+        <ProductPage
+          app={selectedApp}
+          onBack={handleBackToCatalog}
+          onEnter={handleEnterChamber}
+          onTagSelect={handleTagSelect}
+        />
+      ) : (
+        <Catalog
+          onSelectApp={handleSelectApp}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedTag={selectedTag}
+          onTagSelect={handleTagSelect}
+        />
+      )}
       {authModalVisible && <AuthModal />}
       <PrivacyBanner />
     </>
