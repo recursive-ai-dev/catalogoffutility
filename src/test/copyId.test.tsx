@@ -12,10 +12,10 @@ describe('UX Enhancements — Copy ID & Search', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     // Mock navigator.clipboard
-    vi.stubGlobal('navigator', {
-      clipboard: {
-        writeText: vi.fn().mockResolvedValue(undefined),
-      },
+    // Mock only navigator.clipboard, preserving the rest of navigator.
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
     });
   });
 
