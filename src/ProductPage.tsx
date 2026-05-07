@@ -12,16 +12,26 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const [copied, setCopied] = useState(false);
+  const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleCopyId = useCallback(async () => {
     if (!navigator.clipboard) return;
     try {
       await navigator.clipboard.writeText(app.id);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+      copyResetTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy ID:", err);
     }
   }, [app.id]);
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
