@@ -35,7 +35,6 @@ function AppInner() {
   const { user } = useAuth();
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
-  const isLoggedIn = !!user;
 
   // Track transient state in refs to enable referential stability for callbacks.
   // This prevents the Catalog from re-rendering when the view or selected app changes.
