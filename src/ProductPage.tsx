@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 
 interface ProductPageProps {
@@ -10,6 +10,28 @@ interface ProductPageProps {
 
 export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const [copied, setCopied] = useState(false);
+  const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCopyId = useCallback(async () => {
+    if (!navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(app.id);
+      setCopied(true);
+      if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+      copyResetTimerRef.current = setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy ID:", err);
+    }
+  }, [app.id]);
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 80);
@@ -79,14 +101,29 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
             </span>
           </button>
 
-          <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
-            Entry //{" "}
-            <span className="text-white/40">{app.id.toUpperCase()}</span>
+          <div className="flex items-center gap-4">
+            <div className="text-[9px] font-mono text-white/20 tracking-widest uppercase">
+              Entry // <span className="text-white/40">{app.id.toUpperCase()}</span>
+            </div>
+            <button
+              onClick={handleCopyId}
+              className={`min-w-[100px] flex items-center justify-center gap-2 px-3 py-1.5 border rounded-full transition-all duration-300 text-[9px] font-mono tracking-widest uppercase cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+                copied
+                  ? "bg-white/10 border-white/40 text-white"
+                  : "bg-transparent border-white/10 text-white/30 hover:border-white/30 hover:text-white/60"
+              }`}
+              aria-label={copied ? "ID copied" : "Copy entry ID"}
+            >
+              <span className="material-symbols-outlined !text-xs font-light">
+                {copied ? "check" : "content_copy"}
+              </span>
+              <span>{copied ? "COPIED" : "Copy ID"}</span>
+            </button>
           </div>
         </header>
 
         {/* Scrollable body */}
-        <main className="flex-1 overflow-y-auto void-scroll">
+        <main id="main-content" className="flex-1 overflow-y-auto void-scroll">
           {/* Mobile hero thumbnail */}
           <div className="lg:hidden relative h-48 w-full overflow-hidden">
             <img
