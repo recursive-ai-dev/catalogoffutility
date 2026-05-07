@@ -11,8 +11,6 @@ interface ProductPageProps {
 export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  const [copied, setCopied] = useState(false);
   const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleCopyId = useCallback(async () => {
