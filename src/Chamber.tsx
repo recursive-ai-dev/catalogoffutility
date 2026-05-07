@@ -114,7 +114,7 @@ interface ChamberProps {
   clock?: Clock;
 }
 
-export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
+export const Chamber = React.memo(function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
   const clk = clock ?? realClock;
   // Chain 7 (IframeError): initialError allows tests to start in error state
   const [isInitialized, setIsInitialized] = useState(initialError != null);
@@ -765,4 +765,4 @@ export function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
       )}
     </div>
   );
-}
+});

@@ -8,7 +8,7 @@ interface ProductPageProps {
   onTagSelect: (tag: string) => void;
 }
 
-export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
+export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -270,4 +270,4 @@ export function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPagePr
       </div>
     </div>
   );
-}
+});

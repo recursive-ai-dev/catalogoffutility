@@ -410,7 +410,15 @@ export const Catalog = React.memo(function Catalog({
   onTagSelect,
   clock,
 }: CatalogProps) {
-  const deferredSearchQuery = React.useDeferredValue(searchQuery);
+  // Double-memoization: normalize the raw query before deferring it.
+  // This prevents irrelevant changes (like case or trailing spaces) from
+  // triggering a deferred re-filter.
+  const normalizedQuery = useMemo(
+    () => searchQuery.trim().toLowerCase(),
+    [searchQuery],
+  );
+  const deferredQuery = useDeferredValue(normalizedQuery);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
@@ -486,28 +494,24 @@ export const Catalog = React.memo(function Catalog({
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
-  // React 19: Uses deferredSearchQuery to prioritize input responsiveness over
+  // React 19: Uses deferredQuery to prioritize input responsiveness over
   // expensive filtering operations.
-  // React 19: Uses useDeferredValue for searchQuery to prioritize input responsiveness.
   const filteredEntries = useMemo(() => {
-    // Chain 1 (BrowseFilter): trim whitespace before matching so " sun " finds "sun"
-    const normalizedQuery = deferredSearchQuery.trim().toLowerCase();
-
     // Short-circuit: if no search query and default tag, avoid O(N) iteration
     // and return the pre-calculated searchable entries directly.
-    if (normalizedQuery === "" && selectedTag === DEFAULT_TAG) {
+    if (deferredQuery === "" && selectedTag === DEFAULT_TAG) {
       return SEARCHABLE_ENTRIES;
     }
 
     return SEARCHABLE_ENTRIES.filter((entry) => {
       const matchesSearch =
-        normalizedQuery === "" || entry.searchBlob.includes(normalizedQuery);
+        deferredQuery === "" || entry.searchBlob.includes(deferredQuery);
       const matchesTag =
         selectedTag === DEFAULT_TAG ||
         (entry.tags && entry.tags.includes(selectedTag));
       return matchesSearch && matchesTag;
     });
-  }, [deferredSearchQuery, selectedTag]);
+  }, [deferredQuery, selectedTag]);
 
   const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
