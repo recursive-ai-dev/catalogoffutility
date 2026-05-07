@@ -384,18 +384,18 @@ html, body {
 
   <div class="setup-group">
     <label class="setup-label">Starting Role (or leave blank)</label>
-    <input id="cfg-role" class="setup-input" type="text" placeholder="e.g. wandering healer, exiled thief, shipwrecked soldier…">
+    <input id="cfg-role" class="setup-input" type="text" maxlength="100" placeholder="e.g. wandering healer, exiled thief, shipwrecked soldier…">
   </div>
 
   <div class="setup-group">
     <label class="setup-label">Your Name</label>
-    <input id="cfg-name" class="setup-input" type="text" placeholder="(optional)">
+    <input id="cfg-name" class="setup-input" type="text" maxlength="50" placeholder="(optional)">
   </div>
 
   <div class="setup-group">
     <label class="setup-label">World Seed</label>
     <div class="seed-row">
-      <input id="cfg-seed" class="setup-input" type="text" placeholder="Any word or number…">
+      <input id="cfg-seed" class="setup-input" type="text" maxlength="50" placeholder="Any word or number…">
       <button class="seed-dice" id="btn-dice" aria-label="Random seed">⚄</button>
     </div>
   </div>
@@ -411,7 +411,7 @@ html, body {
   </div>
   <div class="chat-messages" id="messages"></div>
   <div class="chat-input-area">
-    <textarea class="chat-input" id="input" rows="1" placeholder="What do you do?"></textarea>
+    <textarea class="chat-input" id="input" rows="1" maxlength="500" placeholder="What do you do?"></textarea>
     <button class="chat-send" id="btn-send" aria-label="Send">↑</button>
   </div>
 </div>
@@ -421,6 +421,12 @@ html, body {
    GENESIS ENGINE — Deterministic Generative World
    No APIs. No precoded paths. Pure algorithmic emergence.
    ═══════════════════════════════════════════════════════════════ */
+
+const esc = str => {
+  const el = document.createElement('span');
+  el.textContent = str;
+  return el.innerHTML;
+};
 
 // ─── SEEDED PRNG (Mulberry32) ───
 class PRNG {
@@ -2026,33 +2032,43 @@ function updateHeader() {
   if (!engine) return;
   const timeStr = engine.sim.getTimeString(engine.world.calendar);
   const hp = engine.player.health;
-  $('hdr-info').innerHTML = `${timeStr}<br>♥ ${hp}`;
+  // Use esc() for defense-in-depth even for system-generated strings
+  $('hdr-info').innerHTML = `${esc(timeStr)}<br>♥ ${esc(hp)}`;
 }
 
 function addMessage(msg) {
   const container = $('messages');
   const div = document.createElement('div');
 
+  // Sanitize both text and speaker before injection, then selectively restore whitelisted tags.
+  // This prevents DOM XSS while maintaining intentional game engine formatting.
+  const safeText = esc(msg.text)
+    .replace(/&lt;em&gt;/g, '<em>')
+    .replace(/&lt;\/em&gt;/g, '</em>')
+    .replace(/&lt;br&gt;/g, '<br>')
+    .replace(/\n/g, '<br>');
+  const safeSpeaker = msg.speaker ? esc(msg.speaker) : '';
+
   switch (msg.type) {
     case 'system':
       div.className = 'msg msg-system';
-      div.innerHTML = msg.text.replace(/\n/g, '<br>');
+      div.innerHTML = safeText;
       break;
     case 'narrator':
       div.className = 'msg msg-narrator';
-      div.innerHTML = `<span class="msg-source">Narrator</span><span class="msg-text">${msg.text}</span>`;
+      div.innerHTML = `<span class="msg-source">Narrator</span><span class="msg-text">${safeText}</span>`;
       break;
     case 'env':
       div.className = 'msg msg-env';
-      div.innerHTML = msg.text;
+      div.innerHTML = safeText;
       break;
     case 'npc':
       div.className = 'msg msg-npc';
-      div.innerHTML = `<span class="msg-source">${msg.speaker}</span><span class="msg-text">${msg.text}</span>`;
+      div.innerHTML = `<span class="msg-source">${safeSpeaker}</span><span class="msg-text">${safeText}</span>`;
       break;
     case 'player':
       div.className = 'msg msg-player';
-      div.innerHTML = `<span class="msg-text">${msg.text}</span>`;
+      div.innerHTML = `<span class="msg-text">${safeText}</span>`;
       break;
   }
 

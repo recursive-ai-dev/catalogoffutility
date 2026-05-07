@@ -15,3 +15,8 @@
 **Vulnerability:** Unbounded input lengths and overly permissive remote image URL validation.
 **Learning:** Client-side input validation (maxLength) and strict length limits on remote URLs are essential first lines of defense against UI-level DoS and data exfiltration via URI parameters.
 **Prevention:** Always enforce standard length limits (e.g., RFC 5321 for emails) and restrict remote asset URLs to reasonable sizes (e.g., 8KB) to minimize the attack surface.
+
+## 2025-05-16 - Vanilla JS DOM XSS & Hardening
+**Vulnerability:** DOM XSS via `innerHTML` in legacy standalone HTML entries (`public/genesis.html`).
+**Learning:** Standalone HTML assets bypass React's built-in XSS protections. User-controlled strings (player name, chat messages) were injected directly into `innerHTML`.
+**Prevention:** Implement an `esc(str)` utility using `textContent` for manual escaping. When whitelisted formatting is required, use strict string replacement on the escaped output (e.g., `.replace(/&lt;em&gt;/g, '<em>')`) to maintain defense-in-depth. Always apply `maxLength` to vanilla HTML inputs to prevent client-side resource exhaustion.
