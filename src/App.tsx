@@ -36,32 +36,53 @@ function AppInner() {
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
 
+  // Track transient state in refs to enable referential stability for callbacks.
+  // This prevents the Catalog from re-rendering when the view or selected app changes.
+  const viewRef = React.useRef(view);
+  const selectedAppRef = React.useRef(selectedApp);
+  const isLoggedInRef = React.useRef(isLoggedIn);
+
+  React.useEffect(() => {
+    viewRef.current = view;
+    selectedAppRef.current = selectedApp;
+    isLoggedInRef.current = isLoggedIn;
+  });
+
   const handleTagSelect = useCallback(
     (tag: string) => {
-      withViewTransition(() => {
-        setSelectedTag(tag);
-        if (view !== "catalog" || selectedApp !== null) {
+      const update = () => {
+        // Toggle tag: if the same tag is selected again, revert to DEFAULT_TAG.
+        setSelectedTag((prev) => (prev === tag ? DEFAULT_TAG : tag));
+        if (viewRef.current !== "catalog" || selectedAppRef.current !== null) {
           setView("catalog");
           setSelectedApp(null);
         }
-      });
+      };
+
+      // Performance: Only wrap in transition if a view/selection change is actually happening.
+      // Tag filtering within the catalog is fast enough to be synchronous.
+      if (viewRef.current !== "catalog" || selectedAppRef.current !== null) {
+        withViewTransition(update);
+      } else {
+        update();
+      }
     },
-    [view, selectedApp],
+    [],
   );
 
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
   }, []);
 
-  // Stabilize handlers by depending on derived primitives (isLoggedIn) instead of the full user object.
-  // This prevents the Catalog from re-rendering when irrelevant user profile properties change.
+  // Stabilize handlers by using refs for state dependencies.
+  // This prevents the Catalog from re-rendering when the user object or current view changes.
   const handleSelectApp = useCallback(
     (app: AppEntry) => {
       // Chain 2 (AppSelection): single authoritative guard — missing entries are never navigated to.
       // Auth-gated entries are also intercepted here so selectedApp never drifts to a value
       // the current user is not permitted to hold (LC-N).
       if (app.missing) return;
-      if (app.requiresAuth && !isLoggedIn) {
+      if (app.requiresAuth && !isLoggedInRef.current) {
         showAuthModal();
         return;
       }
@@ -70,14 +91,14 @@ function AppInner() {
         setView("product");
       });
     },
-    [isLoggedIn, showAuthModal],
+    [showAuthModal],
   );
 
   const handleEnterChamber = useCallback(() => {
     // Chain 9 (EnterChamber): invariant — can only enter chamber when an app is selected
-    if (!selectedApp) return;
+    if (!selectedAppRef.current) return;
     withViewTransition(() => setView("chamber"));
-  }, [selectedApp]);
+  }, []);
 
   const handleBackToCatalog = useCallback(() => {
     // Chain 12 (BackNavigation): atomically clear selection and return to catalog
@@ -89,12 +110,12 @@ function AppInner() {
 
   const handleBackToProduct = useCallback(() => {
     // Chain 12 (BackNavigation): invariant — can only return to product when an app is selected
-    if (!selectedApp) {
+    if (!selectedAppRef.current) {
       withViewTransition(() => setView("catalog"));
       return;
     }
     withViewTransition(() => setView("product"));
-  }, [selectedApp]);
+  }, []);
 
   // Derive effective view at render time to prevent auth-gated pages from
   // flashing before the useEffect runs.
@@ -152,7 +173,7 @@ function AppInner() {
       <Catalog
         onSelectApp={handleSelectApp}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         selectedTag={selectedTag}
         onTagSelect={handleTagSelect}
       />
