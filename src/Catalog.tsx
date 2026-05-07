@@ -768,7 +768,7 @@ export const Catalog = React.memo(function Catalog({
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll"
+          className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll outline-none"
         >
           {/* Anonymous access callout */}
           {!user && (
