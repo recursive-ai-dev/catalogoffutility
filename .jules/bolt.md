@@ -13,3 +13,8 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-05-07 - Pre-indexing Static Collections for Search Space Reduction
+
+**Learning:** In applications with a static but growing registry (like the Catalog), performing O(N) filtering across all entries on every render or filter update becomes increasingly expensive. Pre-indexing the collection by frequently used filter categories (e.g., tags) at module scope allows reducing the search space to O(M) where M << N.
+**Action:** Always evaluate if static data can be pre-indexed into a Record or Map by common filter keys to avoid full collection iterations in useMemo hooks.

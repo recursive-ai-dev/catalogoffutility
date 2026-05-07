@@ -39,6 +39,20 @@ const SEARCHABLE_ENTRIES = CATALOG_ENTRIES.map((entry) => ({
 /** Sentinel value representing the "show all" filter state. Single-sourced here. */
 export const DEFAULT_TAG = "All_Entries" as const;
 
+/**
+ * Pre-indexed catalog by tag. Allows O(1) lookup of entries for a given tag,
+ * narrowing the search space for the deferred filter.
+ */
+const MAP_BY_TAG = SEARCHABLE_ENTRIES.reduce((acc, entry) => {
+  if (entry.tags) {
+    entry.tags.forEach((tag) => {
+      if (!acc[tag]) acc[tag] = [];
+      acc[tag].push(entry);
+    });
+  }
+  return acc;
+}, {} as Record<string, typeof SEARCHABLE_ENTRIES>);
+
 const FILTER_TAGS = [
   DEFAULT_TAG,
   "Pointless",
@@ -61,12 +75,17 @@ const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
   month: "short",
 });
 
+const EMAIL_CLEAN_REGEX = /@.*/;
+const INITIALS_REGEX = /(?:^|[._\-\s])([\p{L}\p{N}_])/gu;
+const INITIAL_CLEAN_REGEX = /^[._\-\s]+/;
+const FALLBACK_CLEAN_REGEX = /[^a-zA-Z0-9]/g;
+
 // Generates a deterministic two-letter avatar from a username/email.
 // Optimized to use a single regex match for initials extraction while preserving
 // underscore/dot/dash boundaries, reducing multiple array allocations.
 function initials(name: string): string {
-  const cleanName = name.replace(/@.*/, "");
-  const matches = cleanName.matchAll(/(?:^|[._\-\s])([\p{L}\p{N}_])/gu);
+  const cleanName = name.replace(EMAIL_CLEAN_REGEX, "");
+  const matches = cleanName.matchAll(INITIALS_REGEX);
   const parts: string[] = [];
   for (const match of matches) {
     parts.push(match[1]);
@@ -74,8 +93,8 @@ function initials(name: string): string {
   }
 
   if (parts.length >= 2) return (parts[0] + parts[1]).toUpperCase();
-  if (parts.length === 1) return cleanName.replace(/^[._\-\s]+/, "").slice(0, 2).toUpperCase();
-  const fallback = cleanName.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2);
+  if (parts.length === 1) return cleanName.replace(INITIAL_CLEAN_REGEX, "").slice(0, 2).toUpperCase();
+  const fallback = cleanName.replace(FALLBACK_CLEAN_REGEX, "").slice(0, 2);
   return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
 
@@ -135,14 +154,20 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  const displayName =
-    profile?.username ?? user.email?.split("@")[0] ?? "entity";
-  const joined = profile?.created_at
-    ? (() => {
-        const date = new Date(profile.created_at);
-        return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
-      })()
-    : null;
+  const displayName = useMemo(
+    () => profile?.username ?? user.email?.split("@")[0] ?? "entity",
+    [profile?.username, user.email],
+  );
+
+  const joined = useMemo(() => {
+    if (!profile?.created_at) return null;
+    const date = new Date(profile.created_at);
+    return Number.isNaN(date.getTime())
+      ? null
+      : PROFILE_DATE_FORMATTER.format(date);
+  }, [profile?.created_at]);
+
+  const userInitials = useMemo(() => initials(displayName), [displayName]);
 
   return (
     <div className="px-4 py-4 border-t border-white/5">
@@ -153,7 +178,7 @@ const UserSection = React.memo(function UserSection() {
         {/* Avatar — initials in a dim circle */}
         <div className="w-8 h-8 rounded-full bg-white/5 border border-white/15 flex items-center justify-center shrink-0">
           <span className="text-white/50 font-mono text-[10px] font-light tracking-wider select-none">
-            {initials(displayName)}
+            {userInitials}
           </span>
         </div>
         <div className="min-w-0">
@@ -503,14 +528,16 @@ export const Catalog = React.memo(function Catalog({
       return SEARCHABLE_ENTRIES;
     }
 
-    return SEARCHABLE_ENTRIES.filter((entry) => {
-      const matchesSearch =
-        deferredQuery === "" || entry.searchBlob.includes(deferredQuery);
-      const matchesTag =
-        selectedTag === DEFAULT_TAG ||
-        (entry.tags && entry.tags.includes(selectedTag));
-      return matchesSearch && matchesTag;
-    });
+    // Narrow the search space: if a tag is selected, start from its pre-indexed bucket.
+    // This reduces the iteration space from O(N_total) to O(N_tag), where N_tag << N_total.
+    const searchSpace =
+      selectedTag === DEFAULT_TAG
+        ? SEARCHABLE_ENTRIES
+        : (MAP_BY_TAG[selectedTag] ?? []);
+
+    if (deferredQuery === "") return searchSpace;
+
+    return searchSpace.filter((entry) => entry.searchBlob.includes(deferredQuery));
   }, [deferredQuery, selectedTag]);
 
   const isLoggedIn = !!user;
@@ -740,6 +767,7 @@ export const Catalog = React.memo(function Catalog({
         {/* Grid Content */}
         <main
           id="main-content"
+          tabIndex={-1}
           className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll"
         >
           {/* Anonymous access callout */}
