@@ -413,7 +413,11 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
       </header>
 
       {/* Main Content Area */}
-      <main id="main-content" className="flex-1 flex overflow-hidden relative z-20">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 flex overflow-hidden relative z-20 outline-none"
+      >
         {/* Game Viewport Area */}
         <section className="flex-1 flex flex-col items-center justify-center relative p-6 md:p-10 lg:p-14">
           {/* Vignette */}
