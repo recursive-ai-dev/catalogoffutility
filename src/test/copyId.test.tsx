@@ -89,5 +89,6 @@ describe('UX Enhancements — Copy ID & Search', () => {
     const mainContent = document.getElementById('main-content');
     expect(mainContent).toBeTruthy();
     expect(mainContent?.tagName).toBe('MAIN');
+    expect(mainContent?.getAttribute('tabindex')).toBe('-1');
   });
 });
