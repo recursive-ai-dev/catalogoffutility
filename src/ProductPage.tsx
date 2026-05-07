@@ -121,7 +121,7 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
         </header>
 
         {/* Scrollable body */}
-        <main id="main-content" className="flex-1 overflow-y-auto void-scroll">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto void-scroll outline-none">
           {/* Mobile hero thumbnail */}
           <div className="lg:hidden relative h-48 w-full overflow-hidden">
             <img
