@@ -128,7 +128,7 @@ const UserSection = React.memo(function UserSection() {
         </p>
         <div className="flex items-center gap-3 mb-3">
           <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-white/20 font-light text-sm">
+            <span className="material-symbols-outlined text-white/20 font-light text-sm" aria-hidden="true">
               person
             </span>
           </div>
@@ -609,6 +609,8 @@ export const Catalog = React.memo(function Catalog({
           </button>
           <button
             className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+            title="Forget all filters (Esc)"
+            aria-label="Forget all filters (Shortcut: Escape)"
             onClick={() => {
               resetFilters();
               showNotification("Memories purged.");
@@ -619,6 +621,9 @@ export const Catalog = React.memo(function Catalog({
             </span>
             <span className="text-white font-light uppercase tracking-widest text-xs">
               Forget
+            </span>
+            <span className="text-[10px] text-white/20 font-mono ml-auto select-none pointer-events-none" aria-hidden="true">
+              [Esc]
             </span>
           </button>
           <button

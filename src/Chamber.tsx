@@ -701,6 +701,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
             <button
               onClick={onBack}
               title="Cease (Esc)"
+              aria-label="Cease (Shortcut: Escape)"
               className="group w-full relative h-12 bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-all duration-300 overflow-hidden flex items-center justify-center gap-4 cursor-pointer rounded-full"
             >
               <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light" aria-hidden="true">
@@ -708,6 +709,9 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
               </span>
               <span className="text-white/50 font-light tracking-[0.2em] text-[10px] uppercase group-hover:text-white transition-colors">
                 Cease
+              </span>
+              <span className="text-[10px] text-white/20 font-mono ml-auto select-none pointer-events-none" aria-hidden="true">
+                [Esc]
               </span>
             </button>
             <div className="mt-6 text-center">
@@ -750,7 +754,8 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                 ref={modalCloseRef}
                 onClick={() => setHotlinkedImage(null)}
                 className="text-white/40 hover:text-white transition-colors cursor-pointer"
-                aria-label="Close image viewer"
+                aria-label="Close image viewer (Shortcut: Escape)"
+                title="Close (Esc)"
               >
                 <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">close</span>
               </button>
