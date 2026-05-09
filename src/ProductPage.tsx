@@ -89,14 +89,20 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
           <button
             onClick={onBack}
             title="Back to catalog (Esc)"
+            aria-label="Archive (Shortcut: Escape)"
             className="flex items-center gap-3 text-white/50 hover:text-white transition-colors group cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
           >
             <span className="material-symbols-outlined !text-lg font-light transition-transform group-hover:-translate-x-1" aria-hidden="true">
               arrow_back
             </span>
-            <span className="text-[10px] font-mono tracking-widest uppercase">
-              Archive
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono tracking-widest uppercase">
+                Archive
+              </span>
+              <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+                [Esc]
+              </span>
+            </div>
           </button>
 
           <div className="flex items-center gap-4">

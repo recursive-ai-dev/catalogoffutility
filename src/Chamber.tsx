@@ -369,16 +369,21 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
           className="flex items-center gap-6 text-white/70 hover:text-white cursor-pointer transition-colors group"
           onClick={onBack}
           title="Back to product (Esc)"
-          aria-label="Back to product page"
+          aria-label="Back to product page (Shortcut: Escape)"
         >
           <div className="size-6 transition-transform group-hover:-translate-x-1">
             <span className="material-symbols-outlined !text-2xl font-light" aria-hidden="true">
               arrow_back
             </span>
           </div>
-          <h2 className="text-white/90 text-2xl font-light tracking-widest uppercase font-display">
-            The Chamber
-          </h2>
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-white/90 text-2xl font-light tracking-widest uppercase font-display">
+              The Chamber
+            </h2>
+            <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+              [Esc]
+            </span>
+          </div>
         </button>
 
         <div className="flex items-center gap-8">
@@ -701,14 +706,20 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
             <button
               onClick={onBack}
               title="Cease (Esc)"
+              aria-label="Cease session (Shortcut: Escape)"
               className="group w-full relative h-12 bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-all duration-300 overflow-hidden flex items-center justify-center gap-4 cursor-pointer rounded-full"
             >
               <span className="material-symbols-outlined text-white/50 group-hover:text-white transition-colors font-light" aria-hidden="true">
                 power_settings_new
               </span>
-              <span className="text-white/50 font-light tracking-[0.2em] text-[10px] uppercase group-hover:text-white transition-colors">
-                Cease
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-white/50 font-light tracking-[0.2em] text-[10px] uppercase group-hover:text-white transition-colors">
+                  Cease
+                </span>
+                <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none group-hover:text-white/40 transition-colors" aria-hidden="true">
+                  [Esc]
+                </span>
+              </div>
             </button>
             <div className="mt-6 text-center">
               <p className="text-[9px] text-white/30 uppercase tracking-widest font-mono">
