@@ -20,3 +20,8 @@
 **Vulnerability:** DOM XSS via `innerHTML` in legacy standalone HTML entries (`public/genesis.html`).
 **Learning:** Standalone HTML assets bypass React's built-in XSS protections. User-controlled strings (player name, chat messages) were injected directly into `innerHTML`.
 **Prevention:** Implement an `esc(str)` utility using `textContent` for manual escaping. When whitelisted formatting is required, use strict string replacement on the escaped output (e.g., `.replace(/&lt;em&gt;/g, '<em>')`) to maintain defense-in-depth. Always apply `maxLength` to vanilla HTML inputs to prevent client-side resource exhaustion.
+
+## 2025-05-17 - Optimized HTML Escaping for Vanilla JS
+**Vulnerability:** DOM XSS via `innerHTML` in standalone assets (`public/kira-v2.html`).
+**Learning:** While the `esc(str)` utility using `textContent` is effective, creating a new DOM element on every call (e.g., inside a loop) can be inefficient. Reusing a single module-level persistent element for escaping maintains performance without sacrificing security.
+**Prevention:** Use a static, persistent element for text-to-HTML encoding utilities in vanilla JS environments to minimize garbage collection and main-thread overhead during UI rendering.
