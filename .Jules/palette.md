@@ -30,3 +30,7 @@
 ## 2025-05-26 - Global Accessibility Orchestration
 **Learning:** Skip links are often implemented locally, leading to broken accessibility when navigating between single-page views. Globalizing the skip link at the root component level while ensuring all primary views share a common target ID (`main-content`) provides a consistent, robust accessibility experience.
 **Action:** Lift the skip link to the application root and enforce a standard ID naming convention for main containers across all view components.
+
+## 2025-05-30 - Discoverable Shortcut Hints
+**Learning:** Adding visible keyboard shortcut hints (e.g., [Esc]) improves UX for power users. Pairing these with descriptive aria-label attributes (e.g., "Archive (Shortcut: Escape)") ensures accessibility while maintaining the original text in the label prevents breaking existing automated tests that rely on role-based text matching.
+**Action:** Use conditional aria-labels and visible mono-styled hints for primary global keyboard actions.
