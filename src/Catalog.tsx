@@ -211,11 +211,13 @@ const Card = React.memo(function Card({
   onSelect,
   onTagSelect,
   isUserLoggedIn,
+  selectedTag,
 }: {
   entry: AppEntry;
   onSelect: (entry: AppEntry) => void;
   onTagSelect: (tag: string) => void;
   isUserLoggedIn: boolean;
+  selectedTag: string;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -367,7 +369,11 @@ const Card = React.memo(function Card({
                   }
                 }}
                 aria-label={`Filter by ${tag}`}
-                className="text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 border border-white/8 text-white/25 rounded-full hover:border-white/30 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+                className={`text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 border rounded-full transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+                  tag === selectedTag
+                    ? "bg-white/10 border-white/30 text-white/80"
+                    : "border-white/8 text-white/25 hover:border-white/30 hover:text-white/60"
+                }`}
               >
                 {tag}
               </button>
@@ -824,6 +830,7 @@ export const Catalog = React.memo(function Catalog({
                   onSelect={handleCardSelect}
                   onTagSelect={onTagSelect}
                   isUserLoggedIn={!!user}
+                  selectedTag={selectedTag}
                 />
               ))}
             </div>

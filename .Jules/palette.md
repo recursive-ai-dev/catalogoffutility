@@ -30,3 +30,7 @@
 ## 2025-05-26 - Global Accessibility Orchestration
 **Learning:** Skip links are often implemented locally, leading to broken accessibility when navigating between single-page views. Globalizing the skip link at the root component level while ensuring all primary views share a common target ID (`main-content`) provides a consistent, robust accessibility experience.
 **Action:** Lift the skip link to the application root and enforce a standard ID naming convention for main containers across all view components.
+
+## 2025-05-30 - Visual Synchronization of Filters
+**Learning:** When users apply global filters, seeing those same filters highlighted within the metadata of individual items (e.g., tags on cards) provides strong visual reinforcement and confirms the system's state. It bridges the gap between the filter controls and the resulting data.
+**Action:** Synchronize the active filter state with item-level metadata by applying distinct "active" styling to tags or labels that match current search or filter criteria.
