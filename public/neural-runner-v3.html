@@ -829,7 +829,7 @@
         </div>
         <div class="script-editor-wrap">
           <div class="line-numbers" id="lineNumbers">1</div>
-          <textarea class="script-editor" id="scriptEditor" placeholder="# Define a process() function:
+          <textarea class="script-editor" id="scriptEditor" maxlength="100000" placeholder="# Define a process() function:
 #
 # def process(message, history):
 #     return 'Hello!'
@@ -893,7 +893,7 @@
         <div class="quick-actions" id="quickActions"></div>
         <div class="chat-input-area">
           <div class="chat-input-wrap">
-            <textarea class="chat-input" id="chatInput" placeholder="Send a message..." rows="1" disabled></textarea>
+            <textarea class="chat-input" id="chatInput" maxlength="2000" placeholder="Send a message..." rows="1" disabled></textarea>
             <button class="send-btn" id="btnSend" disabled>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
@@ -2290,6 +2290,12 @@ el.fileInput.addEventListener('change', async (e) => {
 
 async function handleFile(file) {
   const name = file.name;
+  // Security: Enforce 1MB limit to prevent resource exhaustion/DoS.
+  if (file.size > 1024 * 1024) {
+    addDebugEntry('error', `File too large: ${name} (max 1MB)`);
+    toast('File too large');
+    return;
+  }
   const ext = name.split('.').pop().toLowerCase();
 
   if (ext === 'zip') { await handleZipFile(file); return; }

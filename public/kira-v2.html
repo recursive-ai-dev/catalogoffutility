@@ -500,7 +500,7 @@ html, body {
   <!-- Input -->
   <div id="input-area">
     <div id="input-row">
-      <textarea id="msg-input" rows="1" placeholder="Say something..." autocomplete="off"></textarea>
+      <textarea id="msg-input" rows="1" maxlength="1000" placeholder="Say something..." autocomplete="off"></textarea>
       <button id="send-btn">
         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
@@ -533,7 +533,7 @@ html, body {
 
       <div class="setting-group">
         <div class="setting-label">Your Name</div>
-        <input type="text" class="setting-input" id="set-name" placeholder="What should she call you?">
+        <input type="text" class="setting-input" id="set-name" maxlength="64" placeholder="What should she call you?">
       </div>
 
       <div class="setting-group">
@@ -2060,7 +2060,11 @@ function addSystemMessage(text) {
 function addMilestone(text) {
   const d = document.createElement('div');
   d.className='milestone-msg';
-  d.innerHTML=`<div class="milestone-inner">✧ ${text} ✧</div>`;
+  // Security: Prevent potential XSS by using textContent for dynamic content.
+  const inner = document.createElement('div');
+  inner.className = 'milestone-inner';
+  inner.textContent = `✧ ${text} ✧`;
+  d.appendChild(inner);
   chatArea.appendChild(d); scrollBottom();
   if (S.settings.sound) playTone(600, 0.15, 0.3);
 }
