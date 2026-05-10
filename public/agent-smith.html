@@ -248,7 +248,7 @@
 
       <div class="input-area">
         <div class="input-row">
-          <textarea class="input-field" id="inputField" placeholder="Transmit to Agent Smith…" rows="1"
+          <textarea class="input-field" id="inputField" maxlength="1000" placeholder="Transmit to Agent Smith…" rows="1"
             onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
           <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
         </div>
@@ -416,6 +416,12 @@ function downloadArtifact() {
 function uploadArtifact(event) {
   const file = event.target.files[0];
   if (!file) return;
+  // Security: Enforce 1MB limit to prevent resource exhaustion/DoS.
+  if (file.size > 1024 * 1024) {
+    appendSystem('Import failed: artifact file too large (max 1MB).');
+    event.target.value = '';
+    return;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
