@@ -13,3 +13,9 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-04-15 - Component Decomposition for Deferral-Aware Memoization
+
+**Learning:** React 19's `useDeferredValue` is most effective when paired with memoized sub-components. If a component containing both an "urgent" state (like a search input value) and a "deferred" value (like filtered results) is a single monolithic tree, the entire tree will still reconcile during the urgent pass, even if expensive parts are wrapped in `useMemo`. Decomposing the tree into memoized sub-components (`Sidebar`, `EntryGrid`, etc.) allows branches that don't depend on the urgent state to be skipped entirely during the urgent pass, keeping the UI highly responsive.
+
+**Action:** When using `useDeferredValue` for heavy filtering, decompose the parent component into memoized sub-components and pass the deferred value only to the branches that actually require it.
