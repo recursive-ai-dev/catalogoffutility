@@ -30,3 +30,7 @@
 ## 2025-05-26 - Global Accessibility Orchestration
 **Learning:** Skip links are often implemented locally, leading to broken accessibility when navigating between single-page views. Globalizing the skip link at the root component level while ensuring all primary views share a common target ID (`main-content`) provides a consistent, robust accessibility experience.
 **Action:** Lift the skip link to the application root and enforce a standard ID naming convention for main containers across all view components.
+
+## 2025-05-27 - Standardizing Keyboard Shortcut Discoverability
+**Learning:** In keyboard-centric brutalist UIs, shortcut hints like `[Esc]` or `[/]` should be visually integrated into the UI components themselves to improve discoverability without compromising the aesthetic. Using low-contrast (`text-white/20`), small mono-spaced fonts ensures they remain secondary to primary actions.
+**Action:** Apply the `text-[10px] text-white/20 font-mono select-none pointer-events-none` pattern for keyboard hints and ensure they are paired with descriptive `aria-label` or `title` attributes that explicitly mention the shortcut.

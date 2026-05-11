@@ -88,7 +88,7 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
         <header className="shrink-0 flex items-center justify-between px-8 py-5 border-b border-white/10 bg-black/50 backdrop-blur-xl">
           <button
             onClick={onBack}
-            title="Back to catalog (Esc)"
+            title="Back to catalog (Shortcut: Escape)"
             className="flex items-center gap-3 text-white/50 hover:text-white transition-colors group cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
           >
             <span className="material-symbols-outlined !text-lg font-light transition-transform group-hover:-translate-x-1" aria-hidden="true">
@@ -96,6 +96,9 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
             </span>
             <span className="text-[10px] font-mono tracking-widest uppercase">
               Archive
+            </span>
+            <span className="text-[10px] text-white/20 font-mono ml-2 select-none pointer-events-none" aria-hidden="true">
+              [Esc]
             </span>
           </button>
 

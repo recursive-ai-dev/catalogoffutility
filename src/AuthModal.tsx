@@ -158,9 +158,12 @@ export function AuthModal() {
           </div>
           <button
             onClick={hideAuthModal}
-            className="text-white/20 hover:text-white/70 transition-colors cursor-pointer"
-            aria-label="Close"
+            className="text-white/20 hover:text-white/70 transition-colors cursor-pointer flex items-center gap-2"
+            aria-label="Close (Shortcut: Escape)"
           >
+            <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+              [Esc]
+            </span>
             <span className="material-symbols-outlined font-light text-xl">
               close
             </span>

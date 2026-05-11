@@ -613,12 +613,16 @@ export const Catalog = React.memo(function Catalog({
               resetFilters();
               showNotification("Memories purged.");
             }}
+            aria-label="Forget (Shortcut: Escape)"
           >
             <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
               delete
             </span>
             <span className="text-white font-light uppercase tracking-widest text-xs">
               Forget
+            </span>
+            <span className="text-[10px] text-white/20 font-mono ml-auto select-none pointer-events-none" aria-hidden="true">
+              [Esc]
             </span>
           </button>
           <button
