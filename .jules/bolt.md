@@ -13,3 +13,9 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-04-12 - Deferral & Memoization Synergy
+
+**Learning:** React 19's `useDeferredValue` only avoids main-thread blocking if the heavy UI components are memoized with `React.memo`. Without memoization, the entire subtree still reconciles during the 'urgent' pass even if the deferred value hasn't changed, wasting CPU cycles and increasing input latency.
+
+**Action:** When using `useDeferredValue` for search/filter, always decompose the view into memoized sub-components. Pass derived booleans (like `isSearchActive`) instead of raw strings to these components to ensure they stay referentially stable during typing.
