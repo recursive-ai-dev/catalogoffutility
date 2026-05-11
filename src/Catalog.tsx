@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect, useDeferredValue } from "react";
 import { X } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth, useAuthModal } from "./lib/auth";
 import { Clock, realClock } from "./lib/clock";
@@ -427,6 +428,370 @@ const Card = React.memo(function Card({
   );
 });
 
+const Sidebar = React.memo(function Sidebar({
+  user,
+  onSelectApp,
+  resetFilters,
+  showNotification,
+  lockedCount,
+  corruption,
+}: {
+  user: User | null;
+  onSelectApp: (app: AppEntry) => void;
+  resetFilters: () => void;
+  showNotification: (msg: string) => void;
+  lockedCount: number;
+  corruption: number;
+}) {
+  return (
+    <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
+      <div className="p-8 border-b border-white/10 flex flex-col gap-2">
+        <h1 className="text-white/90 text-3xl font-light tracking-widest uppercase font-display">
+          The Void
+        </h1>
+        <p className="text-white/40 text-[10px] font-mono tracking-widest uppercase">
+          Archive // v2.0.0
+        </p>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
+        <button
+          className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          onClick={() => {
+            const navigable = CATALOG_ENTRIES.filter(e => !e.missing && (!e.requiresAuth || user));
+            if (navigable.length > 0) {
+              const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
+              onSelectApp(randomApp);
+            } else {
+              showNotification("No path found in the void.");
+            }
+          }}
+        >
+          <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
+            schedule
+          </span>
+          <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
+            Waste Time
+          </span>
+        </button>
+        <button
+          className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          onClick={() => {
+            resetFilters();
+            showNotification("Memories purged.");
+          }}
+        >
+          <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
+            delete
+          </span>
+          <span className="text-white font-light uppercase tracking-widest text-xs">
+            Forget
+          </span>
+        </button>
+        <button
+          className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          onClick={() => showNotification("Giving up is not an option.")}
+        >
+          <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
+            cancel
+          </span>
+          <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
+            Give Up
+          </span>
+        </button>
+        <div className="h-px bg-white/10 my-4 w-full"></div>
+        <button
+          className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          onClick={() => showNotification("Staring into the void...")}
+        >
+          <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
+            block
+          </span>
+          <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
+            Void
+          </span>
+        </button>
+        <button
+          className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          onClick={() => showNotification("Exit mechanism destroyed.")}
+        >
+          <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
+            warning
+          </span>
+          <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
+            Exit (Broken)
+          </span>
+        </button>
+      </nav>
+
+      {/* User identity section */}
+      <UserSection />
+
+      <div className="p-6 border-t border-white/10 bg-black/40">
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-between items-center text-[10px] text-white/40 font-mono tracking-widest">
+            <span>STATUS:</span>
+            <span className="text-white/80">FADING</span>
+          </div>
+          <div
+            className="h-px w-full bg-white/10 rounded overflow-hidden"
+            role="progressbar"
+            aria-valuenow={corruption}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Archive stability"
+            aria-valuetext={`${corruption}% corruption, critical`}
+          >
+            <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
+            </div>
+          </div>
+          <div className="flex justify-between items-center text-[10px] text-white/20 font-mono tracking-widest mt-1">
+            <span>ENTRIES:</span>
+            <span className="text-white/40">{CATALOG_ENTRIES.length}</span>
+          </div>
+          {!user && (
+            <div className="flex justify-between items-center text-[10px] text-white/15 font-mono tracking-widest">
+              <span>LOCKED:</span>
+              <span className="text-white/25">{lockedCount}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+const SearchHeader = React.memo(function SearchHeader({
+  filteredCount,
+  totalCount,
+  searchQuery,
+  onSearchChange,
+  searchInputRef,
+}: {
+  filteredCount: number;
+  totalCount: number;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  searchInputRef: React.RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <header className="shrink-0 h-24 border-b border-white/10 flex items-center justify-between px-10 bg-black/20 backdrop-blur-md z-10">
+      <div className="flex items-center gap-6">
+        <h2 className="text-4xl font-light text-white uppercase tracking-widest font-display">
+          The Archive
+        </h2>
+        <div className="hidden sm:flex px-3 py-1 bg-white/5 border border-white/10 text-[9px] text-white/50 font-mono tracking-widest uppercase rounded-full">
+          {filteredCount} of {totalCount} Entries
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors">
+          <button
+            type="button"
+            onClick={() => searchInputRef.current?.focus()}
+            className="flex items-center justify-center text-white/40 hover:text-white/70 transition-colors cursor-pointer"
+            aria-label="Focus search input"
+          >
+            <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
+              search
+            </span>
+          </button>
+          <input
+            ref={searchInputRef}
+            type="text"
+            aria-label="Search catalog entries (Press / to focus)"
+            placeholder="Search the void..."
+            maxLength={200}
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
+          />
+          <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+            [/]
+          </span>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                onSearchChange("");
+                searchInputRef.current?.focus();
+              }}
+              aria-label="Clear search"
+              className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-full"
+            >
+              <X className="size-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+});
+
+const FilterBar = React.memo(function FilterBar({
+  selectedTag,
+  onTagSelect,
+}: {
+  selectedTag: string;
+  onTagSelect: (tag: string) => void;
+}) {
+  return (
+    <div className="shrink-0 px-10 py-5 flex flex-wrap gap-2.5 border-b border-white/5">
+      {FILTER_TAGS.map((tag) => (
+        <button
+          key={tag}
+          onClick={() => onTagSelect(tag)}
+          aria-pressed={selectedTag === tag}
+          className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+            selectedTag === tag
+              ? "bg-white/10 border-white/20 text-white"
+              : "bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white"
+          }`}
+        >
+          {tag}
+        </button>
+      ))}
+    </div>
+  );
+});
+
+const SystemLogs = React.memo(function SystemLogs({
+  mountTime,
+  user,
+}: {
+  mountTime: string;
+  user: User | null;
+}) {
+  return (
+    <div className="mt-auto pt-10 border-t border-white/10">
+      <h3 className="text-white/80 text-xs font-light tracking-widest uppercase mb-6 px-1 font-mono">
+        System_Logs
+      </h3>
+      <div className="font-mono text-[10px] text-white/40 flex flex-col gap-2 opacity-70">
+        <p>
+          &gt; Observer accessed the void at{" "}
+          <span className="text-white">{mountTime}</span>
+        </p>
+        <p>
+          &gt; Reality anchor stabilized:{" "}
+          <span className="text-white/60">FALSE</span>
+        </p>
+        <p>
+          &gt; Loading memories...{" "}
+          <span className="text-white/30">
+            {user ? "RESTORED (partial)" : "FAILED (file missing)"}
+          </span>
+        </p>
+        {user && (
+          <p>
+            &gt; Identity confirmed:{" "}
+            <span className="text-white/60">
+              {user.email?.split("@")[0] ?? "entity"}
+            </span>
+          </p>
+        )}
+        <p className="animate-pulse">&gt; _</p>
+      </div>
+    </div>
+  );
+});
+
+const EntryGrid = React.memo(function EntryGrid({
+  user,
+  filteredEntries,
+  handleCardSelect,
+  onTagSelect,
+  showAuthModal,
+  lockedCount,
+  mountTime,
+  isSearchActive,
+  selectedTag,
+  resetFilters,
+  searchInputRef,
+}: {
+  user: User | null;
+  filteredEntries: typeof SEARCHABLE_ENTRIES;
+  handleCardSelect: (entry: AppEntry) => void;
+  onTagSelect: (tag: string) => void;
+  showAuthModal: () => void;
+  lockedCount: number;
+  mountTime: string;
+  isSearchActive: boolean;
+  selectedTag: string;
+  resetFilters: () => void;
+  searchInputRef: React.RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll outline-none"
+    >
+      {/* Anonymous access callout */}
+      {!user && (
+        <div className="mb-8 flex items-start gap-4 px-6 py-4 border border-white/5 rounded-xl bg-white/[0.01] group">
+          <span className="material-symbols-outlined text-white/15 font-light text-2xl mt-0.5 shrink-0">
+            lock
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-white/25 font-mono text-[10px] tracking-widest uppercase mb-1">
+              Restricted Access
+            </p>
+            <p className="text-white/20 font-light text-xs leading-relaxed">
+              {lockedCount} entries are sealed from unverified observers. The archive keeps its depths hidden from those who have not yet proven they exist.{" "}
+              <button
+                onClick={showAuthModal}
+                className="text-white/35 hover:text-white/60 underline underline-offset-2 transition-colors cursor-pointer"
+              >
+                Identify yourself
+              </button>{" "}
+              to descend further.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {filteredEntries.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <span className="material-symbols-outlined text-5xl text-white/10 font-light">
+            search_off
+          </span>
+          <p className="text-white/20 font-mono text-xs tracking-widest uppercase">
+            Nothing found. The void returns nothing.
+          </p>
+          {(isSearchActive || selectedTag !== DEFAULT_TAG) && (
+            <button
+              type="button"
+              onClick={() => {
+                resetFilters();
+                searchInputRef.current?.focus();
+              }}
+              className="mt-2 px-6 py-2 border border-white/10 text-white/40 hover:text-white/70 hover:border-white/25 text-[10px] font-mono tracking-widest uppercase transition-colors rounded-full cursor-pointer"
+            >
+              Clear all filters
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-16">
+          {filteredEntries.map((entry) => (
+            <Card
+              key={entry.id}
+              entry={entry}
+              onSelect={handleCardSelect}
+              onTagSelect={onTagSelect}
+              isUserLoggedIn={!!user}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Footer Logs */}
+      <SystemLogs mountTime={mountTime} user={user} />
+    </main>
+  );
+});
+
 export const Catalog = React.memo(function Catalog({
   onSelectApp,
   searchQuery,
@@ -446,11 +811,6 @@ export const Catalog = React.memo(function Catalog({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
-  // useRef lazy-init is the correct React idiom for "compute once at mount";
-  // it avoids the exhaustive-deps violation that useMemo([]) would produce.
-  // useRef (not useMemo with []) avoids the exhaustive-deps lint violation while
-  // preserving mount-only semantics: the value is sampled once and never updates
-  // even if the `clock` prop changes (BUG-07).
   const mountTimeRef = useRef<string | null>(null);
   if (mountTimeRef.current === null) {
     mountTimeRef.current = (clock ?? realClock).timeString();
@@ -470,8 +830,7 @@ export const Catalog = React.memo(function Catalog({
     searchInputRef.current?.focus();
   }, [onSearchChange, onTagSelect]);
 
-  // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
-  // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
+  // "/" and "Escape" shortcut handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.isComposing || e.repeat) return;
@@ -516,27 +875,17 @@ export const Catalog = React.memo(function Catalog({
     notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
   }, []);
 
-  // Memoize so the O(n) filter only re-runs when the query or tag changes,
-  // not on every unrelated re-render (e.g. notification state updates).
-  // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
-  // React 19: Uses deferredQuery to prioritize input responsiveness over
-  // expensive filtering operations.
+  // Memoize so the O(n) filter only re-runs when the query or tag changes.
   const filteredEntries = useMemo(() => {
-    // Short-circuit: if no search query and default tag, avoid O(N) iteration
-    // and return the pre-calculated searchable entries directly.
     if (deferredQuery === "" && selectedTag === DEFAULT_TAG) {
       return SEARCHABLE_ENTRIES;
     }
-
-    // Narrow the search space: if a tag is selected, start from its pre-indexed bucket.
-    // This reduces the iteration space from O(N_total) to O(N_tag), where N_tag << N_total.
     const searchSpace =
       selectedTag === DEFAULT_TAG
         ? SEARCHABLE_ENTRIES
         : (MAP_BY_TAG[selectedTag] ?? []);
 
     if (deferredQuery === "") return searchSpace;
-
     return searchSpace.filter((entry) => entry.searchBlob.includes(deferredQuery));
   }, [deferredQuery, selectedTag]);
 
@@ -544,7 +893,6 @@ export const Catalog = React.memo(function Catalog({
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
       if (entry.missing) return;
-      // Auth-gated entries open the auth modal for unauthenticated users
       if (entry.requiresAuth && !isLoggedIn) {
         showAuthModal();
         return;
@@ -554,18 +902,13 @@ export const Catalog = React.memo(function Catalog({
     [isLoggedIn, showAuthModal, onSelectApp],
   );
 
-
-  // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
   const corruption = 85;
 
   return (
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
-      {/* Atmospheric Background */}
       <div className="absolute inset-0 z-0 pointer-events-none atmosphere"></div>
 
-      {/* Chain 14 (NavButtonActions): non-blocking notification banner */}
-      {/* aria-live container is always mounted so screen readers pick up dynamic content */}
       <div aria-live="polite" aria-atomic="true" className="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
         {notification && (
           <div className="px-6 py-3 bg-black/80 border border-white/15 backdrop-blur-xl rounded-full">
@@ -576,291 +919,42 @@ export const Catalog = React.memo(function Catalog({
         )}
       </div>
 
-      {/* Side Navigation */}
-      <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
-        <div className="p-8 border-b border-white/10 flex flex-col gap-2">
-          <h1 className="text-white/90 text-3xl font-light tracking-widest uppercase font-display">
-            The Void
-          </h1>
-          <p className="text-white/40 text-[10px] font-mono tracking-widest uppercase">
-            Archive // v2.0.0
-          </p>
-        </div>
+      <Sidebar
+        user={user}
+        onSelectApp={onSelectApp}
+        resetFilters={resetFilters}
+        showNotification={showNotification}
+        lockedCount={lockedCount}
+        corruption={corruption}
+      />
 
-        <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
-          <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-            onClick={() => {
-              const navigable = CATALOG_ENTRIES.filter(e => !e.missing && (!e.requiresAuth || user));
-              if (navigable.length > 0) {
-                const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
-                onSelectApp(randomApp);
-              } else {
-                showNotification("No path found in the void.");
-              }
-            }}
-          >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
-              schedule
-            </span>
-            <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
-              Waste Time
-            </span>
-          </button>
-          <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-            onClick={() => {
-              resetFilters();
-              showNotification("Memories purged.");
-            }}
-          >
-            <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
-              delete
-            </span>
-            <span className="text-white font-light uppercase tracking-widest text-xs">
-              Forget
-            </span>
-          </button>
-          <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-            onClick={() => showNotification("Giving up is not an option.")}
-          >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
-              cancel
-            </span>
-            <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
-              Give Up
-            </span>
-          </button>
-          <div className="h-px bg-white/10 my-4 w-full"></div>
-          <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-            onClick={() => showNotification("Staring into the void...")}
-          >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
-              block
-            </span>
-            <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
-              Void
-            </span>
-          </button>
-          <button
-            className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-            onClick={() => showNotification("Exit mechanism destroyed.")}
-          >
-            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
-              warning
-            </span>
-            <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
-              Exit (Broken)
-            </span>
-          </button>
-        </nav>
-
-        {/* User identity section */}
-        <UserSection />
-
-        <div className="p-6 border-t border-white/10 bg-black/40">
-          <div className="flex flex-col gap-3">
-            <div className="flex justify-between items-center text-[10px] text-white/40 font-mono tracking-widest">
-              <span>STATUS:</span>
-              <span className="text-white/80">FADING</span>
-            </div>            
-            <div
-              className="h-px w-full bg-white/10 rounded overflow-hidden"
-              role="progressbar"
-              aria-valuenow={corruption}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label="Archive stability"
-              aria-valuetext={`${corruption}% corruption, critical`}
-            >
-              <div className="h-full bg-white/40 relative" style={{ width: `${corruption}%` }}>
-              </div>
-            </div>
-            <div className="flex justify-between items-center text-[10px] text-white/20 font-mono tracking-widest mt-1">
-              <span>ENTRIES:</span>
-              <span className="text-white/40">{CATALOG_ENTRIES.length}</span>
-            </div>
-            {!user && (
-              <div className="flex justify-between items-center text-[10px] text-white/15 font-mono tracking-widest">
-                <span>LOCKED:</span>
-                <span className="text-white/25">{lockedCount}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative z-10">
-        {/* Header */}
-        <header className="shrink-0 h-24 border-b border-white/10 flex items-center justify-between px-10 bg-black/20 backdrop-blur-md z-10">
-          <div className="flex items-center gap-6">
-            <h2 className="text-4xl font-light text-white uppercase tracking-widest font-display">
-              The Archive
-            </h2>
-            <div className="hidden sm:flex px-3 py-1 bg-white/5 border border-white/10 text-[9px] text-white/50 font-mono tracking-widest uppercase rounded-full">
-              {filteredEntries.length} of {CATALOG_ENTRIES.length} Entries
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors">
-              <button
-                type="button"
-                onClick={() => searchInputRef.current?.focus()}
-                className="flex items-center justify-center text-white/40 hover:text-white/70 transition-colors cursor-pointer"
-                aria-label="Focus search input"
-              >
-                <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
-                  search
-                </span>
-              </button>
-              <input
-                ref={searchInputRef}
-                type="text"
-                aria-label="Search catalog entries (Press / to focus)"
-                placeholder="Search the void..."
-                maxLength={200}
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
-              />
-              <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
-                [/]
-              </span>
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSearchChange("");
-                    searchInputRef.current?.focus();
-                  }}
-                  aria-label="Clear search"
-                  className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-full"
-                >
-                  <X className="size-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        </header>
+        <SearchHeader
+          filteredCount={filteredEntries.length}
+          totalCount={CATALOG_ENTRIES.length}
+          searchQuery={searchQuery}
+          onSearchChange={onSearchChange}
+          searchInputRef={searchInputRef}
+        />
 
-        {/* Filters / Tags */}
-        <div className="shrink-0 px-10 py-5 flex flex-wrap gap-2.5 border-b border-white/5">
-          {FILTER_TAGS.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => onTagSelect(tag)}
-              aria-pressed={selectedTag === tag}
-              className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
-                selectedTag === tag
-                  ? "bg-white/10 border-white/20 text-white"
-                  : "bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white"
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
+        <FilterBar
+          selectedTag={selectedTag}
+          onTagSelect={onTagSelect}
+        />
 
-        {/* Grid Content */}
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll outline-none"
-        >
-          {/* Anonymous access callout */}
-          {!user && (
-            <div className="mb-8 flex items-start gap-4 px-6 py-4 border border-white/5 rounded-xl bg-white/[0.01] group">
-              <span className="material-symbols-outlined text-white/15 font-light text-2xl mt-0.5 shrink-0">
-                lock
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-white/25 font-mono text-[10px] tracking-widest uppercase mb-1">
-                  Restricted Access
-                </p>
-                <p className="text-white/20 font-light text-xs leading-relaxed">
-                  {lockedCount} entries are sealed from unverified observers. The archive keeps its depths hidden from those who have not yet proven they exist.{" "}
-                  <button
-                    onClick={showAuthModal}
-                    className="text-white/35 hover:text-white/60 underline underline-offset-2 transition-colors cursor-pointer"
-                  >
-                    Identify yourself
-                  </button>{" "}
-                  to descend further.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {filteredEntries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 gap-4">
-              <span className="material-symbols-outlined text-5xl text-white/10 font-light">
-                search_off
-              </span>
-              <p className="text-white/20 font-mono text-xs tracking-widest uppercase">
-                Nothing found. The void returns nothing.
-              </p>
-              {(searchQuery !== "" || selectedTag !== DEFAULT_TAG) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetFilters();
-                    searchInputRef.current?.focus();
-                  }}
-                  className="mt-2 px-6 py-2 border border-white/10 text-white/40 hover:text-white/70 hover:border-white/25 text-[10px] font-mono tracking-widest uppercase transition-colors rounded-full cursor-pointer"
-                >
-                  Clear all filters
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-16">
-              {filteredEntries.map((entry) => (
-                <Card
-                  key={entry.id}
-                  entry={entry}
-                  onSelect={handleCardSelect}
-                  onTagSelect={onTagSelect}
-                  isUserLoggedIn={!!user}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Footer Logs */}
-          <div className="mt-auto pt-10 border-t border-white/10">
-            <h3 className="text-white/80 text-xs font-light tracking-widest uppercase mb-6 px-1 font-mono">
-              System_Logs
-            </h3>
-            <div className="font-mono text-[10px] text-white/40 flex flex-col gap-2 opacity-70">
-              <p>
-                &gt; Observer accessed the void at{" "}
-                <span className="text-white">{mountTime}</span>
-              </p>
-              <p>
-                &gt; Reality anchor stabilized:{" "}
-                <span className="text-white/60">FALSE</span>
-              </p>
-              <p>
-                &gt; Loading memories...{" "}
-                <span className="text-white/30">
-                  {user ? "RESTORED (partial)" : "FAILED (file missing)"}
-                </span>
-              </p>
-              {user && (
-                <p>
-                  &gt; Identity confirmed:{" "}
-                  <span className="text-white/60">
-                    {user.email?.split("@")[0] ?? "entity"}
-                  </span>
-                </p>
-              )}
-              <p className="animate-pulse">&gt; _</p>
-            </div>
-          </div>
-        </main>
+        <EntryGrid
+          user={user}
+          filteredEntries={filteredEntries}
+          handleCardSelect={handleCardSelect}
+          onTagSelect={onTagSelect}
+          showAuthModal={showAuthModal}
+          lockedCount={lockedCount}
+          mountTime={mountTime}
+          isSearchActive={searchQuery !== ""}
+          selectedTag={selectedTag}
+          resetFilters={resetFilters}
+          searchInputRef={searchInputRef}
+        />
       </div>
     </div>
   );
