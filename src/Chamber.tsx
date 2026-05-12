@@ -379,6 +379,9 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
           <h2 className="text-white/90 text-2xl font-light tracking-widest uppercase font-display">
             The Chamber
           </h2>
+          <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+            [Esc]
+          </span>
         </button>
 
         <div className="flex items-center gap-8">
@@ -708,6 +711,9 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
               </span>
               <span className="text-white/50 font-light tracking-[0.2em] text-[10px] uppercase group-hover:text-white transition-colors">
                 Cease
+              </span>
+              <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+                [Esc]
               </span>
             </button>
             <div className="mt-6 text-center">
