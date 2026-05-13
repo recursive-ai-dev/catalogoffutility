@@ -176,7 +176,7 @@ function AppInner() {
         <Catalog
           onSelectApp={handleSelectApp}
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           selectedTag={selectedTag}
           onTagSelect={handleTagSelect}
         />
