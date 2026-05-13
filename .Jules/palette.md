@@ -30,3 +30,7 @@
 ## 2025-05-26 - Global Accessibility Orchestration
 **Learning:** Skip links are often implemented locally, leading to broken accessibility when navigating between single-page views. Globalizing the skip link at the root component level while ensuring all primary views share a common target ID (`main-content`) provides a consistent, robust accessibility experience.
 **Action:** Lift the skip link to the application root and enforce a standard ID naming convention for main containers across all view components.
+
+## 2025-05-27 - Dynamic Accessibility Labels for Toggles
+**Learning:** Static ARIA labels on stateful toggles (like password visibility) can be misleading once the state changes. Providing dynamic `aria-label` and `title` attributes that reflect the *next* or *current* action (e.g., 'Show' vs 'Hide') ensures that screen reader and mouse users receive accurate, context-aware feedback.
+**Action:** Use conditional logic to update `aria-label` and `title` on interactive elements whose primary function depends on a binary state.
