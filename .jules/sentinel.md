@@ -20,3 +20,8 @@
 **Vulnerability:** DOM XSS via `innerHTML` in legacy standalone HTML entries (`public/genesis.html`).
 **Learning:** Standalone HTML assets bypass React's built-in XSS protections. User-controlled strings (player name, chat messages) were injected directly into `innerHTML`.
 **Prevention:** Implement an `esc(str)` utility using `textContent` for manual escaping. When whitelisted formatting is required, use strict string replacement on the escaped output (e.g., `.replace(/&lt;em&gt;/g, '<em>')`) to maintain defense-in-depth. Always apply `maxLength` to vanilla HTML inputs to prevent client-side resource exhaustion.
+
+## 2025-05-17 - Client-Side DoS via Unbounded File Imports
+**Vulnerability:** Memory-based Denial of Service (DoS) in standalone HTML applications.
+**Learning:** Applications that use `FileReader` to parse user-provided files (like JSON artifacts) in the browser can be crashed or hung by maliciously large payloads if size validation is omitted.
+**Prevention:** Always implement explicit file size validation (e.g., `if (file.size > 1024 * 1024)`) at the entry point of file-upload handlers to protect the client-side execution environment.
