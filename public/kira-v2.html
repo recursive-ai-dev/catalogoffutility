@@ -500,7 +500,7 @@ html, body {
   <!-- Input -->
   <div id="input-area">
     <div id="input-row">
-      <textarea id="msg-input" rows="1" placeholder="Say something..." autocomplete="off"></textarea>
+      <textarea id="msg-input" rows="1" placeholder="Say something..." autocomplete="off" maxlength="500"></textarea>
       <button id="send-btn">
         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
@@ -533,7 +533,7 @@ html, body {
 
       <div class="setting-group">
         <div class="setting-label">Your Name</div>
-        <input type="text" class="setting-input" id="set-name" placeholder="What should she call you?">
+        <input type="text" class="setting-input" id="set-name" placeholder="What should she call you?" maxlength="50">
       </div>
 
       <div class="setting-group">
@@ -2078,9 +2078,16 @@ function addMsg(role, text, ts, skip) {
 
   const meta = document.createElement('div');
   meta.className='msg-meta';
-  meta.innerHTML = `<span>${hm(now)}</span>`;
+
+  const timeSpan = document.createElement('span');
+  timeSpan.textContent = hm(now);
+  meta.appendChild(timeSpan);
+
   if (role==='her' && S.settings.showMoods && S.mood !== 'neutral') {
-    meta.innerHTML += `<span class="mood-tag">${S.mood}</span>`;
+    const moodSpan = document.createElement('span');
+    moodSpan.className = 'mood-tag';
+    moodSpan.textContent = S.mood;
+    meta.appendChild(moodSpan);
   }
   wrap.appendChild(meta);
 
@@ -2296,11 +2303,22 @@ function openDiary() {
     for (const e of entries) {
       const div = document.createElement('div');
       div.className='diary-entry';
-      div.innerHTML=`
-        <div class="diary-date">${new Date(e.ts).toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</div>
-        <div class="diary-text">${e.text}</div>
-        <div class="diary-mood">mood: ${e.mood||'reflective'}</div>
-      `;
+
+      const dateDiv = document.createElement('div');
+      dateDiv.className = 'diary-date';
+      dateDiv.textContent = new Date(e.ts).toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+
+      const textDiv = document.createElement('div');
+      textDiv.className = 'diary-text';
+      textDiv.textContent = e.text;
+
+      const moodDiv = document.createElement('div');
+      moodDiv.className = 'diary-mood';
+      moodDiv.textContent = `mood: ${e.mood||'reflective'}`;
+
+      div.appendChild(dateDiv);
+      div.appendChild(textDiv);
+      div.appendChild(moodDiv);
       body.appendChild(div);
     }
   }
@@ -2387,7 +2405,9 @@ function renderHistory() {
     }
 
     const meta=document.createElement('div'); meta.className='msg-meta';
-    meta.innerHTML=`<span>${hm(m.ts)}</span>`;
+    const timeSpan = document.createElement('span');
+    timeSpan.textContent = hm(m.ts);
+    meta.appendChild(timeSpan);
     wrap.appendChild(meta);
     chatArea.appendChild(wrap);
   }
