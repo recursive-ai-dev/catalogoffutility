@@ -97,6 +97,9 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
             <span className="text-[10px] font-mono tracking-widest uppercase">
               Archive
             </span>
+            <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+              [Esc]
+            </span>
           </button>
 
           <div className="flex items-center gap-4">
