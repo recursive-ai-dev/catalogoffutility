@@ -829,7 +829,7 @@
         </div>
         <div class="script-editor-wrap">
           <div class="line-numbers" id="lineNumbers">1</div>
-          <textarea class="script-editor" id="scriptEditor" placeholder="# Define a process() function:
+          <textarea class="script-editor" id="scriptEditor" maxlength="10000" placeholder="# Define a process() function:
 #
 # def process(message, history):
 #     return 'Hello!'
@@ -893,7 +893,7 @@
         <div class="quick-actions" id="quickActions"></div>
         <div class="chat-input-area">
           <div class="chat-input-wrap">
-            <textarea class="chat-input" id="chatInput" placeholder="Send a message..." rows="1" disabled></textarea>
+            <textarea class="chat-input" id="chatInput" maxlength="2000" placeholder="Send a message..." rows="1" disabled></textarea>
             <button class="send-btn" id="btnSend" disabled>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
@@ -2292,7 +2292,20 @@ async function handleFile(file) {
   const name = file.name;
   const ext = name.split('.').pop().toLowerCase();
 
-  if (ext === 'zip') { await handleZipFile(file); return; }
+  // Security: Prevent client-side DoS by limiting file sizes.
+  if (ext === 'zip') {
+    if (file.size > 2 * 1024 * 1024) {
+      toast('Import failed: ZIP exceeds 2MB limit.');
+      return;
+    }
+    await handleZipFile(file);
+    return;
+  }
+
+  if (file.size > 1024 * 1024) {
+    toast('Import failed: file exceeds 1MB limit.');
+    return;
+  }
 
   if (['py', 'js', 'mjs'].includes(ext)) {
     if (el.scriptEditor.value.trim()) {
