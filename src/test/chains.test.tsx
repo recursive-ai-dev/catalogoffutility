@@ -242,7 +242,7 @@ describe('Chain 1 — BrowseFilter', () => {
     await userEvent.type(input, 'aria');
     expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
 
-    const clearBtn = screen.getByLabelText('Clear search');
+    const clearBtn = screen.getByLabelText('Clear search (Shortcut: Escape)');
     fireEvent.click(clearBtn);
 
     expect((input as HTMLInputElement).value).toBe('');
@@ -940,6 +940,27 @@ describe('DEFAULT_TAG & resetFilters — Catalog', () => {
     const restoredInput = screen.getByPlaceholderText('Search the void...') as HTMLInputElement;
     expect(restoredInput.value).toBe('world');
     expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
+  });
+
+  it('pressing "/" focuses the search input', () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    expect(document.activeElement).not.toBe(input);
+
+    fireEvent.keyDown(window, { key: '/' });
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('pressing "Escape" resets filters', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'aria');
+    expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect((input as HTMLInputElement).value).toBe('');
+    expect(screen.getByText('WHEN THE SUN DIED')).toBeTruthy();
   });
 });
 
