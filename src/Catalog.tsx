@@ -587,7 +587,7 @@ const SearchHeader = React.memo(function SearchHeader({
             type="button"
             onClick={() => searchInputRef.current?.focus()}
             className="flex items-center justify-center text-white/40 hover:text-white/70 transition-colors cursor-pointer"
-            aria-label="Focus search input"
+            aria-label="Focus search (Shortcut: /)"
           >
             <span className="material-symbols-outlined text-base font-light" aria-hidden="true">
               search
@@ -613,7 +613,7 @@ const SearchHeader = React.memo(function SearchHeader({
                 onSearchChange("");
                 searchInputRef.current?.focus();
               }}
-              aria-label="Clear search"
+              aria-label="Clear search (Shortcut: Escape)"
               className="flex items-center justify-center text-white/20 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-full"
             >
               <X className="size-4" />

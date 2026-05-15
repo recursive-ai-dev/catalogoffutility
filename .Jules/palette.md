@@ -34,3 +34,7 @@
 ## 2025-05-27 - Dynamic Accessibility Labels for Toggles
 **Learning:** Static ARIA labels on stateful toggles (like password visibility) can be misleading once the state changes. Providing dynamic `aria-label` and `title` attributes that reflect the *next* or *current* action (e.g., 'Show' vs 'Hide') ensures that screen reader and mouse users receive accurate, context-aware feedback.
 **Action:** Use conditional logic to update `aria-label` and `title` on interactive elements whose primary function depends on a binary state.
+
+## 2025-05-28 - Explicit Shortcut Advertisement in ARIA Labels
+**Learning:** Keyboard shortcuts implemented via global listeners (like '/' or 'Escape') are invisible to screen reader users unless explicitly advertised. Appending '(Shortcut: Key)' to the `aria-label` of the corresponding interactive element (or its trigger) ensures these power-user features are accessible to all.
+**Action:** When implementing global keyboard shortcuts, always update the associated button's `aria-label` to include the shortcut hint, following the existing `(Shortcut: Name)` convention.
