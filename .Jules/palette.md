@@ -14,6 +14,7 @@
 
 **Learning:** Lifting filtering state to a common ancestor (AppInner) allows filters to persist during navigation between views. Interactive tags on product pages provide a secondary, intuitive navigation path back to a pre-filtered catalog.
 **Action:** State-lift search/filter criteria when deep links or "back" actions should preserve user context.
+
 ## 2025-05-15 - Context Persistence via State Lifting
 
 **Learning:** Navigating between list and detail views often breaks user context if filtering state is local. Lifting search and tag state to a common ancestor (App) ensures a seamless "back" experience where the user's previous search remains intact.
@@ -23,6 +24,7 @@
 
 **Learning:** In brutalist UIs with high-contrast, mono-spaced typography, standard password dots can be visually jarring or difficult to count. Providing a visibility toggle improves accessibility for users with complex passphrases without compromising the aesthetic. Adjusting `letter-spacing` (e.g., `tracking-widest` for dots vs `tracking-wide` for text) maintains visual balance during the transition.
 **Action:** Always include a password visibility toggle in authentication forms, especially when using idiosyncratic fonts or letter-spacing.
+
 ## 2025-05-15 - Adaptive Tracking for Password Toggles
 **Learning:** In brutalist UIs using monospaced fonts, password fields often use heavy letter-spacing (`tracking-widest`) to make the masking characters (dots) look intentional and distinct. However, this same spacing can make plain text unreadable when the password is toggled to visible.
 **Action:** Use conditional Tailwind classes to switch between `tracking-widest` (hidden) and `tracking-wide` (visible) to preserve readability while maintaining the aesthetic.
@@ -34,3 +36,7 @@
 ## 2025-05-27 - Dynamic Accessibility Labels for Toggles
 **Learning:** Static ARIA labels on stateful toggles (like password visibility) can be misleading once the state changes. Providing dynamic `aria-label` and `title` attributes that reflect the *next* or *current* action (e.g., 'Show' vs 'Hide') ensures that screen reader and mouse users receive accurate, context-aware feedback.
 **Action:** Use conditional logic to update `aria-label` and `title` on interactive elements whose primary function depends on a binary state.
+
+## 2025-05-28 - Shortcut Discoverability and Consistency
+**Learning:** Advertising keyboard shortcuts in the UI (e.g., `[Esc]`, `[R]`) creates an expectation of functionality. If a shortcut is labeled but not implemented in the underlying event listener, it creates a "broken" feel. Consistency between UI hints and event listener logic is critical for "invisible" UX.
+**Action:** Always verify that every visible shortcut hint has a corresponding functional implementation in the relevant keyboard listener, especially when refactoring or adding features.
