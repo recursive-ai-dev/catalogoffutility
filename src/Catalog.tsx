@@ -428,13 +428,13 @@ const Card = React.memo(function Card({
 });
 
 const Sidebar = React.memo(function Sidebar({
-  onSelectApp,
+  onWasteTime,
   resetFilters,
   showNotification,
   lockedCount,
   corruption,
 }: {
-  onSelectApp: (app: AppEntry) => void;
+  onWasteTime: () => void;
   resetFilters: () => void;
   showNotification: (msg: string) => void;
   lockedCount: number;
@@ -455,36 +455,37 @@ const Sidebar = React.memo(function Sidebar({
       <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-          onClick={() => {
-            const navigable = CATALOG_ENTRIES.filter((e) => !e.missing && (!e.requiresAuth || user));
-            if (navigable.length > 0) {
-              const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
-              onSelectApp(randomApp);
-            } else {
-              showNotification("No path found in the void.");
-            }
-          }}
+          onClick={onWasteTime}
+          aria-label="Waste Time (Shortcut: R)"
         >
           <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
             schedule
           </span>
-          <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
-            Waste Time
-          </span>
+          <div className="flex flex-col">
+            <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
+              Waste Time
+            </span>
+            <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+              [R]
+            </span>
+          </div>
         </button>
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-          onClick={() => {
-            resetFilters();
-            showNotification("Memories purged.");
-          }}
+          onClick={resetFilters}
+          aria-label="Forget (Shortcut: Escape)"
         >
           <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
             delete
           </span>
-          <span className="text-white font-light uppercase tracking-widest text-xs">
-            Forget
-          </span>
+          <div className="flex flex-col">
+            <span className="text-white font-light uppercase tracking-widest text-xs">
+              Forget
+            </span>
+            <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+              [Esc]
+            </span>
+          </div>
         </button>
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
@@ -808,13 +809,36 @@ export const Catalog = React.memo(function Catalog({
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
 
+  const showNotification = useCallback((msg: string) => {
+    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+    setNotification(msg);
+    notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
+  }, []);
+
+  /**
+   * Logic Chain 11b: Waste Time (Random Navigation)
+   * Selects a random non-missing and (if logged out) non-auth-required entry.
+   */
+  const handleWasteTime = useCallback(() => {
+    const navigable = CATALOG_ENTRIES.filter(
+      (e) => !e.missing && (!e.requiresAuth || !!user),
+    );
+    if (navigable.length > 0) {
+      const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
+      onSelectApp(randomApp);
+    } else {
+      showNotification("No path found in the void.");
+    }
+  }, [user, onSelectApp, showNotification]);
+
   /** Centralised filter reset — single source of truth for clearing search and tag. */
   const resetFilters = useCallback(() => {
     onSearchChange("");
     onTagSelect(DEFAULT_TAG);
     // Maintain interaction momentum by restoring focus to the search input.
     searchInputRef.current?.focus();
-  }, [onSearchChange, onTagSelect]);
+    showNotification("Memories purged.");
+  }, [onSearchChange, onTagSelect, showNotification]);
 
   // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
@@ -840,6 +864,19 @@ export const Catalog = React.memo(function Catalog({
       }
 
       if (
+        (e.key === "r" || e.key === "R") &&
+        !isInputFocused &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !e.shiftKey
+      ) {
+        e.preventDefault();
+        handleWasteTime();
+        return;
+      }
+
+      if (
         e.key === "/" &&
         !isInputFocused &&
         !e.ctrlKey &&
@@ -854,13 +891,7 @@ export const Catalog = React.memo(function Catalog({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [resetFilters]);
-
-  const showNotification = useCallback((msg: string) => {
-    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
-    setNotification(msg);
-    notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
-  }, []);
+  }, [resetFilters, handleWasteTime]);
 
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
@@ -929,7 +960,7 @@ export const Catalog = React.memo(function Catalog({
       </div>
 
       <Sidebar
-        onSelectApp={onSelectApp}
+        onWasteTime={handleWasteTime}
         resetFilters={resetFilters}
         showNotification={showNotification}
         lockedCount={lockedCount}
