@@ -320,6 +320,13 @@ describe('Chain 14 — NavButtonActions', () => {
     expect(screen.queryByText('Giving up is not an option.')).toBeNull();
     vi.useRealTimers();
   });
+
+  it('"R" key triggers Waste Time random navigation', () => {
+    render(<App />);
+    fireEvent.keyDown(window, { key: 'r' });
+    // It should navigate to a product page, which has "Enter Chamber" button
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
+  });
 });
 
 // ---------------------------------------------------------------------------
