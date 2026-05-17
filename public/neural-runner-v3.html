@@ -838,7 +838,7 @@
 #   runtime.send(text)  — send chat message
 #   runtime.log(text)   — write to debug log
 #   runtime.history     — conversation history
-" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" maxlength="50000"></textarea>
         </div>
         <div class="code-toolbar" id="codeToolbar"></div>
         <div class="script-footer">
@@ -893,7 +893,7 @@
         <div class="quick-actions" id="quickActions"></div>
         <div class="chat-input-area">
           <div class="chat-input-wrap">
-            <textarea class="chat-input" id="chatInput" placeholder="Send a message..." rows="1" disabled></textarea>
+            <textarea class="chat-input" id="chatInput" placeholder="Send a message..." rows="1" disabled maxlength="1000"></textarea>
             <button class="send-btn" id="btnSend" disabled>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
