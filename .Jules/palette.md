@@ -34,3 +34,7 @@
 ## 2025-05-27 - Dynamic Accessibility Labels for Toggles
 **Learning:** Static ARIA labels on stateful toggles (like password visibility) can be misleading once the state changes. Providing dynamic `aria-label` and `title` attributes that reflect the *next* or *current* action (e.g., 'Show' vs 'Hide') ensures that screen reader and mouse users receive accurate, context-aware feedback.
 **Action:** Use conditional logic to update `aria-label` and `title` on interactive elements whose primary function depends on a binary state.
+
+## 2026-05-18 - Shortcut Discoverability & Visual Cues
+**Learning:** Keyboard shortcuts greatly improve efficiency for power users, but remain "invisible" features unless explicitly hinted at in the UI. Pairing ARIA labels with visual monospace hints (e.g., `[R]`) creates an inclusive experience that teaches users the shortcut during regular interaction.
+**Action:** When adding keyboard shortcuts to interactive elements, update the `aria-label` to include the key and add a decorative, screen-reader-hidden visual indicator using monospace styling.
