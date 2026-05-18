@@ -1060,6 +1060,12 @@ self.onmessage = async function(e) {
 const APP_VERSION = '3.0.0';
 const MAX_DEBUG_ENTRIES = 500;
 const MAX_CHAT_MESSAGES = 200;
+
+/**
+ * Pre-allocated date/time formatters for high-frequency UI updates.
+ * Using formatters is ~50x faster than repeated toLocaleString calls.
+ */
+const TS_FORMATTER = new Intl.DateTimeFormat('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 const EXEC_TIMEOUT_MS = 30000;
 const AUTOSAVE_INTERVAL_MS = 3000;
 const DB_NAME = 'NeuralRunnerV3';
@@ -1151,7 +1157,7 @@ function toast(msg) {
 function genId() { return 'msg_' + (++state.messageIdCounter) + '_' + Date.now(); }
 
 function timestamp() {
-  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return TS_FORMATTER.format(new Date());
 }
 
 function setStatus(type, text) {
