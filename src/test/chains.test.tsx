@@ -278,6 +278,14 @@ describe('Chain 14 — NavButtonActions', () => {
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
   });
 
+  it('R key triggers "Waste Time" random navigation', () => {
+    render(<App />);
+    // Press 'R' key
+    fireEvent.keyDown(window, { key: 'r' });
+    // It should navigate to a product page, which has "Enter Chamber" button
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
+  });
+
   it('"Forget" resets filters and shows notification', async () => {
     render(<App />);
     const input = screen.getByPlaceholderText('Search the void...');
