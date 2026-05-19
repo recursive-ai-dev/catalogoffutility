@@ -610,15 +610,37 @@ function tod() {
   if (h >= 20 && h < 23) return 'night';
   return 'late_night';
 }
-function hm(d) { return new Date(d||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+function hm(d) { return HM_FORMATTER.format(new Date(d || Date.now())); }
 function dateLabel(ts) {
   const d=new Date(ts), n=new Date(), diff=Math.floor((n-d)/864e5);
   if(diff===0) return 'Today';
   if(diff===1) return 'Yesterday';
-  return d.toLocaleDateString([],{weekday:'long',month:'short',day:'numeric'});
+  return DATE_LABEL_FORMATTER.format(d);
 }
 function minSince(ts) { return ts ? Math.floor((Date.now()-ts)/6e4) : 99999; }
 function daysBetween(a,b) { return Math.floor(Math.abs((b||Date.now())-a)/864e5); }
+
+/**
+ * Pre-allocated formatters for consistent date/time formatting.
+ * Reusing these instances avoids repeated locale resolution and option parsing.
+ */
+const HM_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  hour: '2-digit',
+  minute: '2-digit'
+});
+
+const DATE_LABEL_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  weekday: 'long',
+  month: 'short',
+  day: 'numeric'
+});
+
+const DIARY_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric'
+});
 
 // ── DOM ──
 const $ = id => document.getElementById(id);
@@ -2306,7 +2328,7 @@ function openDiary() {
 
       const dateDiv = document.createElement('div');
       dateDiv.className = 'diary-date';
-      dateDiv.textContent = new Date(e.ts).toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+      dateDiv.textContent = DIARY_DATE_FORMATTER.format(new Date(e.ts));
 
       const textDiv = document.createElement('div');
       textDiv.className = 'diary-text';

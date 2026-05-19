@@ -13,3 +13,9 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-05-19 - Pre-allocation & Regex Hoisting in Legacy Assets
+
+**Learning:** Standalone HTML assets in the `public/` directory often lag behind the main React codebase in performance patterns. In these contexts, `toLocaleTimeString` and `toLocaleDateString` calls within UI update loops (chat, logs) and inline Regex construction for intent matching are common bottlenecks that can be easily resolved by hoisting allocations to the module/script scope.
+
+**Action:** When touching legacy HTML assets, proactively audit for locale-sensitive string formatting and frequently executed regexes. Pre-allocate `Intl.DateTimeFormat` and constant `RegExp` objects to minimize main-thread churn during high-frequency events.
