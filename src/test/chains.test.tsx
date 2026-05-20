@@ -249,6 +249,26 @@ describe('Chain 1 — BrowseFilter', () => {
     expect(screen.getByText('WHEN THE SUN DIED')).toBeTruthy();
   });
 
+  it('R key shortcut triggers Waste Time navigation', () => {
+    render(<App />);
+    fireEvent.keyDown(window, { key: 'r' });
+    // It should navigate to a product page, which has "Enter Chamber" button
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
+  });
+
+  it('Escape key in catalog resets filters and shows notification', async () => {
+    render(<App />);
+    const input = screen.getByPlaceholderText('Search the void...');
+    await userEvent.type(input, 'aria');
+    expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.getByText('Memories purged.')).toBeTruthy();
+    expect((input as HTMLInputElement).value).toBe('');
+    expect(screen.getByText('WHEN THE SUN DIED')).toBeTruthy();
+  });
+
   it('"Clear all filters" button in empty state resets both search and tag', async () => {
     render(<App />);
     const input = screen.getByPlaceholderText('Search the void...');
