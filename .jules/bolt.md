@@ -13,3 +13,9 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-04-15 - Lifting Auth Primitives to Shield Memoized Tree
+
+**Learning:** When deep component trees (like `Catalog` and `Sidebar`) use `React.memo` and depend on authentication state, calling `useAuth()` internally can cause full re-renders whenever *any* part of the auth context changes (e.g., background profile updates). Lifting only the necessary primitives (like `isLoggedIn` and `userDisplayName`) to a parent and passing them as props allows memoized children to skip re-renders when the identity remains stable. Additionally, moving interaction-triggered $O(N)$ operations (like random navigation filtering) to module-scope constants turns them into $O(1)$ selections.
+
+**Action:** Prefer passing stable primitives or memoized derived values as props to large memoized component trees rather than having children consume potentially "noisy" contexts directly. Use module-scope pre-computations for any interaction logic that depends on static data.
