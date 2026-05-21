@@ -47,6 +47,9 @@ interface AuthModalContextValue {
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);
 
+/** Regex used to strip the domain from an email address to derive a fallback username. */
+export const EMAIL_CLEAN_REGEX = /@.*/;
+
 // ---------------------------------------------------------------------------
 // AuthModalProvider — standalone provider for modal state.
 // Can be placed inside AuthProvider so consumers of either context stay minimal.
@@ -105,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .from("profiles")
       .insert({
         id: userId,
-        username: email.split("@")[0].slice(0, 32),
+        username: email.replace(EMAIL_CLEAN_REGEX, "").slice(0, 32),
         last_seen_at: now,
       })
       .select()
