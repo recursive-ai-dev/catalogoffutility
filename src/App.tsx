@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
@@ -32,8 +32,17 @@ function AppInner() {
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+
+  // Performance: Lifting and memoizing specific auth fields prevents the entire
+  // Catalog tree from re-rendering on non-UI-impacting auth context updates
+  // (e.g. background session refreshes or metadata changes).
   const isLoggedIn = !!user;
+  const userDisplayName = useMemo(
+    () => profile?.username ?? user?.email?.split("@")[0] ?? null,
+    [profile?.username, user?.email],
+  );
+
   const { authModalVisible, showAuthModal } = useAuthModal();
 
   // Track transient state in refs to enable referential stability for callbacks.
@@ -179,6 +188,8 @@ function AppInner() {
           onSearchChange={handleSearchChange}
           selectedTag={selectedTag}
           onTagSelect={handleTagSelect}
+          isLoggedIn={isLoggedIn}
+          userDisplayName={userDisplayName}
         />
       )}
       {authModalVisible && <AuthModal />}
