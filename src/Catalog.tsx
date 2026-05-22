@@ -10,6 +10,8 @@ interface CatalogProps {
   onSearchChange: (query: string) => void;
   selectedTag: string;
   onTagSelect: (tag: string) => void;
+  isLoggedIn: boolean;
+  userDisplayName: string | null;
   /**
    * Determinism provider. Pass `makeFakeClock(fixed)` in tests to freeze
    * the mount-time log entry at a known instant.
@@ -52,6 +54,16 @@ const MAP_BY_TAG = SEARCHABLE_ENTRIES.reduce((acc, entry) => {
   }
   return acc;
 }, {} as Record<string, typeof SEARCHABLE_ENTRIES>);
+
+/**
+ * Pre-calculated lists of navigable entries for different auth states.
+ * This enables O(1) random selection for the "Waste Time" interaction,
+ * avoiding O(N) filtering on every click.
+ */
+const NAVIGABLE_ANON = SEARCHABLE_ENTRIES.filter(
+  (e) => !e.missing && !e.requiresAuth,
+);
+const NAVIGABLE_AUTH = SEARCHABLE_ENTRIES.filter((e) => !e.missing);
 
 const FILTER_TAGS = [
   DEFAULT_TAG,
@@ -98,8 +110,14 @@ function initials(name: string): string {
   return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
 
-const UserSection = React.memo(function UserSection() {
-  const { user, profile, loading, signOut } = useAuth();
+const UserSection = React.memo(function UserSection({
+  isLoggedIn,
+  userDisplayName,
+}: {
+  isLoggedIn: boolean;
+  userDisplayName: string | null;
+}) {
+  const { profile, loading, signOut } = useAuth();
   const { showAuthModal } = useAuthModal();
   const [signingOut, setSigningOut] = useState(false);
 
@@ -120,7 +138,7 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  if (!user) {
+  if (!isLoggedIn) {
     return (
       <div className="px-4 py-4 border-t border-white/5">
         <p className="text-[9px] font-mono text-white/20 tracking-widest uppercase mb-3">
@@ -154,11 +172,6 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  const displayName = useMemo(
-    () => profile?.username ?? user.email?.split("@")[0] ?? "entity",
-    [profile?.username, user.email],
-  );
-
   const joined = useMemo(() => {
     if (!profile?.created_at) return null;
     const date = new Date(profile.created_at);
@@ -167,7 +180,10 @@ const UserSection = React.memo(function UserSection() {
       : PROFILE_DATE_FORMATTER.format(date);
   }, [profile?.created_at]);
 
-  const userInitials = useMemo(() => initials(displayName), [displayName]);
+  const userInitials = useMemo(
+    () => initials(userDisplayName ?? "entity"),
+    [userDisplayName],
+  );
 
   return (
     <div className="px-4 py-4 border-t border-white/5">
@@ -183,7 +199,7 @@ const UserSection = React.memo(function UserSection() {
         </div>
         <div className="min-w-0">
           <p className="text-white/70 font-mono text-[10px] tracking-widest uppercase truncate">
-            {displayName}
+            {userDisplayName}
           </p>
           {joined && (
             <p className="text-white/20 font-mono text-[8px] tracking-widest">
@@ -429,18 +445,23 @@ const Card = React.memo(function Card({
 
 const Sidebar = React.memo(function Sidebar({
   onSelectApp,
+  handleWasteTime,
   resetFilters,
   showNotification,
   lockedCount,
   corruption,
+  isLoggedIn,
+  userDisplayName,
 }: {
   onSelectApp: (app: AppEntry) => void;
+  handleWasteTime: () => void;
   resetFilters: () => void;
   showNotification: (msg: string) => void;
   lockedCount: number;
   corruption: number;
+  isLoggedIn: boolean;
+  userDisplayName: string | null;
 }) {
-  const { user } = useAuth();
   return (
     <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
       <div className="p-8 border-b border-white/10 flex flex-col gap-2">
@@ -455,22 +476,20 @@ const Sidebar = React.memo(function Sidebar({
       <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-          onClick={() => {
-            const navigable = CATALOG_ENTRIES.filter((e) => !e.missing && (!e.requiresAuth || user));
-            if (navigable.length > 0) {
-              const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
-              onSelectApp(randomApp);
-            } else {
-              showNotification("No path found in the void.");
-            }
-          }}
+          onClick={handleWasteTime}
+          aria-label="Waste Time (Shortcut: R)"
         >
           <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
             schedule
           </span>
-          <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
-            Waste Time
-          </span>
+          <div className="flex items-center justify-between flex-1">
+            <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
+              Waste Time
+            </span>
+            <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+              [R]
+            </span>
+          </div>
         </button>
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
@@ -523,7 +542,7 @@ const Sidebar = React.memo(function Sidebar({
       </nav>
 
       {/* User identity section */}
-      <UserSection />
+      <UserSection isLoggedIn={isLoggedIn} userDisplayName={userDisplayName} />
 
       <div className="p-6 border-t border-white/10 bg-black/40">
         <div className="flex flex-col gap-3">
@@ -546,7 +565,7 @@ const Sidebar = React.memo(function Sidebar({
             <span>ENTRIES:</span>
             <span className="text-white/40">{CATALOG_ENTRIES.length}</span>
           </div>
-          {!user && (
+          {!isLoggedIn && (
             <div className="flex justify-between items-center text-[10px] text-white/15 font-mono tracking-widest">
               <span>LOCKED:</span>
               <span className="text-white/25">{lockedCount}</span>
@@ -779,6 +798,8 @@ export const Catalog = React.memo(function Catalog({
   onSearchChange,
   selectedTag,
   onTagSelect,
+  isLoggedIn,
+  userDisplayName,
   clock,
 }: CatalogProps) {
   // Double-memoization: normalize the raw query before deferring it.
@@ -805,8 +826,27 @@ export const Catalog = React.memo(function Catalog({
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
+
+  const showNotification = useCallback((msg: string) => {
+    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+    setNotification(msg);
+    notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
+  }, []);
+
+  /**
+   * O(1) random navigation using pre-calculated lists.
+   * Stability is key: this callback is passed to the memoized Sidebar.
+   */
+  const handleWasteTime = useCallback(() => {
+    const list = isLoggedIn ? NAVIGABLE_AUTH : NAVIGABLE_ANON;
+    if (list.length > 0) {
+      const randomApp = list[Math.floor(Math.random() * list.length)];
+      onSelectApp(randomApp);
+    } else {
+      showNotification("No path found in the void.");
+    }
+  }, [isLoggedIn, onSelectApp, showNotification]);
 
   /** Centralised filter reset — single source of truth for clearing search and tag. */
   const resetFilters = useCallback(() => {
@@ -816,7 +856,7 @@ export const Catalog = React.memo(function Catalog({
     searchInputRef.current?.focus();
   }, [onSearchChange, onTagSelect]);
 
-  // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
+  // "/", "Escape", and "R" shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -840,6 +880,19 @@ export const Catalog = React.memo(function Catalog({
       }
 
       if (
+        !isInputFocused &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !e.shiftKey
+      ) {
+        if (e.key.toLowerCase() === "r") {
+          handleWasteTime();
+          return;
+        }
+      }
+
+      if (
         e.key === "/" &&
         !isInputFocused &&
         !e.ctrlKey &&
@@ -854,13 +907,8 @@ export const Catalog = React.memo(function Catalog({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [resetFilters]);
+  }, [resetFilters, handleWasteTime]);
 
-  const showNotification = useCallback((msg: string) => {
-    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
-    setNotification(msg);
-    notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
-  }, []);
 
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
@@ -886,7 +934,6 @@ export const Catalog = React.memo(function Catalog({
     return searchSpace.filter((entry) => entry.searchBlob.includes(deferredQuery));
   }, [deferredQuery, selectedTag]);
 
-  const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
       if (entry.missing) return;
@@ -906,10 +953,6 @@ export const Catalog = React.memo(function Catalog({
   const corruption = 85;
 
   const isFilterActive = searchQuery !== "" || selectedTag !== DEFAULT_TAG;
-  const userDisplayName = useMemo(
-    () => user?.email?.split("@")[0] ?? null,
-    [user],
-  );
 
   return (
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
@@ -930,10 +973,13 @@ export const Catalog = React.memo(function Catalog({
 
       <Sidebar
         onSelectApp={onSelectApp}
+        handleWasteTime={handleWasteTime}
         resetFilters={resetFilters}
         showNotification={showNotification}
         lockedCount={lockedCount}
         corruption={corruption}
+        isLoggedIn={isLoggedIn}
+        userDisplayName={userDisplayName}
       />
 
       {/* Main Content Area */}
