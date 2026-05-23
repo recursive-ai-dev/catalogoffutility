@@ -829,7 +829,7 @@
         </div>
         <div class="script-editor-wrap">
           <div class="line-numbers" id="lineNumbers">1</div>
-          <textarea class="script-editor" id="scriptEditor" placeholder="# Define a process() function:
+          <textarea class="script-editor" id="scriptEditor" maxlength="50000" placeholder="# Define a process() function:
 #
 # def process(message, history):
 #     return 'Hello!'
@@ -893,7 +893,7 @@
         <div class="quick-actions" id="quickActions"></div>
         <div class="chat-input-area">
           <div class="chat-input-wrap">
-            <textarea class="chat-input" id="chatInput" placeholder="Send a message..." rows="1" disabled></textarea>
+            <textarea class="chat-input" id="chatInput" maxlength="1000" placeholder="Send a message..." rows="1" disabled></textarea>
             <button class="send-btn" id="btnSend" disabled>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
@@ -2291,6 +2291,16 @@ el.fileInput.addEventListener('change', async (e) => {
 async function handleFile(file) {
   const name = file.name;
   const ext = name.split('.').pop().toLowerCase();
+
+  // Security: Enforce explicit file size limits to prevent client-side DoS
+  // via memory exhaustion. Limits: 1MB for scripts/JSON, 2MB for ZIPs.
+  const limit = ext === 'zip' ? 2 * 1024 * 1024 : 1024 * 1024;
+  if (file.size > limit) {
+    const limitMb = limit / (1024 * 1024);
+    addDebugEntry('error', `Import failed: ${name} exceeds ${limitMb}MB limit.`);
+    toast(`File too large (max ${limitMb}MB)`);
+    return;
+  }
 
   if (ext === 'zip') { await handleZipFile(file); return; }
 
