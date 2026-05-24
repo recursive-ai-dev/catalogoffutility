@@ -13,3 +13,9 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-05-20 - Lifting Auth State & Pre-calculating Navigable Pools
+
+**Learning:** Lifting binary auth state (`isLoggedIn`) and stable display data (`userDisplayName`) to `App.tsx` and passing them as props to `Catalog.tsx` prevents the entire catalog tree from re-rendering when non-UI-impacting profile fields (like `last_seen_at`) update in the background. Additionally, pre-calculating navigable entry pools at module scope transforms "Waste Time" navigation from an O(N) filter operation to an O(1) random selection.
+
+**Action:** Prefer passing primitive or memoized auth props to large components instead of calling `useAuth()` internally. Identify static filtering logic that can be hoisted to module scope to eliminate redundant work during the main render loop.

@@ -9,6 +9,9 @@ import React, {
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase, supabaseAvailable, Profile } from "./supabase";
 
+/** Regex to strip the domain from an email address for username derivation. */
+export const EMAIL_CLEAN_REGEX = /@.*/;
+
 // ---------------------------------------------------------------------------
 // Auth Context — user/session/profile state only.
 // Modal visibility lives in a separate AuthModalContext so that toggling the
@@ -101,11 +104,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Row does not exist yet — insert with email-derived initial username.
+    // Optimization: Use regex replace instead of split to avoid array allocation.
     const { data: inserted, error } = await supabase
       .from("profiles")
       .insert({
         id: userId,
-        username: email.split("@")[0].slice(0, 32),
+        username: email.replace(EMAIL_CLEAN_REGEX, "").slice(0, 32),
         last_seen_at: now,
       })
       .select()

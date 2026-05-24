@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect, useDeferredValue } from "react";
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
-import { useAuth, useAuthModal } from "./lib/auth";
+import { useAuth, useAuthModal, EMAIL_CLEAN_REGEX } from "./lib/auth";
 import { Clock, realClock } from "./lib/clock";
 
 interface CatalogProps {
@@ -10,6 +10,8 @@ interface CatalogProps {
   onSearchChange: (query: string) => void;
   selectedTag: string;
   onTagSelect: (tag: string) => void;
+  isLoggedIn: boolean;
+  userDisplayName: string | null;
   /**
    * Determinism provider. Pass `makeFakeClock(fixed)` in tests to freeze
    * the mount-time log entry at a known instant.
@@ -75,7 +77,11 @@ const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
   month: "short",
 });
 
-const EMAIL_CLEAN_REGEX = /@.*/;
+// Pre-calculate navigable entry pools for O(1) random selection.
+// This avoids O(N) filtering of the entire catalog on every "Waste Time" click.
+const NAVIGABLE_ANON = CATALOG_ENTRIES.filter((e) => !e.missing && !e.requiresAuth);
+const NAVIGABLE_AUTH = CATALOG_ENTRIES.filter((e) => !e.missing);
+
 const INITIALS_REGEX = /(?:^|[._\-\s])([\p{L}\p{N}_])/gu;
 const INITIAL_CLEAN_REGEX = /^[._\-\s]+/;
 const FALLBACK_CLEAN_REGEX = /[^a-zA-Z0-9]/g;
@@ -428,19 +434,20 @@ const Card = React.memo(function Card({
 });
 
 const Sidebar = React.memo(function Sidebar({
-  onSelectApp,
   resetFilters,
   showNotification,
   lockedCount,
   corruption,
+  isLoggedIn,
+  handleWasteTime,
 }: {
-  onSelectApp: (app: AppEntry) => void;
   resetFilters: () => void;
   showNotification: (msg: string) => void;
   lockedCount: number;
   corruption: number;
+  isLoggedIn: boolean;
+  handleWasteTime: () => void;
 }) {
-  const { user } = useAuth();
   return (
     <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
       <div className="p-8 border-b border-white/10 flex flex-col gap-2">
@@ -455,21 +462,16 @@ const Sidebar = React.memo(function Sidebar({
       <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-          onClick={() => {
-            const navigable = CATALOG_ENTRIES.filter((e) => !e.missing && (!e.requiresAuth || user));
-            if (navigable.length > 0) {
-              const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
-              onSelectApp(randomApp);
-            } else {
-              showNotification("No path found in the void.");
-            }
-          }}
+          onClick={handleWasteTime}
         >
           <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
             schedule
           </span>
           <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
             Waste Time
+          </span>
+          <span className="text-[10px] text-white/20 font-mono ml-auto select-none pointer-events-none" aria-hidden="true">
+            [R]
           </span>
         </button>
         <button
@@ -546,7 +548,7 @@ const Sidebar = React.memo(function Sidebar({
             <span>ENTRIES:</span>
             <span className="text-white/40">{CATALOG_ENTRIES.length}</span>
           </div>
-          {!user && (
+          {!isLoggedIn && (
             <div className="flex justify-between items-center text-[10px] text-white/15 font-mono tracking-widest">
               <span>LOCKED:</span>
               <span className="text-white/25">{lockedCount}</span>
@@ -779,6 +781,8 @@ export const Catalog = React.memo(function Catalog({
   onSearchChange,
   selectedTag,
   onTagSelect,
+  isLoggedIn,
+  userDisplayName,
   clock,
 }: CatalogProps) {
   // Double-memoization: normalize the raw query before deferring it.
@@ -805,7 +809,6 @@ export const Catalog = React.memo(function Catalog({
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
 
   /** Centralised filter reset — single source of truth for clearing search and tag. */
@@ -815,6 +818,26 @@ export const Catalog = React.memo(function Catalog({
     // Maintain interaction momentum by restoring focus to the search input.
     searchInputRef.current?.focus();
   }, [onSearchChange, onTagSelect]);
+
+  const showNotification = useCallback((msg: string) => {
+    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+    setNotification(msg);
+    notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
+  }, []);
+
+  /**
+   * Randomly selects a navigable entry from the pre-calculated pools based on
+   * current auth status. O(1) selection cost after O(N) module-load filter.
+   */
+  const handleWasteTime = useCallback(() => {
+    const pool = isLoggedIn ? NAVIGABLE_AUTH : NAVIGABLE_ANON;
+    if (pool.length > 0) {
+      const randomApp = pool[Math.floor(Math.random() * pool.length)];
+      onSelectApp(randomApp);
+    } else {
+      showNotification("No path found in the void.");
+    }
+  }, [isLoggedIn, onSelectApp, showNotification]);
 
   // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
@@ -839,6 +862,12 @@ export const Catalog = React.memo(function Catalog({
         return;
       }
 
+      if (e.key.toLowerCase() === "r" && !isInputFocused && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        handleWasteTime();
+        return;
+      }
+
       if (
         e.key === "/" &&
         !isInputFocused &&
@@ -854,13 +883,7 @@ export const Catalog = React.memo(function Catalog({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [resetFilters]);
-
-  const showNotification = useCallback((msg: string) => {
-    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
-    setNotification(msg);
-    notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
-  }, []);
+  }, [resetFilters, handleWasteTime]);
 
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
@@ -886,7 +909,6 @@ export const Catalog = React.memo(function Catalog({
     return searchSpace.filter((entry) => entry.searchBlob.includes(deferredQuery));
   }, [deferredQuery, selectedTag]);
 
-  const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
       if (entry.missing) return;
@@ -906,10 +928,6 @@ export const Catalog = React.memo(function Catalog({
   const corruption = 85;
 
   const isFilterActive = searchQuery !== "" || selectedTag !== DEFAULT_TAG;
-  const userDisplayName = useMemo(
-    () => user?.email?.split("@")[0] ?? null,
-    [user],
-  );
 
   return (
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
@@ -929,11 +947,12 @@ export const Catalog = React.memo(function Catalog({
       </div>
 
       <Sidebar
-        onSelectApp={onSelectApp}
         resetFilters={resetFilters}
         showNotification={showNotification}
         lockedCount={lockedCount}
         corruption={corruption}
+        isLoggedIn={isLoggedIn}
+        handleWasteTime={handleWasteTime}
       />
 
       {/* Main Content Area */}
