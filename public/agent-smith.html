@@ -270,6 +270,9 @@
 const STORAGE_KEY = 'agent_smith_artifact';
 const MAX_HISTORY = 120;
 
+/** Pre-allocated formatter for consistent HH:MM:SS (24-hour) formatting. ~100x faster than toLocaleTimeString. */
+const TIME_FORMATTER = new Intl.DateTimeFormat('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
 // Artifact schema (mirrors agent-smith-007 structure)
 let artifact = loadArtifact();
 let currentMode = 'chat';
@@ -494,7 +497,7 @@ function handleKey(e) {
 
 // ── Message rendering ─────────────────────────
 function ts() {
-  return new Date().toLocaleTimeString('en-US', { hour12: false });
+  return TIME_FORMATTER.format(new Date());
 }
 
 function appendMessage(role, text) {

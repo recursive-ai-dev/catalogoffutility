@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
-import { AuthProvider, useAuth, useAuthModal } from "./lib/auth";
+import { AuthProvider, useAuth, useAuthModal, EMAIL_CLEAN_REGEX, initials } from "./lib/auth";
 import { AuthModal } from "./AuthModal";
 import { PrivacyBanner } from "./PrivacyBanner";
 
@@ -32,9 +32,30 @@ function AppInner() {
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
-  const { user } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
+
+  // Memoize auth primitives to prevent unnecessary Catalog re-renders.
+  const userDisplayName = useMemo(
+    () => profile?.username ?? user?.email?.replace(EMAIL_CLEAN_REGEX, "") ?? null,
+    [profile?.username, user?.email],
+  );
+
+  const userInitials = useMemo(
+    () => (userDisplayName ? initials(userDisplayName) : null),
+    [userDisplayName],
+  );
+
+  const joinedDate = useMemo(() => {
+    if (!profile?.created_at) return null;
+    const date = new Date(profile.created_at);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  }, [profile?.created_at]);
+
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+  }, [signOut]);
 
   // Track transient state in refs to enable referential stability for callbacks.
   // This prevents the Catalog from re-rendering when the view or selected app changes.
@@ -179,6 +200,13 @@ function AppInner() {
           onSearchChange={handleSearchChange}
           selectedTag={selectedTag}
           onTagSelect={handleTagSelect}
+          isLoggedIn={isLoggedIn}
+          userDisplayName={userDisplayName}
+          userInitials={userInitials}
+          joinedDate={joinedDate}
+          authLoading={loading}
+          onSignOut={handleSignOut}
+          onShowAuthModal={showAuthModal}
         />
       )}
       {authModalVisible && <AuthModal />}

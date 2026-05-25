@@ -13,3 +13,7 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-04-15 - Primitive Auth Lifting for Catalog Stability
+**Learning:** Consuming the full `useAuth()` context in the top-level `Catalog` component causes the entire entry grid to re-render whenever the user profile's `last_seen_at` timestamp is updated by the background sync logic, even if no visible identity data has changed. Extracting only the required primitives (`isLoggedIn`, `userDisplayName`, etc.) in `App.tsx` and passing them as memoized props to a memoized `Catalog` shields the catalog from these frequent, non-visual context updates.
+**Action:** Lift context consumption to the nearest common ancestor and pass down only the minimal set of memoized primitives to large, expensive-to-render components.
