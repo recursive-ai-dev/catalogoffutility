@@ -53,6 +53,11 @@ const MAP_BY_TAG = SEARCHABLE_ENTRIES.reduce((acc, entry) => {
   return acc;
 }, {} as Record<string, typeof SEARCHABLE_ENTRIES>);
 
+// Pre-calculate navigable pools for the 'Waste Time' feature to ensure O(1)
+// random selection without re-filtering on every interaction.
+const NAVIGABLE_ANON = SEARCHABLE_ENTRIES.filter((e) => !e.missing && !e.requiresAuth);
+const NAVIGABLE_AUTH = SEARCHABLE_ENTRIES.filter((e) => !e.missing);
+
 const FILTER_TAGS = [
   DEFAULT_TAG,
   "Pointless",
@@ -428,19 +433,20 @@ const Card = React.memo(function Card({
 });
 
 const Sidebar = React.memo(function Sidebar({
-  onSelectApp,
   resetFilters,
+  handleWasteTime,
   showNotification,
   lockedCount,
   corruption,
+  isLoggedIn,
 }: {
-  onSelectApp: (app: AppEntry) => void;
   resetFilters: () => void;
+  handleWasteTime: () => void;
   showNotification: (msg: string) => void;
   lockedCount: number;
   corruption: number;
+  isLoggedIn: boolean;
 }) {
-  const { user } = useAuth();
   return (
     <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
       <div className="p-8 border-b border-white/10 flex flex-col gap-2">
@@ -455,22 +461,20 @@ const Sidebar = React.memo(function Sidebar({
       <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-          onClick={() => {
-            const navigable = CATALOG_ENTRIES.filter((e) => !e.missing && (!e.requiresAuth || user));
-            if (navigable.length > 0) {
-              const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
-              onSelectApp(randomApp);
-            } else {
-              showNotification("No path found in the void.");
-            }
-          }}
+          onClick={handleWasteTime}
+          aria-label="Waste Time (Shortcut: R)"
         >
           <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
             schedule
           </span>
-          <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
-            Waste Time
-          </span>
+          <div className="flex-1 flex items-center justify-between">
+            <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
+              Waste Time
+            </span>
+            <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+              [R]
+            </span>
+          </div>
         </button>
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
@@ -478,13 +482,19 @@ const Sidebar = React.memo(function Sidebar({
             resetFilters();
             showNotification("Memories purged.");
           }}
+          aria-label="Forget (Shortcut: Esc)"
         >
           <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
             delete
           </span>
-          <span className="text-white font-light uppercase tracking-widest text-xs">
-            Forget
-          </span>
+          <div className="flex-1 flex items-center justify-between">
+            <span className="text-white font-light uppercase tracking-widest text-xs">
+              Forget
+            </span>
+            <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+              [Esc]
+            </span>
+          </div>
         </button>
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
@@ -546,7 +556,7 @@ const Sidebar = React.memo(function Sidebar({
             <span>ENTRIES:</span>
             <span className="text-white/40">{CATALOG_ENTRIES.length}</span>
           </div>
-          {!user && (
+          {!isLoggedIn && (
             <div className="flex justify-between items-center text-[10px] text-white/15 font-mono tracking-widest">
               <span>LOCKED:</span>
               <span className="text-white/25">{lockedCount}</span>
@@ -808,6 +818,25 @@ export const Catalog = React.memo(function Catalog({
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
 
+  const showNotification = useCallback((msg: string) => {
+    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+    setNotification(msg);
+    notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
+  }, []);
+
+  const isLoggedIn = !!user;
+
+  /** Random selection logic: picks a non-missing entry from the available pool. */
+  const handleWasteTime = useCallback(() => {
+    const pool = isLoggedIn ? NAVIGABLE_AUTH : NAVIGABLE_ANON;
+    if (pool.length > 0) {
+      const randomApp = pool[Math.floor(Math.random() * pool.length)];
+      onSelectApp(randomApp);
+    } else {
+      showNotification("No path found in the void.");
+    }
+  }, [isLoggedIn, onSelectApp, showNotification]);
+
   /** Centralised filter reset — single source of truth for clearing search and tag. */
   const resetFilters = useCallback(() => {
     onSearchChange("");
@@ -840,6 +869,19 @@ export const Catalog = React.memo(function Catalog({
       }
 
       if (
+        e.key.toLowerCase() === "r" &&
+        !isInputFocused &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !e.shiftKey
+      ) {
+        e.preventDefault();
+        handleWasteTime();
+        return;
+      }
+
+      if (
         e.key === "/" &&
         !isInputFocused &&
         !e.ctrlKey &&
@@ -854,13 +896,7 @@ export const Catalog = React.memo(function Catalog({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [resetFilters]);
-
-  const showNotification = useCallback((msg: string) => {
-    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
-    setNotification(msg);
-    notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
-  }, []);
+  }, [resetFilters, handleWasteTime]);
 
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
@@ -886,7 +922,6 @@ export const Catalog = React.memo(function Catalog({
     return searchSpace.filter((entry) => entry.searchBlob.includes(deferredQuery));
   }, [deferredQuery, selectedTag]);
 
-  const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
       if (entry.missing) return;
@@ -929,11 +964,12 @@ export const Catalog = React.memo(function Catalog({
       </div>
 
       <Sidebar
-        onSelectApp={onSelectApp}
         resetFilters={resetFilters}
+        handleWasteTime={handleWasteTime}
         showNotification={showNotification}
         lockedCount={lockedCount}
         corruption={corruption}
+        isLoggedIn={isLoggedIn}
       />
 
       {/* Main Content Area */}
