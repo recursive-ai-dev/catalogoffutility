@@ -13,3 +13,9 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-05-26 - Lifting Auth State for Tree Stability
+
+**Learning:** Consuming the `AuthContext` directly in large, frequently rendered components (like `Catalog`) causes the entire tree to re-render whenever any auth property updates, even non-UI-impacting ones like `last_seen_at`. Lifting the specific, stable properties (`isLoggedIn`, `userDisplayName`) to a root component and passing them as props to a memoized tree prevents these cascading re-renders.
+
+**Action:** Identify components that consume heavy contexts but only use a small, stable subset of the data. Lift those properties to a parent and use `React.memo` on the consumer to shield it from unrelated context noise.
