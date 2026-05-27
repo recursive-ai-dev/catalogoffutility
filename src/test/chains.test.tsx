@@ -320,6 +320,30 @@ describe('Chain 14 — NavButtonActions', () => {
     expect(screen.queryByText('Giving up is not an option.')).toBeNull();
     vi.useRealTimers();
   });
+
+  it('R key triggers Waste Time random navigation', async () => {
+    render(<App />);
+    // Initial catalog view
+    expect(screen.getByRole('heading', { name: /The Archive/i })).toBeTruthy();
+
+    // Press R
+    fireEvent.keyDown(window, { key: 'r' });
+
+    // Should navigate to a product page
+    await waitFor(() => expect(screen.getByText(/Enter Chamber/i)).toBeTruthy());
+  });
+
+  it('Escape key triggers "Memories purged." notification', () => {
+    render(<App />);
+    // Set a filter first
+    fireEvent.click(screen.getByRole('button', { name: 'Narrative' }));
+
+    // Press Escape
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    // Verify notification appears
+    expect(screen.getByText('Memories purged.')).toBeTruthy();
+  });
 });
 
 // ---------------------------------------------------------------------------
