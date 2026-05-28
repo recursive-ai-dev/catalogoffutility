@@ -1307,13 +1307,13 @@ class EditorPanel {
   _buildNodeForm(node) {
     const t = node.tags;
     return `
-      <div class="field"><label>Title</label><input id="nf-title" value="${this._esc(node.title)}"></div>
-      <div class="field"><label>Description</label><textarea id="nf-desc">${this._esc(node.description)}</textarea></div>
+      <div class="field"><label>Title</label><input id="nf-title" value="${this._esc(node.title)}" maxlength="100"></div>
+      <div class="field"><label>Description</label><textarea id="nf-desc" maxlength="2000">${this._esc(node.description)}</textarea></div>
       <div class="field"><label>Tone</label>
         <select id="nf-tone">${this._tones().map(v=>this._toneOption(v,t.tone)).join('')}</select>
       </div>
-      <div class="field"><label>Location</label><input id="nf-location" value="${this._esc(t.location||'')}"></div>
-      <div class="field"><label>Faction</label><input id="nf-faction" value="${this._esc(t.faction||'')}"></div>
+      <div class="field"><label>Location</label><input id="nf-location" value="${this._esc(t.location||'')}" maxlength="100"></div>
+      <div class="field"><label>Faction</label><input id="nf-faction" value="${this._esc(t.faction||'')}" maxlength="100"></div>
 
       <div class="section-head">
         Requirements <button id="add-req">+ Add</button>
@@ -1359,7 +1359,7 @@ class EditorPanel {
     const conds = edge.conditions || [];
     return `
       <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Edge: ${edge.from} → ${edge.to}</div>
-      <div class="field"><label>Choice Label</label><input id="ef-label" value="${this._esc(edge.label||'')}"></div>
+      <div class="field"><label>Choice Label</label><input id="ef-label" value="${this._esc(edge.label||'')}" maxlength="100"></div>
       <div class="section-head">Conditions (guard) <button id="add-econd">+ Add</button></div>
       <div id="econd-list">${conds.map((c,i)=>this._reqHtml(c,i)).join('')}</div>
       <button class="save-btn" id="ef-save">Save Edge</button>

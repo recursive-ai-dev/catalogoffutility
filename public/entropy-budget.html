@@ -347,7 +347,7 @@ body::after {
 
   <div id="input-area">
     <span id="input-prompt">›</span>
-    <input type="text" id="input-field" placeholder="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <input type="text" id="input-field" placeholder="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="500">
     <span id="cost-preview"></span>
   </div>
 </div>
@@ -1037,7 +1037,7 @@ body::after {
     if (state.collapsed) return;
 
     const text = dom.inputField.value.trim();
-    if (!text) return;
+    if (!text || text.length > 500) return;
 
     dom.inputField.value = '';
     dom.costPreview.textContent = '';

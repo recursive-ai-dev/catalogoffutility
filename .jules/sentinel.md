@@ -25,3 +25,8 @@
 **Vulnerability:** Memory-based Denial of Service (DoS) in standalone HTML applications.
 **Learning:** Applications that use `FileReader` to parse user-provided files (like JSON artifacts) in the browser can be crashed or hung by maliciously large payloads if size validation is omitted.
 **Prevention:** Always implement explicit file size validation (e.g., `if (file.size > 1024 * 1024)`) at the entry point of file-upload handlers to protect the client-side execution environment.
+
+## 2025-05-18 - Standalone Asset Security Audit
+**Vulnerability:** Inconsistent input hardening across standalone HTML applications in the `public/` directory.
+**Learning:** Standalone HTML apps frequently exist outside the main build pipeline and component standards, leading to "security drift" where global protections (like React's automatic escaping or centralized validation) are absent.
+**Prevention:** Conduct periodic audits of the `public/` directory specifically for un-hardened `<input>` and `<textarea>` elements. Use a defense-in-depth approach by combining HTML `maxlength` attributes with logical length checks in JavaScript event handlers to prevent processing of oversized payloads.
