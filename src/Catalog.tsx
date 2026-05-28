@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect, useDeferredValue } from "react";
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
-import { useAuth, useAuthModal } from "./lib/auth";
+import { useAuth, useAuthModal, EMAIL_CLEAN_REGEX } from "./lib/auth";
 import { Clock, realClock } from "./lib/clock";
 
 interface CatalogProps {
@@ -21,6 +21,13 @@ interface CatalogProps {
 // Pre-computed at module load — the registry is static, so no need to
 // re-filter on every Catalog render.
 const LOCKED_COUNT = CATALOG_ENTRIES.filter((e) => e.requiresAuth).length;
+
+/**
+ * Pre-computed lists of navigable entries to enable O(1) random selection.
+ * This avoids O(N) filtering of the entire catalog on every "Waste Time" interaction.
+ */
+const NAVIGABLE_ANON = CATALOG_ENTRIES.filter((e) => !e.missing && !e.requiresAuth);
+const NAVIGABLE_AUTH = CATALOG_ENTRIES.filter((e) => !e.missing);
 
 // Pre-calculate search blobs to avoid redundant string operations during filtering.
 // This reduces main-thread work by ~40% during active search.
@@ -75,7 +82,6 @@ const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
   month: "short",
 });
 
-const EMAIL_CLEAN_REGEX = /@.*/;
 const INITIALS_REGEX = /(?:^|[._\-\s])([\p{L}\p{N}_])/gu;
 const INITIAL_CLEAN_REGEX = /^[._\-\s]+/;
 const FALLBACK_CLEAN_REGEX = /[^a-zA-Z0-9]/g;
@@ -155,7 +161,7 @@ const UserSection = React.memo(function UserSection() {
   }
 
   const displayName = useMemo(
-    () => profile?.username ?? user.email?.split("@")[0] ?? "entity",
+    () => profile?.username ?? user.email?.replace(EMAIL_CLEAN_REGEX, "") ?? "entity",
     [profile?.username, user.email],
   );
 
@@ -456,7 +462,8 @@ const Sidebar = React.memo(function Sidebar({
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           onClick={() => {
-            const navigable = CATALOG_ENTRIES.filter((e) => !e.missing && (!e.requiresAuth || user));
+            // Use pre-computed lists for O(1) random selection instead of O(N) filtering
+            const navigable = user ? NAVIGABLE_AUTH : NAVIGABLE_ANON;
             if (navigable.length > 0) {
               const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
               onSelectApp(randomApp);
@@ -907,7 +914,7 @@ export const Catalog = React.memo(function Catalog({
 
   const isFilterActive = searchQuery !== "" || selectedTag !== DEFAULT_TAG;
   const userDisplayName = useMemo(
-    () => user?.email?.split("@")[0] ?? null,
+    () => user?.email?.replace(EMAIL_CLEAN_REGEX, "") ?? null,
     [user],
   );
 

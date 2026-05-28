@@ -13,3 +13,9 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-05-20 - O(1) Random Navigation via Pre-computed Registries
+
+**Learning:** In applications with static registries like `CATALOG_ENTRIES`, performing O(N) filtering operations (e.g., filtering by auth requirements or missing status) within interaction handlers like "Waste Time" introduces unnecessary main-thread work. Pre-computing these subsets (`NAVIGABLE_ANON`, `NAVIGABLE_AUTH`) at the module level allows for O(1) random selection, significantly reducing keystroke and click latency.
+
+**Action:** Always identify static data subsets that are frequently used for navigation or filtering and hoist their computation to the module scope to avoid repeated iteration during user interactions.
