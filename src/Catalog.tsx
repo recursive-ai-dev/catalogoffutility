@@ -53,6 +53,10 @@ const MAP_BY_TAG = SEARCHABLE_ENTRIES.reduce((acc, entry) => {
   return acc;
 }, {} as Record<string, typeof SEARCHABLE_ENTRIES>);
 
+/** Pre-computed navigable entries to avoid O(N) filtering on every random selection. */
+const NAVIGABLE_ANON = CATALOG_ENTRIES.filter((e) => !e.missing && !e.requiresAuth);
+const NAVIGABLE_AUTH = CATALOG_ENTRIES.filter((e) => !e.missing);
+
 const FILTER_TAGS = [
   DEFAULT_TAG,
   "Pointless",
@@ -428,19 +432,20 @@ const Card = React.memo(function Card({
 });
 
 const Sidebar = React.memo(function Sidebar({
-  onSelectApp,
+  onWasteTime,
   resetFilters,
   showNotification,
   lockedCount,
   corruption,
+  isUserLoggedIn,
 }: {
-  onSelectApp: (app: AppEntry) => void;
+  onWasteTime: () => void;
   resetFilters: () => void;
   showNotification: (msg: string) => void;
   lockedCount: number;
   corruption: number;
+  isUserLoggedIn: boolean;
 }) {
-  const { user } = useAuth();
   return (
     <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
       <div className="p-8 border-b border-white/10 flex flex-col gap-2">
@@ -454,41 +459,43 @@ const Sidebar = React.memo(function Sidebar({
 
       <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
         <button
-          className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-          onClick={() => {
-            const navigable = CATALOG_ENTRIES.filter((e) => !e.missing && (!e.requiresAuth || user));
-            if (navigable.length > 0) {
-              const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
-              onSelectApp(randomApp);
-            } else {
-              showNotification("No path found in the void.");
-            }
-          }}
+          className="group flex items-center justify-between px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          onClick={onWasteTime}
+          aria-label="Waste Time (Shortcut: R)"
         >
-          <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
-            schedule
-          </span>
-          <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
-            Waste Time
+          <div className="flex items-center gap-4">
+            <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
+              schedule
+            </span>
+            <span className="text-white/60 font-light group-hover:text-white uppercase tracking-widest text-xs">
+              Waste Time
+            </span>
+          </div>
+          <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+            [R]
           </span>
         </button>
         <button
-          className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-          onClick={() => {
-            resetFilters();
-            showNotification("Memories purged.");
-          }}
+          className="group flex items-center justify-between px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          onClick={resetFilters}
+          aria-label="Forget (Shortcut: Esc)"
         >
-          <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
-            delete
-          </span>
-          <span className="text-white font-light uppercase tracking-widest text-xs">
-            Forget
+          <div className="flex items-center gap-4">
+            <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
+              delete
+            </span>
+            <span className="text-white font-light uppercase tracking-widest text-xs">
+              Forget
+            </span>
+          </div>
+          <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
+            [Esc]
           </span>
         </button>
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           onClick={() => showNotification("Giving up is not an option.")}
+          aria-label="Give Up"
         >
           <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
             cancel
@@ -501,6 +508,7 @@ const Sidebar = React.memo(function Sidebar({
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           onClick={() => showNotification("Staring into the void...")}
+          aria-label="Void"
         >
           <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
             block
@@ -512,6 +520,7 @@ const Sidebar = React.memo(function Sidebar({
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           onClick={() => showNotification("Exit mechanism destroyed.")}
+          aria-label="Exit (Broken)"
         >
           <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
             warning
@@ -546,7 +555,7 @@ const Sidebar = React.memo(function Sidebar({
             <span>ENTRIES:</span>
             <span className="text-white/40">{CATALOG_ENTRIES.length}</span>
           </div>
-          {!user && (
+          {!isUserLoggedIn && (
             <div className="flex justify-between items-center text-[10px] text-white/15 font-mono tracking-widest">
               <span>LOCKED:</span>
               <span className="text-white/25">{lockedCount}</span>
@@ -808,15 +817,32 @@ export const Catalog = React.memo(function Catalog({
   const { user } = useAuth();
   const { showAuthModal } = useAuthModal();
 
+  const showNotification = useCallback((msg: string) => {
+    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+    setNotification(msg);
+    notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
+  }, []);
+
   /** Centralised filter reset — single source of truth for clearing search and tag. */
   const resetFilters = useCallback(() => {
     onSearchChange("");
     onTagSelect(DEFAULT_TAG);
+    showNotification("Memories purged.");
     // Maintain interaction momentum by restoring focus to the search input.
     searchInputRef.current?.focus();
-  }, [onSearchChange, onTagSelect]);
+  }, [onSearchChange, onTagSelect, showNotification]);
 
-  // "/" and "Escape" shortcut handler — only triggers when no modifier keys are pressed,
+  const handleWasteTime = useCallback(() => {
+    const navigable = user ? NAVIGABLE_AUTH : NAVIGABLE_ANON;
+    if (navigable.length > 0) {
+      const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
+      onSelectApp(randomApp);
+    } else {
+      showNotification("No path found in the void.");
+    }
+  }, [user, onSelectApp, showNotification]);
+
+  // Global shortcut handler — only triggers when no modifier keys are pressed,
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -839,28 +865,27 @@ export const Catalog = React.memo(function Catalog({
         return;
       }
 
+      if (isInputFocused) return;
+
       if (
-        e.key === "/" &&
-        !isInputFocused &&
         !e.ctrlKey &&
         !e.metaKey &&
         !e.altKey &&
         !e.shiftKey
       ) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
+        if (e.key === "/") {
+          e.preventDefault();
+          searchInputRef.current?.focus();
+        } else if (e.key.toLowerCase() === "r") {
+          e.preventDefault();
+          handleWasteTime();
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [resetFilters]);
-
-  const showNotification = useCallback((msg: string) => {
-    if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
-    setNotification(msg);
-    notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
-  }, []);
+  }, [resetFilters, handleWasteTime]);
 
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
@@ -929,11 +954,12 @@ export const Catalog = React.memo(function Catalog({
       </div>
 
       <Sidebar
-        onSelectApp={onSelectApp}
+        onWasteTime={handleWasteTime}
         resetFilters={resetFilters}
         showNotification={showNotification}
         lockedCount={lockedCount}
         corruption={corruption}
+        isUserLoggedIn={isLoggedIn}
       />
 
       {/* Main Content Area */}
