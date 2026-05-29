@@ -1,8 +1,8 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "pnpm build",
   "outputDirectory": "dist",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "devCommand": "pnpm dev",
+  "installCommand": "pnpm install",
   "framework": "vite",
   "headers": [
     {

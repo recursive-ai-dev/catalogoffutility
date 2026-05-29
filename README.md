@@ -37,7 +37,7 @@ A brutalist web application for hosting and curating single-file HTML apps and g
 ### Prerequisites
 
 - Node.js 18+ 
-- npm or yarn
+- pnpm or yarn
 
 ### Installation
 
@@ -49,7 +49,7 @@ A brutalist web application for hosting and curating single-file HTML apps and g
 
 2. **Install dependencies**
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Configure environment variables (optional)**
@@ -66,7 +66,7 @@ A brutalist web application for hosting and curating single-file HTML apps and g
 
 4. **Start development server**
    ```bash
-   npm run dev
+   pnpm run dev
    ```
    
    The app will be available at `http://localhost:3000`
@@ -177,11 +177,11 @@ Provide the raw HTML string directly in the `htmlContent` property:
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server (port 3000) |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Type-check with TypeScript |
-| `npm run clean` | Remove `dist/` directory |
+| `pnpm run dev` | Start development server (port 3000) |
+| `pnpm run build` | Build for production |
+| `pnpm run preview` | Preview production build |
+| `pnpm run lint` | Type-check with TypeScript |
+| `pnpm run clean` | Remove `dist/` directory |
 
 ---
 
@@ -198,7 +198,7 @@ vercel deploy --prod
 ### Manual Build
 
 ```bash
-npm run build
+pnpm run build
 # Deploy the contents of dist/ to your hosting provider
 ```
 
@@ -290,7 +290,7 @@ Trigger → ordered state transitions → terminal resolution (± side effects)
 ### Running Chain Tests
 
 ```bash
-npm run test
+pnpm run test
 # or
 npx vitest run src/test/chains.test.tsx
 ```
