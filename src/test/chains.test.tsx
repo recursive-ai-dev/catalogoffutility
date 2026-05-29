@@ -278,13 +278,19 @@ describe('Chain 14 — NavButtonActions', () => {
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
   });
 
-  it('"Forget" resets filters and shows notification', async () => {
+  it('"Forget" resets filters and shows notification after confirmation', async () => {
     render(<App />);
     const input = screen.getByPlaceholderText('Search the void...');
     await userEvent.type(input, 'aria');
     expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
 
+    // First click enters confirmation state
     fireEvent.click(screen.getByRole('button', { name: /Forget/i }));
+    expect(screen.queryByText('Memories purged.')).toBeNull();
+    expect(screen.getByText('Are you sure?')).toBeTruthy();
+
+    // Second click triggers the reset
+    fireEvent.click(screen.getByRole('button', { name: /Confirm purging memories/i }));
 
     expect(screen.getByText('Memories purged.')).toBeTruthy();
     expect((input as HTMLInputElement).value).toBe('');
