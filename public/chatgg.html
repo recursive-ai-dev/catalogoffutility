@@ -351,7 +351,7 @@ body::before {
 
   <div id="input-area">
     <div id="input-wrap">
-      <textarea id="user-input" rows="1" placeholder="say something true..." spellcheck="false"></textarea>
+      <textarea id="user-input" rows="1" placeholder="say something true..." spellcheck="false" maxlength="1000"></textarea>
       <button id="send-btn" aria-label="Send">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="19" x2="12" y2="5"/>
@@ -900,6 +900,9 @@ const ChatGG = (() => {
 
     const text = dom.input.value.trim();
     if (!text) return;
+
+    // Security: Explicit length check to prevent DoS from oversized payloads
+    if (text.length > 1000) return;
 
     processing = true;
     dom.input.value = '';

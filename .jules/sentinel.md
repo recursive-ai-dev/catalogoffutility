@@ -25,3 +25,8 @@
 **Vulnerability:** Memory-based Denial of Service (DoS) in standalone HTML applications.
 **Learning:** Applications that use `FileReader` to parse user-provided files (like JSON artifacts) in the browser can be crashed or hung by maliciously large payloads if size validation is omitted.
 **Prevention:** Always implement explicit file size validation (e.g., `if (file.size > 1024 * 1024)`) at the entry point of file-upload handlers to protect the client-side execution environment.
+
+## 2025-05-18 - Input Length Hardening in Legacy Assets
+**Vulnerability:** Client-side Denial of Service (DoS) in standalone HTML applications.
+**Learning:** Assets in the `public/` directory (like `chatgg.html`) bypass the main React application's security pipeline and input sanitization. Unbounded input fields in these vanilla JS apps can hang the browser if users paste extremely large payloads.
+**Prevention:** Implement a dual-layer hardening strategy for all standalone HTML assets: use the `maxlength` attribute on interactive elements for immediate UI feedback, and enforce matching length validation in JavaScript event handlers as defense-in-depth against bypassed UI constraints.
