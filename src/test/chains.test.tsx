@@ -284,7 +284,10 @@ describe('Chain 14 — NavButtonActions', () => {
     await userEvent.type(input, 'aria');
     expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: /Forget/i }));
+    const forgetButton = screen.getByRole('button', { name: /Forget/i });
+    fireEvent.click(forgetButton);
+    // Double-click pattern: first click enters confirming state, second click triggers action
+    fireEvent.click(forgetButton);
 
     expect(screen.getByText('Memories purged.')).toBeTruthy();
     expect((input as HTMLInputElement).value).toBe('');
