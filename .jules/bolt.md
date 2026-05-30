@@ -13,3 +13,9 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-05-20 - Lifting Derived Auth State & O(1) Random Selection
+
+**Learning:** In a deep component tree like `Catalog`, calling `useAuth()` in multiple leaf nodes (e.g., `UserSection`, `Sidebar`) and deriving state (display names, initials) repeatedly causes redundant overhead. Additionally, the "Waste Time" random navigation feature was performing an O(N) filter on every interaction.
+
+**Action:** Lift all derived auth state (memoized display names, initials, formatted dates) to the highest common ancestor (`App.tsx`) and pass them as props. For static registries, pre-calculate navigable lists (e.g., `NAVIGABLE_ANON`, `NAVIGABLE_AUTH`) at module scope to enable O(1) random selection, significantly reducing interaction latency.

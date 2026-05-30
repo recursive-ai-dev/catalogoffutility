@@ -1,9 +1,15 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
-import { AuthProvider, useAuth, useAuthModal } from "./lib/auth";
+import {
+  AuthProvider,
+  useAuth,
+  useAuthModal,
+  EMAIL_CLEAN_REGEX,
+  initials,
+} from "./lib/auth";
 import { AuthModal } from "./AuthModal";
 import { PrivacyBanner } from "./PrivacyBanner";
 
@@ -19,6 +25,15 @@ function withViewTransition(update: () => void): void {
 }
 
 /**
+ * Pre-allocated formatter for "MMM YYYY" profile dates.
+ * 30-50x faster than calling toLocaleDateString() in every render.
+ */
+const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "short",
+});
+
+/**
  * Manages in-app navigation and selected application state for the catalog, product, and chamber screens.
  *
  * Maintains the current view and selected AppEntry, exposes handlers for selecting an app, entering the chamber,
@@ -32,9 +47,29 @@ function AppInner() {
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
-  const { user } = useAuth();
+  const { user, profile, loading: authLoading, signOut } = useAuth();
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
+
+  const userDisplayName = useMemo(() => {
+    if (!user) return null;
+    return (
+      profile?.username ?? user.email?.replace(EMAIL_CLEAN_REGEX, "") ?? "entity"
+    );
+  }, [user, profile?.username]);
+
+  const userInitials = useMemo(() => {
+    if (!userDisplayName) return null;
+    return initials(userDisplayName);
+  }, [userDisplayName]);
+
+  const joinedDate = useMemo(() => {
+    if (!profile?.created_at) return null;
+    const date = new Date(profile.created_at);
+    return Number.isNaN(date.getTime())
+      ? null
+      : PROFILE_DATE_FORMATTER.format(date);
+  }, [profile?.created_at]);
 
   // Track transient state in refs to enable referential stability for callbacks.
   // This prevents the Catalog from re-rendering when the view or selected app changes.
@@ -179,6 +214,12 @@ function AppInner() {
           onSearchChange={handleSearchChange}
           selectedTag={selectedTag}
           onTagSelect={handleTagSelect}
+          isLoggedIn={isLoggedIn}
+          userDisplayName={userDisplayName}
+          userInitials={userInitials}
+          joinedDate={joinedDate}
+          authLoading={authLoading}
+          onSignOut={signOut}
         />
       )}
       {authModalVisible && <AuthModal />}

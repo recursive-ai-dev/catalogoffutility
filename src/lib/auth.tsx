@@ -9,6 +9,30 @@ import React, {
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase, supabaseAvailable, Profile } from "./supabase";
 
+export const EMAIL_CLEAN_REGEX = /@.*/;
+const INITIALS_REGEX = /(?:^|[._\-\s])([\p{L}\p{N}_])/gu;
+const INITIAL_CLEAN_REGEX = /^[._\-\s]+/;
+const FALLBACK_CLEAN_REGEX = /[^a-zA-Z0-9]/g;
+
+// Generates a deterministic two-letter avatar from a username/email.
+// Optimized to use a single regex match for initials extraction while preserving
+// underscore/dot/dash boundaries, reducing multiple array allocations.
+export function initials(name: string): string {
+  const cleanName = name.replace(EMAIL_CLEAN_REGEX, "");
+  const matches = cleanName.matchAll(INITIALS_REGEX);
+  const parts: string[] = [];
+  for (const match of matches) {
+    parts.push(match[1]);
+    if (parts.length === 2) break;
+  }
+
+  if (parts.length >= 2) return (parts[0] + parts[1]).toUpperCase();
+  if (parts.length === 1)
+    return cleanName.replace(INITIAL_CLEAN_REGEX, "").slice(0, 2).toUpperCase();
+  const fallback = cleanName.replace(FALLBACK_CLEAN_REGEX, "").slice(0, 2);
+  return (fallback.length > 0 ? fallback : "??").toUpperCase();
+}
+
 // ---------------------------------------------------------------------------
 // Auth Context — user/session/profile state only.
 // Modal visibility lives in a separate AuthModalContext so that toggling the
@@ -105,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .from("profiles")
       .insert({
         id: userId,
-        username: email.split("@")[0].slice(0, 32),
+        username: email.replace(EMAIL_CLEAN_REGEX, "").slice(0, 32),
         last_seen_at: now,
       })
       .select()
