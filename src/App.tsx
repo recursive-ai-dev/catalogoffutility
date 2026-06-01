@@ -3,7 +3,7 @@ import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
-import { AuthProvider, useAuth, useAuthModal } from "./lib/auth";
+import { AuthProvider, useAuth, useAuthModal, EMAIL_CLEAN_REGEX } from "./lib/auth";
 import { AuthModal } from "./AuthModal";
 import { PrivacyBanner } from "./PrivacyBanner";
 
@@ -32,9 +32,14 @@ function AppInner() {
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
-  const { user } = useAuth();
+  const { user, profile, loading: authLoading, signOut } = useAuth();
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
+
+  const userDisplayName = React.useMemo(
+    () => profile?.username ?? user?.email?.replace(EMAIL_CLEAN_REGEX, "") ?? null,
+    [profile?.username, user?.email],
+  );
 
   // Track transient state in refs to enable referential stability for callbacks.
   // This prevents the Catalog from re-rendering when the view or selected app changes.
@@ -179,6 +184,13 @@ function AppInner() {
           onSearchChange={handleSearchChange}
           selectedTag={selectedTag}
           onTagSelect={handleTagSelect}
+          isLoggedIn={isLoggedIn}
+          user={user}
+          profile={profile}
+          authLoading={authLoading}
+          signOut={signOut}
+          userDisplayName={userDisplayName}
+          showAuthModal={showAuthModal}
         />
       )}
       {authModalVisible && <AuthModal />}
