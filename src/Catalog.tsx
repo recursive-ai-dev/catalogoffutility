@@ -441,6 +441,14 @@ const Sidebar = React.memo(function Sidebar({
   corruption: number;
 }) {
   const { user } = useAuth();
+  const [isConfirmingForget, setIsConfirmingForget] = useState(false);
+
+  useEffect(() => {
+    if (!isConfirmingForget) return;
+    const timer = setTimeout(() => setIsConfirmingForget(false), 3000);
+    return () => clearTimeout(timer);
+  }, [isConfirmingForget]);
+
   return (
     <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
       <div className="p-8 border-b border-white/10 flex flex-col gap-2">
@@ -473,17 +481,35 @@ const Sidebar = React.memo(function Sidebar({
           </span>
         </button>
         <button
-          className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          className={`group flex items-center gap-4 px-4 py-3 rounded-lg border transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+            isConfirmingForget
+              ? "border-red-500/50 bg-red-500/5 animate-pulse"
+              : "border-white/10 bg-white/5"
+          }`}
           onClick={() => {
-            resetFilters();
-            showNotification("Memories purged.");
+            if (isConfirmingForget) {
+              resetFilters();
+              showNotification("Memories purged.");
+              setIsConfirmingForget(false);
+            } else {
+              setIsConfirmingForget(true);
+            }
           }}
         >
-          <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
-            delete
+          <span
+            className={`material-symbols-outlined text-xl font-light transition-colors ${
+              isConfirmingForget ? "text-red-400" : "text-white"
+            }`}
+            aria-hidden="true"
+          >
+            {isConfirmingForget ? "priority_high" : "delete"}
           </span>
-          <span className="text-white font-light uppercase tracking-widest text-xs">
-            Forget
+          <span
+            className={`font-light uppercase tracking-widest text-xs transition-colors ${
+              isConfirmingForget ? "text-red-400" : "text-white"
+            }`}
+          >
+            {isConfirmingForget ? "Are you sure?" : "Forget"}
           </span>
         </button>
         <button
