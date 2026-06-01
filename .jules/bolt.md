@@ -13,3 +13,7 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-06-01 - [O(1) Navigation & Auth State Lifting]
+**Learning:** Pre-calculating navigable subsets at the module level for a static registry enables O(1) random selection, bypassing O(N) filtering during high-frequency UI interactions (like "Waste Time"). Additionally, lifting authentication state to a parent component (App.tsx) and passing memoized props to a large component tree (Catalog.tsx) prevents unnecessary re-renders when non-UI-impacting auth context updates occur.
+**Action:** Always evaluate if data subsets can be pre-calculated outside the render loop for static data. Prioritize lifting state to prevent wide-scale re-renders in complex component hierarchies.
