@@ -284,7 +284,17 @@ describe('Chain 14 — NavButtonActions', () => {
     await userEvent.type(input, 'aria');
     expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: /Forget/i }));
+    const forgetBtn = screen.getByRole('button', { name: /Forget/i });
+
+    // First click enters confirmation state
+    fireEvent.click(forgetBtn);
+    expect(screen.getByText('Are you sure?')).toBeTruthy();
+    expect(screen.queryByText('Memories purged.')).toBeNull();
+    // Search should still be active
+    expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
+
+    // Second click triggers the reset
+    fireEvent.click(forgetBtn);
 
     expect(screen.getByText('Memories purged.')).toBeTruthy();
     expect((input as HTMLInputElement).value).toBe('');
