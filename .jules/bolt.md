@@ -13,3 +13,9 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-06-02 - Prop Stability & Module-Scope Pre-calculation
+
+**Learning:** Lifting frequently accessed auth state (like `isLoggedIn` and `userDisplayName`) from context hooks into a parent component and passing them as primitive props to a memoized tree (`Catalog`) prevents unnecessary re-renders during non-UI-impacting context updates. Additionally, moving static list derivations (e.g., navigable entries) to module scope converts (N)$ runtime filtering in interaction handlers into (1)$ selections.
+
+**Action:** Always evaluate if context-dependent components can be converted to prop-dependent components to leverage `React.memo` effectively. Use module-scope constants for static data derivations to keep interaction handlers lightweight.
