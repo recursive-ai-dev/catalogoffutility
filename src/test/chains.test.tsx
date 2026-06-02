@@ -278,17 +278,43 @@ describe('Chain 14 — NavButtonActions', () => {
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
   });
 
-  it('"Forget" resets filters and shows notification', async () => {
+  it('"Forget" resets filters and shows notification (requires double-click confirmation)', async () => {
     render(<App />);
     const input = screen.getByPlaceholderText('Search the void...');
     await userEvent.type(input, 'aria');
     expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: /Forget/i }));
+    // First click enters confirmation state
+    fireEvent.click(screen.getByRole('button', { name: /Purge all filters and search/i }));
+    expect(screen.queryByText('Memories purged.')).toBeNull();
+    expect(screen.getByText('Are you sure?')).toBeTruthy();
+
+    // Second click within 3 seconds executes the reset
+    fireEvent.click(screen.getByRole('button', { name: /Confirm purging memories/i }));
 
     expect(screen.getByText('Memories purged.')).toBeTruthy();
     expect((input as HTMLInputElement).value).toBe('');
     expect(screen.getByText('WHEN THE SUN DIED')).toBeTruthy();
+  });
+
+  it('"Forget" confirmation state reverts after 3000ms timeout', () => {
+    vi.useFakeTimers();
+    render(<App />);
+
+    // Enter confirmation state
+    fireEvent.click(screen.getByRole('button', { name: /Purge all filters and search/i }));
+    expect(screen.getByText('Are you sure?')).toBeTruthy();
+
+    // Advance time past the 3s timeout
+    act(() => {
+      vi.advanceTimersByTime(3100);
+    });
+
+    // Should have reverted to the original state
+    expect(screen.queryByText('Are you sure?')).toBeNull();
+    expect(screen.getByText('Forget')).toBeTruthy();
+
+    vi.useRealTimers();
   });
 
   it('"Give Up" shows notification', () => {
