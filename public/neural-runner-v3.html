@@ -829,7 +829,7 @@
         </div>
         <div class="script-editor-wrap">
           <div class="line-numbers" id="lineNumbers">1</div>
-          <textarea class="script-editor" id="scriptEditor" placeholder="# Define a process() function:
+          <textarea class="script-editor" id="scriptEditor" maxlength="50000" placeholder="# Define a process() function:
 #
 # def process(message, history):
 #     return 'Hello!'
@@ -893,7 +893,7 @@
         <div class="quick-actions" id="quickActions"></div>
         <div class="chat-input-area">
           <div class="chat-input-wrap">
-            <textarea class="chat-input" id="chatInput" placeholder="Send a message..." rows="1" disabled></textarea>
+            <textarea class="chat-input" id="chatInput" maxlength="5000" placeholder="Send a message..." rows="1" disabled></textarea>
             <button class="send-btn" id="btnSend" disabled>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
@@ -1947,6 +1947,7 @@ function executeJavaScript(code, message, history) {
 async function runScript() {
   const code = el.scriptEditor.value.trim();
   if (!code) { toast('No script to run'); return; }
+  if (code.length > 50000) { toast('Script too large (max 50k chars)'); return; }
 
   state.currentScriptCode = code;
   state.language = el.langSelect.value;
@@ -1983,6 +1984,7 @@ async function runScript() {
 
 async function processMessage(message) {
   if (!state.scriptLoaded || !state.currentScriptCode) { toast('No script loaded'); return; }
+  if (message.length > 5000) { toast('Message too long'); return; }
 
   state.isRunning = true;
   setStatus('running', 'RUNNING');
@@ -2291,6 +2293,13 @@ el.fileInput.addEventListener('change', async (e) => {
 async function handleFile(file) {
   const name = file.name;
   const ext = name.split('.').pop().toLowerCase();
+
+  // Security: limit file size to 1MB to prevent client-side DoS
+  if (file.size > 1024 * 1024) {
+    addDebugEntry('error', `Rejected ${name}: file size exceeds 1MB limit`);
+    toast(`File too large: ${name} (max 1MB)`);
+    return;
+  }
 
   if (ext === 'zip') { await handleZipFile(file); return; }
 

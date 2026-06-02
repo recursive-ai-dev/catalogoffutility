@@ -1307,13 +1307,13 @@ class EditorPanel {
   _buildNodeForm(node) {
     const t = node.tags;
     return `
-      <div class="field"><label>Title</label><input id="nf-title" value="${this._esc(node.title)}"></div>
-      <div class="field"><label>Description</label><textarea id="nf-desc">${this._esc(node.description)}</textarea></div>
+      <div class="field"><label>Title</label><input id="nf-title" maxlength="100" value="${this._esc(node.title)}"></div>
+      <div class="field"><label>Description</label><textarea id="nf-desc" maxlength="2000">${this._esc(node.description)}</textarea></div>
       <div class="field"><label>Tone</label>
         <select id="nf-tone">${this._tones().map(v=>this._toneOption(v,t.tone)).join('')}</select>
       </div>
-      <div class="field"><label>Location</label><input id="nf-location" value="${this._esc(t.location||'')}"></div>
-      <div class="field"><label>Faction</label><input id="nf-faction" value="${this._esc(t.faction||'')}"></div>
+      <div class="field"><label>Location</label><input id="nf-location" maxlength="100" value="${this._esc(t.location||'')}"></div>
+      <div class="field"><label>Faction</label><input id="nf-faction" maxlength="100" value="${this._esc(t.faction||'')}"></div>
 
       <div class="section-head">
         Requirements <button id="add-req">+ Add</button>
@@ -1335,9 +1335,9 @@ class EditorPanel {
     return `<div class="req-item" data-req-i="${i}">
       <div class="row">
         <select class="req-type">${types}</select>
-        <input class="req-flag" placeholder="flag/stat" value="${this._esc(req.flag||req.stat||'')}" style="flex:2">
+        <input class="req-flag" maxlength="100" placeholder="flag/stat" value="${this._esc(req.flag||req.stat||'')}" style="flex:2">
         <select class="req-comp" style="flex:0.8">${comps}</select>
-        <input class="req-val" placeholder="value" value="${this._esc(req.value!==undefined?String(req.value):(req.threshold!==undefined?String(req.threshold):''))}">
+        <input class="req-val" maxlength="100" placeholder="value" value="${this._esc(req.value!==undefined?String(req.value):(req.threshold!==undefined?String(req.threshold):''))}">
         <button class="del-btn req-del">×</button>
       </div>
     </div>`;
@@ -1348,8 +1348,8 @@ class EditorPanel {
     return `<div class="eff-item" data-eff-i="${i}">
       <div class="row">
         <select class="eff-type">${types}</select>
-        <input class="eff-key" placeholder="key/stat/faction" value="${this._esc(eff.flag||eff.stat||eff.faction||'')}" style="flex:2">
-        <input class="eff-val" placeholder="val/delta" value="${this._esc(eff.value!==undefined?String(eff.value):(eff.delta!==undefined?String(eff.delta):''))}">
+        <input class="eff-key" maxlength="100" placeholder="key/stat/faction" value="${this._esc(eff.flag||eff.stat||eff.faction||'')}" style="flex:2">
+        <input class="eff-val" maxlength="100" placeholder="val/delta" value="${this._esc(eff.value!==undefined?String(eff.value):(eff.delta!==undefined?String(eff.delta):''))}">
         <button class="del-btn eff-del">×</button>
       </div>
     </div>`;
@@ -1359,7 +1359,7 @@ class EditorPanel {
     const conds = edge.conditions || [];
     return `
       <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Edge: ${edge.from} → ${edge.to}</div>
-      <div class="field"><label>Choice Label</label><input id="ef-label" value="${this._esc(edge.label||'')}"></div>
+      <div class="field"><label>Choice Label</label><input id="ef-label" maxlength="100" value="${this._esc(edge.label||'')}"></div>
       <div class="section-head">Conditions (guard) <button id="add-econd">+ Add</button></div>
       <div id="econd-list">${conds.map((c,i)=>this._reqHtml(c,i)).join('')}</div>
       <button class="save-btn" id="ef-save">Save Edge</button>
@@ -1748,6 +1748,14 @@ class App {
     document.getElementById('file-input').onchange = e => {
       const file = e.target.files[0];
       if (!file) return;
+
+      // Security: limit file size to 1MB to prevent client-side DoS
+      if (file.size > 1024 * 1024) {
+        this._flash('Import failed: file exceeds 1MB limit', 'err');
+        e.target.value = '';
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = ev => {
         try {
@@ -1840,12 +1848,52 @@ class App {
 
   // ── Save from editor
   _saveNode(id, data) {
-    this.model.updateNode(id, data);
+    // Secondary validation: ensure lengths are within limits
+    const limit = (s, n) => (typeof s === 'string' && s.length > n) ? s.substring(0, n) : s;
+    const safeData = {
+      ...data,
+      title: limit(data.title, 100),
+      description: limit(data.description, 2000),
+      tags: {
+        tone: data.tags?.tone || 'neutral',
+        location: limit(data.tags?.location, 100),
+        faction: limit(data.tags?.faction, 100),
+      },
+      requirements: (data.requirements || []).map(r => {
+        const res = { ...r };
+        if (res.flag) res.flag = limit(res.flag, 100);
+        if (res.stat) res.stat = limit(res.stat, 100);
+        if (res.value !== undefined) res.value = limit(res.value, 100);
+        return res;
+      }),
+      effects: (data.effects || []).map(e => {
+        const res = { ...e };
+        if (res.flag) res.flag = limit(res.flag, 100);
+        if (res.stat) res.stat = limit(res.stat, 100);
+        if (res.faction) res.faction = limit(res.faction, 100);
+        if (res.value !== undefined) res.value = limit(res.value, 100);
+        return res;
+      })
+    };
+    this.model.updateNode(id, safeData);
     this._flash('Beat saved', 'ok');
   }
 
   _saveEdge(id, data) {
-    this.model.updateEdge(id, data);
+    // Secondary validation: ensure lengths are within limits
+    const limit = (s, n) => (typeof s === 'string' && s.length > n) ? s.substring(0, n) : s;
+    const safeData = {
+      ...data,
+      label: limit(data.label, 100),
+      conditions: (data.conditions || []).map(c => {
+        const res = { ...c };
+        if (res.flag) res.flag = limit(res.flag, 100);
+        if (res.stat) res.stat = limit(res.stat, 100);
+        if (res.value !== undefined) res.value = limit(res.value, 100);
+        return res;
+      })
+    };
+    this.model.updateEdge(id, safeData);
     this._flash('Edge saved', 'ok');
     this.view.renderEdge(this.model.edges.get(id), this.model);
   }
