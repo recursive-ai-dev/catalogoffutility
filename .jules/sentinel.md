@@ -25,3 +25,8 @@
 **Vulnerability:** Memory-based Denial of Service (DoS) in standalone HTML applications.
 **Learning:** Applications that use `FileReader` to parse user-provided files (like JSON artifacts) in the browser can be crashed or hung by maliciously large payloads if size validation is omitted.
 **Prevention:** Always implement explicit file size validation (e.g., `if (file.size > 1024 * 1024)`) at the entry point of file-upload handlers to protect the client-side execution environment.
+
+## 2026-06-02 - Defensive Input Hardening & Data Integrity
+**Vulnerability:** Client-side DoS via DOM attribute bypass.
+**Learning:** Standalone HTML assets bypass global security pipelines, requiring local `maxlength` attributes for UX and secondary JS validation in save/send handlers for robust enforcement. When implementing JS-level sanitization, strict string conversion (e.g., `String(val || '')`) can inadvertently destroy numeric `0` values (which are falsy), leading to data loss in simulation tools.
+**Prevention:** Use type-aware validation helpers (e.g., `typeof s === 'string' ? s.substring(0, n) : s`) to enforce length constraints on user-controlled fields without mutating numeric or boolean state variables.
