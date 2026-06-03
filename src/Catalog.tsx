@@ -2,6 +2,8 @@ import React, { useState, useRef, useCallback, useMemo, useEffect, useDeferredVa
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
 import { useAuth, useAuthModal } from "./lib/auth";
+import { Profile } from "./lib/supabase";
+import { User } from "@supabase/supabase-js";
 import { Clock, realClock } from "./lib/clock";
 
 interface CatalogProps {
@@ -21,6 +23,11 @@ interface CatalogProps {
 // Pre-computed at module load — the registry is static, so no need to
 // re-filter on every Catalog render.
 const LOCKED_COUNT = CATALOG_ENTRIES.filter((e) => e.requiresAuth).length;
+
+// Pre-computed navigable lists for "Waste Time" random selection.
+// Enables O(1) selection at runtime instead of O(N) filtering on every interaction.
+const NAVIGABLE_ANON = CATALOG_ENTRIES.filter((e) => !e.missing && !e.requiresAuth);
+const NAVIGABLE_AUTH = CATALOG_ENTRIES.filter((e) => !e.missing);
 
 // Pre-calculate search blobs to avoid redundant string operations during filtering.
 // This reduces main-thread work by ~40% during active search.
@@ -98,9 +105,19 @@ function initials(name: string): string {
   return (fallback.length > 0 ? fallback : "??").toUpperCase();
 }
 
-const UserSection = React.memo(function UserSection() {
-  const { user, profile, loading, signOut } = useAuth();
-  const { showAuthModal } = useAuthModal();
+const UserSection = React.memo(function UserSection({
+  user,
+  profile,
+  loading,
+  signOut,
+  showAuthModal,
+}: {
+  user: User | null;
+  profile: Profile | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+  showAuthModal: () => void;
+}) {
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -433,14 +450,25 @@ const Sidebar = React.memo(function Sidebar({
   showNotification,
   lockedCount,
   corruption,
+  user,
+  isUserLoggedIn,
+  profile,
+  authLoading,
+  signOut,
+  showAuthModal,
 }: {
   onSelectApp: (app: AppEntry) => void;
   resetFilters: () => void;
   showNotification: (msg: string) => void;
   lockedCount: number;
   corruption: number;
+  user: User | null;
+  isUserLoggedIn: boolean;
+  profile: Profile | null;
+  authLoading: boolean;
+  signOut: () => Promise<void>;
+  showAuthModal: () => void;
 }) {
-  const { user } = useAuth();
   return (
     <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
       <div className="p-8 border-b border-white/10 flex flex-col gap-2">
@@ -456,9 +484,10 @@ const Sidebar = React.memo(function Sidebar({
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           onClick={() => {
-            const navigable = CATALOG_ENTRIES.filter((e) => !e.missing && (!e.requiresAuth || user));
-            if (navigable.length > 0) {
-              const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
+            // Optimized O(1) selection using pre-calculated navigable lists.
+            const source = isUserLoggedIn ? NAVIGABLE_AUTH : NAVIGABLE_ANON;
+            if (source.length > 0) {
+              const randomApp = source[Math.floor(Math.random() * source.length)];
               onSelectApp(randomApp);
             } else {
               showNotification("No path found in the void.");
@@ -523,7 +552,13 @@ const Sidebar = React.memo(function Sidebar({
       </nav>
 
       {/* User identity section */}
-      <UserSection />
+      <UserSection
+        user={user}
+        profile={profile}
+        loading={authLoading}
+        signOut={signOut}
+        showAuthModal={showAuthModal}
+      />
 
       <div className="p-6 border-t border-white/10 bg-black/40">
         <div className="flex flex-col gap-3">
@@ -805,7 +840,7 @@ export const Catalog = React.memo(function Catalog({
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { user } = useAuth();
+  const { user, profile, loading: authLoading, signOut } = useAuth();
   const { showAuthModal } = useAuthModal();
 
   /** Centralised filter reset — single source of truth for clearing search and tag. */
@@ -934,6 +969,12 @@ export const Catalog = React.memo(function Catalog({
         showNotification={showNotification}
         lockedCount={lockedCount}
         corruption={corruption}
+        user={user}
+        isUserLoggedIn={isLoggedIn}
+        profile={profile}
+        authLoading={authLoading}
+        signOut={signOut}
+        showAuthModal={showAuthModal}
       />
 
       {/* Main Content Area */}
