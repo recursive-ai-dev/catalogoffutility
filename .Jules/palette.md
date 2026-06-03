@@ -34,3 +34,7 @@
 ## 2025-05-27 - Dynamic Accessibility Labels for Toggles
 **Learning:** Static ARIA labels on stateful toggles (like password visibility) can be misleading once the state changes. Providing dynamic `aria-label` and `title` attributes that reflect the *next* or *current* action (e.g., 'Show' vs 'Hide') ensures that screen reader and mouse users receive accurate, context-aware feedback.
 **Action:** Use conditional logic to update `aria-label` and `title` on interactive elements whose primary function depends on a binary state.
+
+## 2025-05-28 - Guarded Destructive Actions
+**Learning:** For destructive or high-impact state resets (like "Forget" or "Purge"), a single click can be too error-prone. A double-click confirmation pattern with a timed reset (e.g., 3 seconds) provides a frictionless guardrail that fits the atmospheric, high-stakes aesthetic of the app while improving usability.
+**Action:** Implement "armed" states for destructive buttons that change color, icon, and label on the first click, requiring a second click to execute.
