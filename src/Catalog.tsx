@@ -441,6 +441,29 @@ const Sidebar = React.memo(function Sidebar({
   corruption: number;
 }) {
   const { user } = useAuth();
+  const [confirmingForget, setConfirmingForget] = useState(false);
+  const confirmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimeoutRef.current) clearTimeout(confirmTimeoutRef.current);
+    };
+  }, []);
+
+  const handleForget = useCallback(() => {
+    if (!confirmingForget) {
+      setConfirmingForget(true);
+      confirmTimeoutRef.current = setTimeout(() => {
+        setConfirmingForget(false);
+      }, 3000);
+    } else {
+      if (confirmTimeoutRef.current) clearTimeout(confirmTimeoutRef.current);
+      setConfirmingForget(false);
+      resetFilters();
+      showNotification("Memories purged.");
+    }
+  }, [confirmingForget, resetFilters, showNotification]);
+
   return (
     <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
       <div className="p-8 border-b border-white/10 flex flex-col gap-2">
@@ -454,6 +477,7 @@ const Sidebar = React.memo(function Sidebar({
 
       <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
         <button
+          aria-label="Waste Time (Shortcut: random navigation)"
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           onClick={() => {
             const navigable = CATALOG_ENTRIES.filter((e) => !e.missing && (!e.requiresAuth || user));
@@ -473,20 +497,32 @@ const Sidebar = React.memo(function Sidebar({
           </span>
         </button>
         <button
-          className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-          onClick={() => {
-            resetFilters();
-            showNotification("Memories purged.");
-          }}
+          aria-label={confirmingForget ? "Confirm purging memories" : "Forget (Reset filters)"}
+          className={`group flex items-center gap-4 px-4 py-3 rounded-lg border transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+            confirmingForget
+              ? "border-red-500/50 bg-red-500/10"
+              : "border-white/10 bg-white/5 hover:border-white/20"
+          }`}
+          onClick={handleForget}
         >
-          <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
-            delete
+          <span
+            className={`material-symbols-outlined text-xl font-light transition-colors ${
+              confirmingForget ? "text-red-500 animate-pulse" : "text-white"
+            }`}
+            aria-hidden="true"
+          >
+            {confirmingForget ? "priority_high" : "delete"}
           </span>
-          <span className="text-white font-light uppercase tracking-widest text-xs">
-            Forget
+          <span
+            className={`font-light uppercase tracking-widest text-xs transition-colors ${
+              confirmingForget ? "text-red-400" : "text-white"
+            }`}
+          >
+            {confirmingForget ? "Are you sure?" : "Forget"}
           </span>
         </button>
         <button
+          aria-label="Give Up (No action)"
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           onClick={() => showNotification("Giving up is not an option.")}
         >
@@ -499,6 +535,7 @@ const Sidebar = React.memo(function Sidebar({
         </button>
         <div className="h-px bg-white/10 my-4 w-full"></div>
         <button
+          aria-label="Void (No action)"
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           onClick={() => showNotification("Staring into the void...")}
         >
@@ -510,6 +547,7 @@ const Sidebar = React.memo(function Sidebar({
           </span>
         </button>
         <button
+          aria-label="Exit (Broken)"
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           onClick={() => showNotification("Exit mechanism destroyed.")}
         >
