@@ -13,3 +13,7 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-05-20 - O(1) Random Selection & Auth State Lifting
+**Learning:** For static registries, pre-calculating filtered lists (e.g., navigable entries) at module scope converts O(N) runtime operations into O(1) lookups. Additionally, lifting auth context consumption to the highest possible common ancestor and passing stable props to memoized children (Sidebar, UserSection) prevents entire subtree re-renders during non-visual auth state updates (like profile syncs).
+**Action:** Identify static data filters that are executed on user interaction and move them to module-scope constants. Lift context consumption to minimize the number of components subscribing to frequently updating global state.
