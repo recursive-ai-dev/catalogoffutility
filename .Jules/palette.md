@@ -34,3 +34,7 @@
 ## 2025-05-27 - Dynamic Accessibility Labels for Toggles
 **Learning:** Static ARIA labels on stateful toggles (like password visibility) can be misleading once the state changes. Providing dynamic `aria-label` and `title` attributes that reflect the *next* or *current* action (e.g., 'Show' vs 'Hide') ensures that screen reader and mouse users receive accurate, context-aware feedback.
 **Action:** Use conditional logic to update `aria-label` and `title` on interactive elements whose primary function depends on a binary state.
+
+## 2026-06-06 - Confirmation Patterns for Destructive Actions
+**Learning:** Destructive UI actions (like purging filters/memories) should be guarded with a confirmation state rather than a simple alert. A double-click pattern with a visual countdown or timeout provides a smooth, non-blocking way to prevent accidental resets while maintaining the app's aesthetic.
+**Action:** Use a state-driven confirmation pattern (e.g., 'Confirm?' -> 'Are you sure?') with a 3-second `setTimeout` reset for all high-consequence sidebar or toolbar actions.
