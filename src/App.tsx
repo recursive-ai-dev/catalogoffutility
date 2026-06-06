@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
-import { AuthProvider, useAuth, useAuthModal } from "./lib/auth";
+import { AuthProvider, useAuth, useAuthModal, initials, PROFILE_DATE_FORMATTER } from "./lib/auth";
 import { AuthModal } from "./AuthModal";
 import { PrivacyBanner } from "./PrivacyBanner";
 
@@ -32,9 +32,27 @@ function AppInner() {
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
-  const { user } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
+
+  // Performance: memoize display-related strings to ensure prop stability for
+  // Catalog's memoized tree. Prevents re-renders on background profile updates
+  // (like last_seen_at refreshes) that don't change the UI.
+  const userDisplayName = useMemo(
+    () => profile?.username ?? user?.email?.split("@")[0] ?? "entity",
+    [profile?.username, user?.email],
+  );
+
+  const joined = useMemo(() => {
+    if (!profile?.created_at) return null;
+    const date = new Date(profile.created_at);
+    return Number.isNaN(date.getTime())
+      ? null
+      : PROFILE_DATE_FORMATTER.format(date);
+  }, [profile?.created_at]);
+
+  const userInitials = useMemo(() => initials(userDisplayName), [userDisplayName]);
 
   // Track transient state in refs to enable referential stability for callbacks.
   // This prevents the Catalog from re-rendering when the view or selected app changes.
@@ -179,6 +197,15 @@ function AppInner() {
           onSearchChange={handleSearchChange}
           selectedTag={selectedTag}
           onTagSelect={handleTagSelect}
+          isLoggedIn={isLoggedIn}
+          user={user}
+          profile={profile}
+          loading={loading}
+          signOut={signOut}
+          showAuthModal={showAuthModal}
+          userDisplayName={userDisplayName}
+          userInitials={userInitials}
+          joined={joined}
         />
       )}
       {authModalVisible && <AuthModal />}
