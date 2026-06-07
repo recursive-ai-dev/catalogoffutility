@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Catalog, DEFAULT_TAG } from "./Catalog";
+import { initials, PROFILE_DATE_FORMATTER } from "./lib/auth";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
 import { AppEntry } from "./data";
@@ -32,9 +33,24 @@ function AppInner() {
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
-  const { user } = useAuth();
+  const { user, profile, loading: authLoading, signOut } = useAuth();
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
+
+  const userDisplayName = useMemo(
+    () => profile?.username ?? user?.email?.split("@")[0] ?? "entity",
+    [profile?.username, user?.email],
+  );
+
+  const joined = useMemo(() => {
+    if (!profile?.created_at) return null;
+    const date = new Date(profile.created_at);
+    return Number.isNaN(date.getTime())
+      ? null
+      : PROFILE_DATE_FORMATTER.format(date);
+  }, [profile?.created_at]);
+
+  const userInitials = useMemo(() => initials(userDisplayName), [userDisplayName]);
 
   // Track transient state in refs to enable referential stability for callbacks.
   // This prevents the Catalog from re-rendering when the view or selected app changes.
@@ -179,6 +195,13 @@ function AppInner() {
           onSearchChange={handleSearchChange}
           selectedTag={selectedTag}
           onTagSelect={handleTagSelect}
+          isLoggedIn={isLoggedIn}
+          userDisplayName={userDisplayName}
+          userInitials={userInitials}
+          joined={joined}
+          authLoading={authLoading}
+          signOut={signOut}
+          showAuthModal={showAuthModal}
         />
       )}
       {authModalVisible && <AuthModal />}
