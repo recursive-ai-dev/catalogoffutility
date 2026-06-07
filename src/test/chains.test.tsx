@@ -285,6 +285,10 @@ describe('Chain 14 — NavButtonActions', () => {
     expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /Forget/i }));
+    // In confirmation mode, it should not have purged yet.
+    expect(screen.queryByText('Memories purged.')).toBeNull();
+    // Second click within the 3s window triggers the purge
+    fireEvent.click(screen.getByRole('button', { name: /Are you sure\?/i }));
 
     expect(screen.getByText('Memories purged.')).toBeTruthy();
     expect((input as HTMLInputElement).value).toBe('');
