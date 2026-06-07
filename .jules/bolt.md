@@ -13,3 +13,9 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-04-15 - Context Churn Mitigation & Pre-calculated Navigation
+
+**Learning:** Components subscribing to large context objects (like `AuthContext`) re-render on every context change, even if they only use a subset of the fields. Lifting and memoizing specific derived props (e.g., `isLoggedIn`, `userDisplayName`) in the parent and passing them down to `React.memo`'d children isolates them from irrelevant context updates. Additionally, converting runtime filters (like selecting a random navigable entry) into O(1) lookups via pre-calculated module-scope constants avoids redundant O(N) iterations on every user interaction.
+
+**Action:** Prefer lifting and memoizing derived context props to isolate expensive subtrees from context churn. Use module-scope constants for static or semi-static data filtering to keep interaction latency minimal.
