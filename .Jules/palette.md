@@ -34,3 +34,7 @@
 ## 2025-05-27 - Dynamic Accessibility Labels for Toggles
 **Learning:** Static ARIA labels on stateful toggles (like password visibility) can be misleading once the state changes. Providing dynamic `aria-label` and `title` attributes that reflect the *next* or *current* action (e.g., 'Show' vs 'Hide') ensures that screen reader and mouse users receive accurate, context-aware feedback.
 **Action:** Use conditional logic to update `aria-label` and `title` on interactive elements whose primary function depends on a binary state.
+
+## 2025-06-01 - Destructive Action Confirmation UX
+**Learning:** Destructive actions (like "Forget" which purges search/filter state) benefit from a stateful confirmation flow rather than a simple immediate trigger. Using a "Click to Confirm" pattern with visual feedback (changing labels, icons, and colors) reduces accidental triggers and adds a layer of intentionality to the UI.
+**Action:** Implement a binary confirmation state (e.g., `isConfirming`) with a timed reset (e.g., 3000ms) for destructive or significant UI actions.
