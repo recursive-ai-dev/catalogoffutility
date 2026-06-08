@@ -284,7 +284,15 @@ describe('Chain 14 — NavButtonActions', () => {
     await userEvent.type(input, 'aria');
     expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
 
+    // First click: enters confirmation state
     fireEvent.click(screen.getByRole('button', { name: /Forget/i }));
+    // Verify confirmation state UI
+    expect(screen.getByText('Are you sure?')).toBeTruthy();
+    // Filters should NOT be reset yet
+    expect((input as HTMLInputElement).value).toBe('aria');
+
+    // Second click: triggers reset
+    fireEvent.click(screen.getByRole('button', { name: /Are you sure\?/i }));
 
     expect(screen.getByText('Memories purged.')).toBeTruthy();
     expect((input as HTMLInputElement).value).toBe('');
