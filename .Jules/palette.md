@@ -34,3 +34,7 @@
 ## 2025-05-27 - Dynamic Accessibility Labels for Toggles
 **Learning:** Static ARIA labels on stateful toggles (like password visibility) can be misleading once the state changes. Providing dynamic `aria-label` and `title` attributes that reflect the *next* or *current* action (e.g., 'Show' vs 'Hide') ensures that screen reader and mouse users receive accurate, context-aware feedback.
 **Action:** Use conditional logic to update `aria-label` and `title` on interactive elements whose primary function depends on a binary state.
+
+## 2026-06-09 - Double-Confirmation for Destructive State Resets
+**Learning:** In brutalist interfaces with minimalist navigation, global actions like "Forget" (filter reset) can be too easily triggered by accident. A two-step confirmation state using high-contrast color shifts (e.g., dim white to red-500) and iconography changes (e.g., delete to priority_high) provides a tactile safety mechanism that fits the aesthetic while preventing user frustration.
+**Action:** Implement a 3000ms "confirmation window" for global destructive actions, toggling both visual theme and label to ensure intentionality.
