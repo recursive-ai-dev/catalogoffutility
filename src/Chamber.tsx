@@ -81,15 +81,20 @@ function isSafeImageSrc(src: string): boolean {
   return false;
 }
 
+let logIdCounter = 0;
+/** Generates a stable, unique ID for log entries to enable efficient React list reconciliation. */
+const nextLogId = () => `log-${++logIdCounter}`;
+
 function appendLog(
   prev: LogEntry[],
-  entry: LogEntry,
+  entry: Omit<LogEntry, 'id'>,
 ): LogEntry[] {
-  const next = [...prev, entry];
+  const next = [...prev, { ...entry, id: nextLogId() }];
   return next.length > MAX_LOGS ? next.slice(next.length - MAX_LOGS) : next;
 }
 
 type LogEntry = {
+  id: string;
   sender: string;
   time: string;
   msg: string;
@@ -133,18 +138,21 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
     const t = clk.timeString();
     return [
       {
+        id: nextLogId(),
         sender: "SYSTEM_MSG",
         time: t,
         msg: "Connection established with the external node. Do not trust the visuals.",
         type: "msg",
       },
       {
+        id: nextLogId(),
         sender: "UNKNOWN_SENDER",
         time: t,
         msg: "It sees you. It has always seen you.",
         type: "unknown",
       },
       {
+        id: nextLogId(),
         sender: "SYSTEM_WARN",
         time: t,
         msg: "Packet loss detected. Reality buffer is thinning.",
@@ -633,9 +641,9 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
             </div>
             {showLogs ? (
               <div className="flex-1 overflow-y-auto p-6 space-y-6 font-mono text-xs void-scroll">
-                {logs.map((log, i) => (
+                {logs.map((log) => (
                   <div
-                    key={i}
+                    key={log.id}
                     className={`flex flex-col gap-2 ${log.type === "msg" ? "opacity-60 hover:opacity-100" : log.type === "warn" ? "opacity-80" : ""} transition-opacity`}
                   >
                     <span

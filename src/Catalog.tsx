@@ -1,7 +1,6 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect, useDeferredValue } from "react";
 import { X } from "lucide-react";
 import { CATALOG_ENTRIES, AppEntry } from "./data";
-import { useAuth, useAuthModal } from "./lib/auth";
 import { Clock, realClock } from "./lib/clock";
 
 interface CatalogProps {
@@ -10,6 +9,13 @@ interface CatalogProps {
   onSearchChange: (query: string) => void;
   selectedTag: string;
   onTagSelect: (tag: string) => void;
+  isLoggedIn: boolean;
+  userDisplayName: string;
+  userInitials: string;
+  joined: string | null;
+  authLoading: boolean;
+  signOut: () => Promise<void>;
+  showAuthModal: () => void;
   /**
    * Determinism provider. Pass `makeFakeClock(fixed)` in tests to freeze
    * the mount-time log entry at a known instant.
@@ -66,41 +72,24 @@ const FILTER_TAGS = [
   "Horror",
 ];
 
-/**
- * Pre-allocated formatter for "MMM YYYY" profile dates.
- * 30-50x faster than calling toLocaleDateString() in every render.
- */
-const PROFILE_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "short",
-});
 
-const EMAIL_CLEAN_REGEX = /@.*/;
-const INITIALS_REGEX = /(?:^|[._\-\s])([\p{L}\p{N}_])/gu;
-const INITIAL_CLEAN_REGEX = /^[._\-\s]+/;
-const FALLBACK_CLEAN_REGEX = /[^a-zA-Z0-9]/g;
-
-// Generates a deterministic two-letter avatar from a username/email.
-// Optimized to use a single regex match for initials extraction while preserving
-// underscore/dot/dash boundaries, reducing multiple array allocations.
-function initials(name: string): string {
-  const cleanName = name.replace(EMAIL_CLEAN_REGEX, "");
-  const matches = cleanName.matchAll(INITIALS_REGEX);
-  const parts: string[] = [];
-  for (const match of matches) {
-    parts.push(match[1]);
-    if (parts.length === 2) break;
-  }
-
-  if (parts.length >= 2) return (parts[0] + parts[1]).toUpperCase();
-  if (parts.length === 1) return cleanName.replace(INITIAL_CLEAN_REGEX, "").slice(0, 2).toUpperCase();
-  const fallback = cleanName.replace(FALLBACK_CLEAN_REGEX, "").slice(0, 2);
-  return (fallback.length > 0 ? fallback : "??").toUpperCase();
-}
-
-const UserSection = React.memo(function UserSection() {
-  const { user, profile, loading, signOut } = useAuth();
-  const { showAuthModal } = useAuthModal();
+const UserSection = React.memo(function UserSection({
+  isLoggedIn,
+  userDisplayName,
+  userInitials,
+  joined,
+  authLoading,
+  signOut,
+  showAuthModal,
+}: {
+  isLoggedIn: boolean;
+  userDisplayName: string;
+  userInitials: string;
+  joined: string | null;
+  authLoading: boolean;
+  signOut: () => Promise<void>;
+  showAuthModal: () => void;
+}) {
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -109,7 +98,7 @@ const UserSection = React.memo(function UserSection() {
     setSigningOut(false);
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="px-4 py-4 border-t border-white/5">
         <div className="flex items-center gap-3">
@@ -120,7 +109,7 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  if (!user) {
+  if (!isLoggedIn) {
     return (
       <div className="px-4 py-4 border-t border-white/5">
         <p className="text-[9px] font-mono text-white/20 tracking-widest uppercase mb-3">
@@ -154,21 +143,6 @@ const UserSection = React.memo(function UserSection() {
     );
   }
 
-  const displayName = useMemo(
-    () => profile?.username ?? user.email?.split("@")[0] ?? "entity",
-    [profile?.username, user.email],
-  );
-
-  const joined = useMemo(() => {
-    if (!profile?.created_at) return null;
-    const date = new Date(profile.created_at);
-    return Number.isNaN(date.getTime())
-      ? null
-      : PROFILE_DATE_FORMATTER.format(date);
-  }, [profile?.created_at]);
-
-  const userInitials = useMemo(() => initials(displayName), [displayName]);
-
   return (
     <div className="px-4 py-4 border-t border-white/5">
       <p className="text-[9px] font-mono text-white/20 tracking-widest uppercase mb-3">
@@ -183,7 +157,7 @@ const UserSection = React.memo(function UserSection() {
         </div>
         <div className="min-w-0">
           <p className="text-white/70 font-mono text-[10px] tracking-widest uppercase truncate">
-            {displayName}
+            {userDisplayName}
           </p>
           {joined && (
             <p className="text-white/20 font-mono text-[8px] tracking-widest">
@@ -433,14 +407,27 @@ const Sidebar = React.memo(function Sidebar({
   showNotification,
   lockedCount,
   corruption,
+  isLoggedIn,
+  userDisplayName,
+  userInitials,
+  joined,
+  authLoading,
+  signOut,
+  showAuthModal,
 }: {
   onSelectApp: (app: AppEntry) => void;
   resetFilters: () => void;
   showNotification: (msg: string) => void;
   lockedCount: number;
   corruption: number;
+  isLoggedIn: boolean;
+  userDisplayName: string;
+  userInitials: string;
+  joined: string | null;
+  authLoading: boolean;
+  signOut: () => Promise<void>;
+  showAuthModal: () => void;
 }) {
-  const { user } = useAuth();
   return (
     <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
       <div className="p-8 border-b border-white/10 flex flex-col gap-2">
@@ -456,7 +443,7 @@ const Sidebar = React.memo(function Sidebar({
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           onClick={() => {
-            const navigable = CATALOG_ENTRIES.filter((e) => !e.missing && (!e.requiresAuth || user));
+            const navigable = CATALOG_ENTRIES.filter((e) => !e.missing && (!e.requiresAuth || isLoggedIn));
             if (navigable.length > 0) {
               const randomApp = navigable[Math.floor(Math.random() * navigable.length)];
               onSelectApp(randomApp);
@@ -523,7 +510,15 @@ const Sidebar = React.memo(function Sidebar({
       </nav>
 
       {/* User identity section */}
-      <UserSection />
+      <UserSection
+        isLoggedIn={isLoggedIn}
+        userDisplayName={userDisplayName}
+        userInitials={userInitials}
+        joined={joined}
+        authLoading={authLoading}
+        signOut={signOut}
+        showAuthModal={showAuthModal}
+      />
 
       <div className="p-6 border-t border-white/10 bg-black/40">
         <div className="flex flex-col gap-3">
@@ -546,7 +541,7 @@ const Sidebar = React.memo(function Sidebar({
             <span>ENTRIES:</span>
             <span className="text-white/40">{CATALOG_ENTRIES.length}</span>
           </div>
-          {!user && (
+          {!isLoggedIn && (
             <div className="flex justify-between items-center text-[10px] text-white/15 font-mono tracking-widest">
               <span>LOCKED:</span>
               <span className="text-white/25">{lockedCount}</span>
@@ -779,6 +774,13 @@ export const Catalog = React.memo(function Catalog({
   onSearchChange,
   selectedTag,
   onTagSelect,
+  isLoggedIn,
+  userDisplayName,
+  userInitials,
+  joined,
+  authLoading,
+  signOut,
+  showAuthModal,
   clock,
 }: CatalogProps) {
   // Double-memoization: normalize the raw query before deferring it.
@@ -805,8 +807,6 @@ export const Catalog = React.memo(function Catalog({
   // Chain 14 (NavButtonActions): non-blocking notification replaces alert()
   const [notification, setNotification] = useState<string | null>(null);
   const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { user } = useAuth();
-  const { showAuthModal } = useAuthModal();
 
   /** Centralised filter reset — single source of truth for clearing search and tag. */
   const resetFilters = useCallback(() => {
@@ -886,7 +886,6 @@ export const Catalog = React.memo(function Catalog({
     return searchSpace.filter((entry) => entry.searchBlob.includes(deferredQuery));
   }, [deferredQuery, selectedTag]);
 
-  const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
     (entry: AppEntry) => {
       if (entry.missing) return;
@@ -906,10 +905,6 @@ export const Catalog = React.memo(function Catalog({
   const corruption = 85;
 
   const isFilterActive = searchQuery !== "" || selectedTag !== DEFAULT_TAG;
-  const userDisplayName = useMemo(
-    () => user?.email?.split("@")[0] ?? null,
-    [user],
-  );
 
   return (
     <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
@@ -934,6 +929,13 @@ export const Catalog = React.memo(function Catalog({
         showNotification={showNotification}
         lockedCount={lockedCount}
         corruption={corruption}
+        isLoggedIn={isLoggedIn}
+        userDisplayName={userDisplayName}
+        userInitials={userInitials}
+        joined={joined}
+        authLoading={authLoading}
+        signOut={signOut}
+        showAuthModal={showAuthModal}
       />
 
       {/* Main Content Area */}
