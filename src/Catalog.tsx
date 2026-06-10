@@ -441,6 +441,27 @@ const Sidebar = React.memo(function Sidebar({
   corruption: number;
 }) {
   const { user } = useAuth();
+  const [confirmForget, setConfirmForget] = useState(false);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleForget = () => {
+    if (confirmForget) {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+      setConfirmForget(false);
+      resetFilters();
+      showNotification("Memories purged.");
+    } else {
+      setConfirmForget(true);
+      confirmTimerRef.current = setTimeout(() => setConfirmForget(false), 3000);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
+
   return (
     <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
       <div className="p-8 border-b border-white/10 flex flex-col gap-2">
@@ -473,17 +494,21 @@ const Sidebar = React.memo(function Sidebar({
           </span>
         </button>
         <button
-          className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-white/10 bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
-          onClick={() => {
-            resetFilters();
-            showNotification("Memories purged.");
-          }}
+          className={`group flex items-center gap-4 px-4 py-3 rounded-lg border transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+            confirmForget
+              ? "border-red-900/50 bg-red-950/20 text-red-500/70"
+              : "border-white/10 bg-white/5 text-white"
+          }`}
+          onClick={handleForget}
         >
-          <span className="material-symbols-outlined text-white text-xl font-light" aria-hidden="true">
-            delete
+          <span
+            className={`material-symbols-outlined text-xl font-light ${confirmForget ? "text-red-500/70" : "text-white"}`}
+            aria-hidden="true"
+          >
+            {confirmForget ? "priority_high" : "delete"}
           </span>
-          <span className="text-white font-light uppercase tracking-widest text-xs">
-            Forget
+          <span className="font-light uppercase tracking-widest text-xs">
+            {confirmForget ? "Are you sure?" : "Forget"}
           </span>
         </button>
         <button
