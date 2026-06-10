@@ -13,3 +13,8 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-04-15 - Stable Keys for Shifting FIFO Lists
+
+**Learning:** Using array indices as keys in a list that is truncated from the front (FIFO) causes React to re-render the entire list on every update because every item's index changes. Generating a stable, unique ID for each entry allows React to perform surgical DOM updates (1 removal, 1 addition), drastically reducing main-thread work when the list is at its maximum capacity.
+**Action:** Always use stable unique IDs instead of indices for lists that undergo mutations, especially in performance-critical components like system logs or real-time feeds.
