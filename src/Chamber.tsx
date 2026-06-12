@@ -83,18 +83,39 @@ function isSafeImageSrc(src: string): boolean {
 
 function appendLog(
   prev: LogEntry[],
-  entry: LogEntry,
+  entry: Omit<LogEntry, "id">,
 ): LogEntry[] {
-  const next = [...prev, entry];
+  const lastId = prev.length > 0 ? prev[prev.length - 1].id : 0;
+  const next = [...prev, { ...entry, id: lastId + 1 }];
   return next.length > MAX_LOGS ? next.slice(next.length - MAX_LOGS) : next;
 }
 
 type LogEntry = {
+  id: number;
   sender: string;
   time: string;
   msg: string;
   type: "msg" | "warn" | "unknown";
 };
+
+const LogEntryItem = React.memo(function LogEntryItem({ log }: { log: LogEntry }) {
+  return (
+    <div
+      className={`flex flex-col gap-2 ${log.type === "msg" ? "opacity-60 hover:opacity-100" : log.type === "warn" ? "opacity-80" : ""} transition-opacity`}
+    >
+      <span
+        className={`${log.type === "unknown" ? "text-white/70" : "text-white/30"} text-[9px] tracking-widest`}
+      >
+        [{log.sender}] {log.time}
+      </span>
+      <p
+        className={`${log.type === "unknown" ? "text-white/90" : "text-white/50"} font-light leading-relaxed`}
+      >
+        {log.msg}
+      </p>
+    </div>
+  );
+});
 
 interface ChamberProps {
   app: AppEntry;
@@ -133,18 +154,21 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
     const t = clk.timeString();
     return [
       {
+        id: 1,
         sender: "SYSTEM_MSG",
         time: t,
         msg: "Connection established with the external node. Do not trust the visuals.",
         type: "msg",
       },
       {
+        id: 2,
         sender: "UNKNOWN_SENDER",
         time: t,
         msg: "It sees you. It has always seen you.",
         type: "unknown",
       },
       {
+        id: 3,
         sender: "SYSTEM_WARN",
         time: t,
         msg: "Packet loss detected. Reality buffer is thinning.",
@@ -633,22 +657,8 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
             </div>
             {showLogs ? (
               <div className="flex-1 overflow-y-auto p-6 space-y-6 font-mono text-xs void-scroll">
-                {logs.map((log, i) => (
-                  <div
-                    key={i}
-                    className={`flex flex-col gap-2 ${log.type === "msg" ? "opacity-60 hover:opacity-100" : log.type === "warn" ? "opacity-80" : ""} transition-opacity`}
-                  >
-                    <span
-                      className={`${log.type === "unknown" ? "text-white/70" : "text-white/30"} text-[9px] tracking-widest`}
-                    >
-                      [{log.sender}] {log.time}
-                    </span>
-                    <p
-                      className={`${log.type === "unknown" ? "text-white/90" : "text-white/50"} font-light leading-relaxed`}
-                    >
-                      {log.msg}
-                    </p>
-                  </div>
+                {logs.map((log) => (
+                  <LogEntryItem key={log.id} log={log} />
                 ))}
                 <div ref={logsEndRef} />
               </div>
