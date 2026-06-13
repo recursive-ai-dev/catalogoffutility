@@ -382,7 +382,7 @@ body::after {
 <!-- ── INPUT ──────────────────────────────────────── -->
 <div id="input-row">
   <div id="input-prompt"><span id="prompt-user">user</span>@aria-dev-01:~$</div>
-  <input id="cmd" type="text" autocomplete="off" spellcheck="false" placeholder="">
+  <input id="cmd" type="text" autocomplete="off" spellcheck="false" placeholder="" maxlength="1000">
 </div>
 
 <!-- ── SUBLIMINAL ─────────────────────────────────── -->
@@ -1490,7 +1490,7 @@ async function endingC() {
 $cmd.addEventListener('keydown', async (e) => {
   if (e.key !== 'Enter') return;
   const raw = $cmd.value.trim();
-  if (!raw || S.typing || !S.inputEnabled) return;
+  if (!raw || raw.length > 1000 || S.typing || !S.inputEnabled) return;
   $cmd.value = '';
 
   // Echo command
