@@ -512,13 +512,14 @@ describe('Chain 7 — IframeError', () => {
 // ---------------------------------------------------------------------------
 describe('Chain 11 — LogAppend', () => {
   it('appendLog caps at MAX_LOGS and evicts oldest', () => {
-    type LogEntry = { sender: string; time: string; msg: string; type: 'msg' | 'warn' | 'unknown' };
+    type LogEntry = { id: number; sender: string; time: string; msg: string; type: 'msg' | 'warn' | 'unknown' };
     const MAX_LOGS = 100;
-    function appendLog(prev: LogEntry[], entry: LogEntry): LogEntry[] {
-      const next = [...prev, entry];
+    function appendLog(prev: LogEntry[], entry: Omit<LogEntry, "id">): LogEntry[] {
+      const lastId = prev.length > 0 ? prev[prev.length - 1].id : 0;
+      const next = [...prev, { ...entry, id: lastId + 1 }];
       return next.length > MAX_LOGS ? next.slice(next.length - MAX_LOGS) : next;
     }
-    const makeEntry = (i: number): LogEntry => ({
+    const makeEntry = (i: number): Omit<LogEntry, "id"> => ({
       sender: 'T', time: '00:00', msg: `Msg ${i}`, type: 'msg',
     });
     let logs: LogEntry[] = [];
