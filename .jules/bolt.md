@@ -13,3 +13,8 @@
 **Learning:** In a deeply nested component tree where large leaf components (like `ProductPage` or `Chamber`) are wrapped in `React.memo`, passing navigation callbacks that depend on transient state (like the current `view` or `selectedApp`) can trigger unnecessary cascading re-renders. Using `useRef` to track these transient dependencies within the callbacks allows them to remain referentially stable (empty dependency array) while still being functionally correct.
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
+
+## 2026-04-15 - Stable Keys for FIFO List Eviction
+
+**Learning:** In React lists with a FIFO eviction strategy (like a rolling log capped at N entries), using the array index as a `key` is a performance anti-pattern. Every new entry shifts the indices of all existing entries, forcing React to re-render the entire DOM list. Using stable, incrementing IDs and `React.memo` on list items allows React to perform surgical DOM updates (removing one node, adding one node) while skipping reconciliation for all other items.
+**Action:** Always use stable unique IDs for list keys in components with dynamic ordering or FIFO eviction. Combine with `React.memo` to achieve $O(1)$ render cost relative to list size.

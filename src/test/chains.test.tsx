@@ -512,20 +512,23 @@ describe('Chain 7 — IframeError', () => {
 // ---------------------------------------------------------------------------
 describe('Chain 11 — LogAppend', () => {
   it('appendLog caps at MAX_LOGS and evicts oldest', () => {
-    type LogEntry = { sender: string; time: string; msg: string; type: 'msg' | 'warn' | 'unknown' };
+    type LogEntry = { id: number; sender: string; time: string; msg: string; type: 'msg' | 'warn' | 'unknown' };
     const MAX_LOGS = 100;
-    function appendLog(prev: LogEntry[], entry: LogEntry): LogEntry[] {
-      const next = [...prev, entry];
+    function appendLog(prev: LogEntry[], entry: Omit<LogEntry, 'id'>): LogEntry[] {
+      const lastId = prev.length > 0 ? prev[prev.length - 1].id : 0;
+      const next = [...prev, { ...entry, id: lastId + 1 }];
       return next.length > MAX_LOGS ? next.slice(next.length - MAX_LOGS) : next;
     }
-    const makeEntry = (i: number): LogEntry => ({
+    const makeEntry = (i: number): Omit<LogEntry, 'id'> => ({
       sender: 'T', time: '00:00', msg: `Msg ${i}`, type: 'msg',
     });
     let logs: LogEntry[] = [];
     for (let i = 0; i < 110; i++) { logs = appendLog(logs, makeEntry(i)); }
     expect(logs.length).toBe(MAX_LOGS);
     expect(logs[0].msg).toBe('Msg 10');
+    expect(logs[0].id).toBe(11);
     expect(logs[99].msg).toBe('Msg 109');
+    expect(logs[99].id).toBe(110);
   });
 
   it('"Inject Log" button appends a manual override entry', () => {
