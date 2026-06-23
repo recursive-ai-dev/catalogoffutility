@@ -81,13 +81,19 @@ function isSafeImageSrc(src: string): boolean {
   return false;
 }
 
-function appendLog(prev: LogEntry[], entry: Omit<LogEntry, "id">): LogEntry[] {
-  // Chain 11 (LogAppend): Assign stable, incrementing IDs based on the last entry.
-  // This allows React to perform surgical O(1) DOM updates during additions
-  // and evictions, rather than re-rendering the entire O(N) list.
+/**
+ * Efficiently appends a new log entry to the FIFO list.
+ * Automatically assigns a stable, incrementing unique 'id' based on the previous
+ * tail entry to ensure React can perform surgical DOM updates without full list
+ * re-renders (BUG-11 / Optimization).
+ */
+function appendLog(
+  prev: LogEntry[],
+  entry: Omit<LogEntry, "id">,
+): LogEntry[] {
   const lastId = prev.length > 0 ? prev[prev.length - 1].id : 0;
   const next = [...prev, { ...entry, id: lastId + 1 }];
-  return next.length > MAX_LOGS ? next.slice(-MAX_LOGS) : next;
+  return next.length > MAX_LOGS ? next.slice(next.length - MAX_LOGS) : next;
 }
 
 type LogEntry = {
@@ -99,15 +105,19 @@ type LogEntry = {
 };
 
 /**
- * Renders a single log entry. Memoized to prevent re-rendering when
- * unrelated Chamber state (like noise or fullscreen) changes.
+ * Memoized individual log entry to prevent redundant re-renders of the entire
+ * log list when new entries are appended or old ones are evicted (BUG-11 / Optimization).
+ * Since entries are immutable once created, memoization here ensures O(1)
+ * reconciliation per new entry.
  */
-const LogItem = React.memo(function LogItem({ log }: { log: LogEntry }) {
+const LogEntryItem = React.memo(function LogEntryItem({
+  log,
+}: {
+  log: LogEntry;
+}) {
   return (
     <div
-      className={`flex flex-col gap-2 ${
-        log.type === "msg" ? "opacity-60 hover:opacity-100" : log.type === "warn" ? "opacity-80" : ""
-      } transition-opacity`}
+      className={`flex flex-col gap-2 ${log.type === "msg" ? "opacity-60 hover:opacity-100" : log.type === "warn" ? "opacity-80" : ""} transition-opacity`}
     >
       <span
         className={`${log.type === "unknown" ? "text-white/70" : "text-white/30"} text-[9px] tracking-widest`}
@@ -664,7 +674,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
             {showLogs ? (
               <div className="flex-1 overflow-y-auto p-6 space-y-6 font-mono text-xs void-scroll">
                 {logs.map((log) => (
-                  <LogItem key={log.id} log={log} />
+                  <LogEntryItem key={log.id} log={log} />
                 ))}
                 <div ref={logsEndRef} />
               </div>

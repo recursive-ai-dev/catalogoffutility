@@ -14,7 +14,7 @@
 
 **Action:** When passing callbacks to memoized components, evaluate if dependencies can be moved to `useRef` to maintain referential stability, especially for state that changes frequently or triggers global re-renders.
 
-## 2026-06-17 - Stable IDs for FIFO Log Reconciliation
+## 2026-04-15 - Stable Keys for FIFO List Eviction
 
-**Learning:** In a React list component that implements a FIFO eviction policy (like a system log), using array indices as keys forces O(N) DOM reconciliation every time the head is evicted, as every subsequent item's index changes. This causes noticeable main-thread lag when the list is large (e.g., 100+ entries).
-**Action:** Always assign stable, monotonically increasing IDs to list entries that undergo shifting or eviction. Pair this with React.memo on the item component to ensure React only performs O(1) DOM operations (one removal, one append) during steady-state updates.
+**Learning:** In React lists with a FIFO eviction strategy (like a rolling log capped at N entries), using the array index as a `key` is a performance anti-pattern. Every new entry shifts the indices of all existing entries, forcing React to re-render the entire DOM list. Using stable, incrementing IDs and `React.memo` on list items allows React to perform surgical DOM updates (removing one node, adding one node) while skipping reconciliation for all other items.
+**Action:** Always use stable unique IDs for list keys in components with dynamic ordering or FIFO eviction. Combine with `React.memo` to achieve $O(1)$ render cost relative to list size.
