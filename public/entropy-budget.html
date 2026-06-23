@@ -347,7 +347,7 @@ body::after {
 
   <div id="input-area">
     <span id="input-prompt">›</span>
-    <input type="text" id="input-field" placeholder="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <input type="text" id="input-field" placeholder="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="2000">
     <span id="cost-preview"></span>
   </div>
 </div>
@@ -1035,6 +1035,11 @@ body::after {
   function handleInput(e) {
     if (e.key !== 'Enter') return;
     if (state.collapsed) return;
+
+    if (dom.inputField.value.length > 2000) {
+      addLogEntry("[ SYSTEM ERROR: Input exceeds maximum buffer length. ]", 'log-critical');
+      return;
+    }
 
     const text = dom.inputField.value.trim();
     if (!text) return;
