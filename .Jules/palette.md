@@ -34,3 +34,7 @@
 ## 2025-05-27 - Dynamic Accessibility Labels for Toggles
 **Learning:** Static ARIA labels on stateful toggles (like password visibility) can be misleading once the state changes. Providing dynamic `aria-label` and `title` attributes that reflect the *next* or *current* action (e.g., 'Show' vs 'Hide') ensures that screen reader and mouse users receive accurate, context-aware feedback.
 **Action:** Use conditional logic to update `aria-label` and `title` on interactive elements whose primary function depends on a binary state.
+
+## 2025-06-05 - Click-to-Confirm for Destructive Actions
+**Learning:** In minimalist UIs, immediate execution of destructive actions like 'Forget' or 'Reset' can lead to accidental data loss. A two-step "click-to-confirm" pattern with a temporary state (3000ms timeout) provides a safety net without the high friction of a modal dialog, preserving the interface's flow and aesthetic.
+**Action:** Implement a confirmation window with distinct visual feedback (e.g., transition to a reddish theme and icon change) for non-reversible actions to balance safety and speed.
