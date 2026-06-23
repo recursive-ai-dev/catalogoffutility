@@ -442,25 +442,25 @@ const Sidebar = React.memo(function Sidebar({
 }) {
   const { user } = useAuth();
   const [isConfirmingForget, setIsConfirmingForget] = useState(false);
-  const forgetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleForgetClick = useCallback(() => {
+  const handleForgetClick = () => {
     if (isConfirmingForget) {
-      if (forgetTimerRef.current) clearTimeout(forgetTimerRef.current);
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
       setIsConfirmingForget(false);
       resetFilters();
       showNotification("Memories purged.");
     } else {
       setIsConfirmingForget(true);
-      forgetTimerRef.current = setTimeout(() => {
+      confirmTimerRef.current = setTimeout(() => {
         setIsConfirmingForget(false);
       }, 3000);
     }
-  }, [isConfirmingForget, resetFilters, showNotification]);
+  };
 
   useEffect(() => {
     return () => {
-      if (forgetTimerRef.current) clearTimeout(forgetTimerRef.current);
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
     };
   }, []);
 
@@ -498,14 +498,14 @@ const Sidebar = React.memo(function Sidebar({
         <button
           className={`group flex items-center gap-4 px-4 py-3 rounded-lg border transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
             isConfirmingForget
-              ? "border-red-900/50 bg-red-950/20 text-red-500/70"
-              : "border-white/10 bg-white/5 hover:bg-white/10 text-white"
+              ? "border-red-900/50 bg-red-950/20"
+              : "border-white/10 bg-white/5"
           }`}
           onClick={handleForgetClick}
           aria-label={isConfirmingForget ? "Confirm: Forget memories" : "Forget memories"}
         >
           <span
-            className={`material-symbols-outlined text-xl font-light ${
+            className={`material-symbols-outlined text-xl font-light transition-colors ${
               isConfirmingForget ? "text-red-500/70" : "text-white"
             }`}
             aria-hidden="true"
@@ -513,7 +513,7 @@ const Sidebar = React.memo(function Sidebar({
             {isConfirmingForget ? "priority_high" : "delete"}
           </span>
           <span
-            className={`font-light uppercase tracking-widest text-xs ${
+            className={`font-light uppercase tracking-widest text-xs transition-colors ${
               isConfirmingForget ? "text-red-500/70" : "text-white"
             }`}
           >
