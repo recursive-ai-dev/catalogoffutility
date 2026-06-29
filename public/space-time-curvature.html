@@ -523,13 +523,20 @@
   <!-- Tooltip -->
   <div class="tooltip" id="tooltip"></div>
 
-  <script>
+  <script type="module">
     /**
      * Curvature Cartographer v2.0
      * Production-grade spacetime curvature visualization
      */
 
     'use strict';
+
+    import {
+      calculateSchwarzschildPotential,
+      calculatePotentialGradient,
+      calculateSpatialCurvature,
+      calculateShapiroDelay
+    } from './math-physics.js';
 
     // Configuration
     const CONFIG = {
@@ -637,35 +644,16 @@
       }
 
       intensityAt(x, y) {
-        let I = 0;
-        for (const source of this.state.sources.values()) {
-          const dx = x - source.x;
-          const dy = y - source.y;
-          const d2 = dx * dx + dy * dy;
-          I += source.s * Math.exp(-d2 / (source.r * source.r));
-        }
-        return I;
+        return calculateSchwarzschildPotential(x, y, Array.from(this.state.sources.values()));
       }
 
       gradIntensityAt(x, y) {
-        const e = 2.0;
-        const Ix1 = this.intensityAt(x + e, y);
-        const Ix0 = this.intensityAt(x - e, y);
-        const Iy1 = this.intensityAt(x, y + e);
-        const Iy0 = this.intensityAt(x, y - e);
-        return {
-          gx: (Ix1 - Ix0) / (2 * e),
-          gy: (Iy1 - Iy0) / (2 * e)
-        };
+        return calculatePotentialGradient(x, y, Array.from(this.state.sources.values()));
       }
 
       kFromI(I) {
         const k = I / (1.0 + I);
         return Math.max(0, Math.min(0.92, k));
-      }
-
-      bendGain(k) {
-        return 1.6 * k + 0.25 * k * k;
       }
 
       traceRay(x0, y0, dir0, steps, dtBase) {
@@ -693,22 +681,25 @@
             clampCount++;
           }
 
-          const gain = this.bendGain(k);
-          const perp = (-vy * gx + vx * gy);
-          const ax = -vy * perp * gain;
-          const ay = vx * perp * gain;
-          const damp = 1.0 - dampNear * k;
-          const dt = dtBase * (0.55 + 0.45 * (1.0 - k));
+          const kappa = calculateSpatialCurvature(vx, vy, I, gx, gy);
+          const c_coord = calculateShapiroDelay(I);
 
-          vx = (vx + ax * dt) * damp;
-          vy = (vy + ay * dt) * damp;
+          const dt = dtBase;
+          const travel = 18 * dt * c_coord;
+          const dTheta = kappa * travel;
+
+          const new_vx = vx * Math.cos(dTheta) - vy * Math.sin(dTheta);
+          const new_vy = vx * Math.sin(dTheta) + vy * Math.cos(dTheta);
+
+          vx = new_vx;
+          vy = new_vy;
 
           const vm = Math.hypot(vx, vy) + 1e-9;
           vx /= vm;
           vy /= vm;
 
-          x += vx * 18 * dt;
-          y += vy * 18 * dt;
+          x += vx * travel;
+          y += vy * travel;
 
           pts.push({ x, y, k, clamped });
 
