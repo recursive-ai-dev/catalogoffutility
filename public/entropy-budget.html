@@ -357,7 +357,9 @@ body::after {
   <div id="restart-hint">[ press any key ]</div>
 </div>
 
-<script>
+<script type="module">
+  import { calculateInputCost } from './math-physics.js';
+
 (function() {
   'use strict';
 
@@ -746,34 +748,7 @@ body::after {
   // ENTROPY ENGINE
   // ============================================================
 
-  function calculateWordCost(word) {
-    const normalized = word.toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (!normalized) return 0;
-
-    let cost = CONFIG.baseCostPerWord + (normalized.length * CONFIG.lengthMultiplier);
-
-    // Repetition penalty
-    const freq = state.wordFrequency[normalized] || 0;
-    if (freq > 0) {
-      const repMultiplier = CONFIG.repetitionBaseMultiplier + (freq * CONFIG.repetitionEscalation);
-      cost *= repMultiplier;
-
-      if (!state.discoveredRepetition && freq >= 2) {
-        state.discoveredRepetition = true;
-      }
-    }
-
-    return Math.ceil(cost);
-  }
-
-  function calculateInputCost(text) {
-    const words = text.trim().split(/\s+/).filter(w => w.length > 0);
-    let totalCost = 0;
-    for (const word of words) {
-      totalCost += calculateWordCost(word);
-    }
-    return { totalCost, words };
-  }
+  // calculateInputCost is imported from math-physics.js
 
   function spendEntropy(amount) {
     state.entropy = Math.max(0, state.entropy - amount);
@@ -1050,7 +1025,13 @@ body::after {
     breakSilence();
 
     // Calculate cost
-    const { totalCost, words } = calculateInputCost(text);
+    const { totalCost, words } = calculateInputCost(text, state.wordFrequency, CONFIG.repetitionBaseMultiplier, CONFIG.repetitionEscalation);
+
+    // Flag discovered repetition if it wasn't already
+    const uniqueNorms = words.map(w => w.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    if (!state.discoveredRepetition && uniqueNorms.some(n => (state.wordFrequency[n] || 0) >= 2)) {
+       state.discoveredRepetition = true;
+    }
 
     // Log user input
     addLogEntry(text, 'log-user');
@@ -1110,7 +1091,7 @@ body::after {
       return;
     }
 
-    const { totalCost } = calculateInputCost(text);
+    const { totalCost } = calculateInputCost(text, state.wordFrequency, CONFIG.repetitionBaseMultiplier, CONFIG.repetitionEscalation);
     dom.costPreview.textContent = `-${totalCost}`;
 
     const ratio = totalCost / state.entropy;
