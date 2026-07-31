@@ -98,12 +98,12 @@ describe('Entropy Budget Mathematical Rigor', () => {
       expect(calculateWordCost('void', freq)).toBe(12);
    });
 
-   it('Accumulates input costs identically to independent calculations', () => {
+   it('Accumulates input costs with intra-input repetition penalty', () => {
       const freq = { 'hello': 2, 'world': 0 };
       const text = "hello   world. hello!!!";
-      // Expected total: 9 (hello) + 4 (world) + 9 (hello) = 22
+      // Expected total: 9 (hello @ freq 2) + 4 (world) + 11 (hello @ freq 3) = 24
       const res = calculateInputCost(text, freq, 1.5, 0.5);
-      expect(res.totalCost).toBe(22);
+      expect(res.totalCost).toBe(24);
       expect(res.words.length).toBe(3);
    });
 
