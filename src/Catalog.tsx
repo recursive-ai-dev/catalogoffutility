@@ -896,6 +896,14 @@ export const Catalog = React.memo(function Catalog({
     notificationTimerRef.current = setTimeout(() => setNotification(null), 2500);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (notificationTimerRef.current) {
+        clearTimeout(notificationTimerRef.current);
+      }
+    };
+  }, []);
+
   // Memoize so the O(n) filter only re-runs when the query or tag changes,
   // not on every unrelated re-render (e.g. notification state updates).
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
