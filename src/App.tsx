@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
@@ -12,7 +13,11 @@ type View = "catalog" | "product" | "chamber";
 /** Wraps a state update in the View Transitions API when available, falling back gracefully. */
 function withViewTransition(update: () => void): void {
   if (typeof document !== "undefined" && "startViewTransition" in document) {
-    (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(update);
+    (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
+      flushSync(() => {
+        update();
+      });
+    });
   } else {
     update();
   }

@@ -65,8 +65,13 @@ export function calculateWordCost(word, wordFrequency, baseMultiplier = 1.5, esc
 export function calculateInputCost(text, wordFrequency, baseMultiplier, escalation) {
   const words = text.trim().split(/\s+/).filter(w => w.length > 0);
   let totalCost = 0;
+  const currentFrequencies = { ...wordFrequency };
   for (const word of words) {
-    totalCost += calculateWordCost(word, wordFrequency, baseMultiplier, escalation);
+    totalCost += calculateWordCost(word, currentFrequencies, baseMultiplier, escalation);
+    const normalized = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (normalized.length > 0) {
+      currentFrequencies[normalized] = (currentFrequencies[normalized] || 0) + 1;
+    }
   }
   return { totalCost, words };
 }

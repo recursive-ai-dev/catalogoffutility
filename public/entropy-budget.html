@@ -771,7 +771,7 @@ body::after {
   function regenEntropy(amount) {
     const cap = state.maxRecoverable * CONFIG.silenceRegenCap;
     state.entropy = Math.min(cap, state.entropy + amount);
-    if (state.entropy > state.sessionPeakEntropy * 0.5) {
+    if (state.entropy > state.sessionPeakEntropy) {
       state.sessionPeakEntropy = state.entropy;
     }
     updateDisplay();
@@ -1187,6 +1187,10 @@ body::after {
   // ============================================================
 
   function init() {
+    // Prevent interval leaks
+    if (state.regenTimer) clearInterval(state.regenTimer);
+    if (state.ambientTimer) clearInterval(state.ambientTimer);
+
     // Reset state
     state.entropy = CONFIG.maxEntropy;
     state.maxRecoverable = CONFIG.maxEntropy;
