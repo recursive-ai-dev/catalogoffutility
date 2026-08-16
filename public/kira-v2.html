@@ -583,6 +583,22 @@ html, body {
 
 const STORE = 'kira_v3';
 
+/**
+ * Pre-allocated formatters and regex patterns for performance.
+ * Pre-allocating Intl.DateTimeFormat is ~50x faster than repeated toLocale calls.
+ * Hoisting regex patterns avoids redundant object allocation in frequent loops.
+ */
+const HM_FORMATTER = new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit' });
+const DATE_LABEL_FORMATTER = new Intl.DateTimeFormat([], { weekday: 'long', month: 'short', day: 'numeric' });
+const DIARY_DATE_FORMATTER = new Intl.DateTimeFormat([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+const REGEX_NAME = /(?:my name is|i'?m |call me |i go by )([a-z]{2,14})/i;
+const REGEX_LIKES = /(?:i (?:really )?(?:love|like|enjoy|adore|am into|am obsessed with) )(.+?)(?:\.|!|,|$)/i;
+const REGEX_DISLIKES = /(?:i (?:really )?(?:hate|dislike|can'?t stand|despise|loathe) )(.+?)(?:\.|!|,|$)/i;
+const REGEX_PET = /(?:my (?:dog|cat|pet|puppy|kitten|bird|fish|hamster|bunny|rabbit|parrot|ferret)(?:'?s)? (?:name is|is called|named) )([a-z]+)/i;
+const REGEX_AGE = /i'?m (\d{2}) (?:years|yrs|yo)|i am (\d{2})/;
+const REGEX_LOCATION = /i (?:live in|am from|am in|stay in) (.+?)(?:\.|!|,|$)/i;
+
 // ── PRNG ──
 function mulberry32(a) {
   return function() {
@@ -610,12 +626,12 @@ function tod() {
   if (h >= 20 && h < 23) return 'night';
   return 'late_night';
 }
-function hm(d) { return new Date(d||Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+function hm(d) { return HM_FORMATTER.format(new Date(d || Date.now())); }
 function dateLabel(ts) {
-  const d=new Date(ts), n=new Date(), diff=Math.floor((n-d)/864e5);
-  if(diff===0) return 'Today';
-  if(diff===1) return 'Yesterday';
-  return d.toLocaleDateString([],{weekday:'long',month:'short',day:'numeric'});
+  const d = new Date(ts), n = new Date(), diff = Math.floor((n - d) / 864e5);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  return DATE_LABEL_FORMATTER.format(d);
 }
 function minSince(ts) { return ts ? Math.floor((Date.now()-ts)/6e4) : 99999; }
 function daysBetween(a,b) { return Math.floor(Math.abs((b||Date.now())-a)/864e5); }
@@ -875,18 +891,18 @@ function extractInfo(text) {
   let found = null;
 
   // Name
-  const nm = t.match(/(?:my name is|i'?m |call me |i go by )([a-z]{2,14})/i);
+  const nm = t.match(REGEX_NAME);
   if (nm) {
-    const n = nm[1][0].toUpperCase()+nm[1].slice(1);
-    if (!S.username || S.username.toLowerCase()!==n.toLowerCase()) {
+    const n = nm[1][0].toUpperCase() + nm[1].slice(1);
+    if (!S.username || S.username.toLowerCase() !== n.toLowerCase()) {
       S.username = n;
       addMem(`Their name is ${n}`, 'name');
-      found = { type:'name', val:n };
+      found = { type: 'name', val: n };
     }
   }
 
   // Likes
-  const likes = t.match(/(?:i (?:really )?(?:love|like|enjoy|adore|am into|am obsessed with) )(.+?)(?:\.|!|,|$)/i);
+  const likes = t.match(REGEX_LIKES);
   if (likes) {
     const val = likes[1].trim().substring(0, 60);
     if (val.length > 2 && !S.userInfo.likes.includes(val)) {
@@ -897,7 +913,7 @@ function extractInfo(text) {
   }
 
   // Dislikes
-  const dis = t.match(/(?:i (?:really )?(?:hate|dislike|can'?t stand|despise|loathe) )(.+?)(?:\.|!|,|$)/i);
+  const dis = t.match(REGEX_DISLIKES);
   if (dis) {
     const val = dis[1].trim().substring(0, 60);
     if (val.length > 2 && !S.userInfo.dislikes.includes(val)) {
@@ -907,27 +923,27 @@ function extractInfo(text) {
   }
 
   // Pet
-  const pet = t.match(/(?:my (?:dog|cat|pet|puppy|kitten|bird|fish|hamster|bunny|rabbit|parrot|ferret)(?:'?s)? (?:name is|is called|named) )([a-z]+)/i);
+  const pet = t.match(REGEX_PET);
   if (pet) {
-    const val = pet[1][0].toUpperCase()+pet[1].slice(1);
-    if (!S.userInfo.pets.find(p=>p.name===val)) {
-      S.userInfo.pets.push({name:val,ts:Date.now()});
+    const val = pet[1][0].toUpperCase() + pet[1].slice(1);
+    if (!S.userInfo.pets.find(p => p.name === val)) {
+      S.userInfo.pets.push({ name: val, ts: Date.now() });
       addMem(`Their pet is named ${val}`, 'pet');
-      found = { type:'pet', val };
+      found = { type: 'pet', val };
     }
   }
 
   // Age
-  const age = t.match(/i'?m (\d{2}) (?:years|yrs|yo)|i am (\d{2})/);
+  const age = t.match(REGEX_AGE);
   if (age) {
-    S.userInfo.age = parseInt(age[1]||age[2]);
+    S.userInfo.age = parseInt(age[1] || age[2]);
     addMem(`They are ${S.userInfo.age} years old`, 'personal');
   }
 
   // Location
-  const loc = t.match(/i (?:live in|am from|am in|stay in) (.+?)(?:\.|!|,|$)/i);
+  const loc = t.match(REGEX_LOCATION);
   if (loc) {
-    S.userInfo.location = loc[1].trim().substring(0,40);
+    S.userInfo.location = loc[1].trim().substring(0, 40);
     addMem(`They live in ${S.userInfo.location}`, 'location');
   }
 
@@ -2306,7 +2322,7 @@ function openDiary() {
 
       const dateDiv = document.createElement('div');
       dateDiv.className = 'diary-date';
-      dateDiv.textContent = new Date(e.ts).toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+      dateDiv.textContent = DIARY_DATE_FORMATTER.format(new Date(e.ts));
 
       const textDiv = document.createElement('div');
       textDiv.className = 'diary-text';
