@@ -829,7 +829,7 @@
         </div>
         <div class="script-editor-wrap">
           <div class="line-numbers" id="lineNumbers">1</div>
-          <textarea class="script-editor" id="scriptEditor" placeholder="# Define a process() function:
+          <textarea class="script-editor" id="scriptEditor" maxlength="50000" placeholder="# Define a process() function:
 #
 # def process(message, history):
 #     return 'Hello!'
@@ -893,7 +893,7 @@
         <div class="quick-actions" id="quickActions"></div>
         <div class="chat-input-area">
           <div class="chat-input-wrap">
-            <textarea class="chat-input" id="chatInput" placeholder="Send a message..." rows="1" disabled></textarea>
+            <textarea class="chat-input" id="chatInput" maxlength="5000" placeholder="Send a message..." rows="1" disabled></textarea>
             <button class="send-btn" id="btnSend" disabled>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
@@ -1948,6 +1948,13 @@ async function runScript() {
   const code = el.scriptEditor.value.trim();
   if (!code) { toast('No script to run'); return; }
 
+  // Security: Secondary validation layer for code length (50KB limit)
+  if (code.length > 50000) {
+    addDebugEntry('error', 'Script execution blocked: length exceeds 50,000 characters.');
+    toast('Script too large');
+    return;
+  }
+
   state.currentScriptCode = code;
   state.language = el.langSelect.value;
   state.scriptLoaded = true;
@@ -2026,6 +2033,13 @@ async function processMessage(message) {
 function sendMessage() {
   const text = el.chatInput.value.trim();
   if (!text || state.isRunning) return;
+
+  // Security: Secondary validation layer for message length (5000 char limit)
+  if (text.length > 5000) {
+    addDebugEntry('error', 'Message delivery failed: content exceeds 5,000 characters.');
+    toast('Message too long');
+    return;
+  }
   el.chatInput.value = '';
   el.chatInput.style.height = 'auto';
   haptic('light');
@@ -2290,6 +2304,14 @@ el.fileInput.addEventListener('change', async (e) => {
 
 async function handleFile(file) {
   const name = file.name;
+
+  // Security: Prevent client-side DoS by limiting file upload size to 1MB.
+  if (file.size > 1024 * 1024) {
+    addDebugEntry('error', `File rejected: ${name} exceeds 1MB limit.`);
+    toast('File too large (max 1MB)');
+    return;
+  }
+
   const ext = name.split('.').pop().toLowerCase();
 
   if (ext === 'zip') { await handleZipFile(file); return; }
