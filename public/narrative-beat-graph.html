@@ -1455,7 +1455,7 @@ class EditorPanel {
     };
   }
 
-  _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/\//g,'&#47;'); }
 }
 
 // ──────────────────────────────────────────
@@ -1930,7 +1930,7 @@ class App {
       }
       body.innerHTML = result.contradictions.map(c => `
         <div class="contradiction-item">
-          <div class="ci-title">${c.type === 'unsatisfied' ? '🔴' : '🟡'} ${this._esc(c.nodeTitle)} <span style="color:var(--text-dim);font-size:10px">(${c.nodeId})</span></div>
+          <div class="ci-title">${c.type === 'unsatisfied' ? '🔴' : '🟡'} ${this._esc(c.nodeTitle)} <span style="color:var(--text-dim);font-size:10px">(${this._esc(c.nodeId)})</span></div>
           <div class="ci-msg">${this._esc(c.msg)}</div>
         </div>
       `).join('');
@@ -1951,8 +1951,8 @@ class App {
         states.forEach((s, i) => {
           const rows = [
             ...Object.entries(s.flags).map(([k,v]) => `<tr><td>🏴 ${this._esc(k)}</td><td>${this._esc(String(v))}</td></tr>`),
-            ...Object.entries(s.stats).map(([k,v]) => `<tr><td>📊 ${this._esc(k)}</td><td>${v}</td></tr>`),
-            ...Object.entries(s.rep).map(([k,v])   => `<tr><td>⚑ ${this._esc(k)}</td><td>${v}</td></tr>`),
+            ...Object.entries(s.stats).map(([k,v]) => `<tr><td>📊 ${this._esc(k)}</td><td>${this._esc(String(v))}</td></tr>`),
+            ...Object.entries(s.rep).map(([k,v])   => `<tr><td>⚑ ${this._esc(k)}</td><td>${this._esc(String(v))}</td></tr>`),
           ];
           if (states.length > 1) html += `<div style="font-size:10px;color:var(--text-dim);margin:4px 0 2px">Path variant ${i+1}</div>`;
           if (rows.length === 0) html += `<div style="font-size:11px;color:var(--text-dim)">(empty state)</div>`;
@@ -1972,7 +1972,7 @@ class App {
       body.innerHTML = result.paths.map((path, i) => {
         const names = path.map(id => {
           const n = this.model.nodes.get(id);
-          return n ? `<span style="color:var(--text-bright)">${this._esc(n.title)}</span>` : id;
+          return n ? `<span style="color:var(--text-bright)">${this._esc(n.title)}</span>` : this._esc(id);
         }).join(`<span class="path-arrow">→</span>`);
         return `<div class="path-item"><span class="pi-num">${i+1}.</span> ${names}</div>`;
       }).join('');
@@ -2026,7 +2026,7 @@ class App {
     this._flashTimer = setTimeout(() => { el.className = 'flash'; }, 2800);
   }
 
-  _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/\//g,'&#47;'); }
 
   // ── Sample story: "The Siege of the Last City"
   _loadSample() {
