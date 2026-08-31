@@ -1307,13 +1307,13 @@ class EditorPanel {
   _buildNodeForm(node) {
     const t = node.tags;
     return `
-      <div class="field"><label>Title</label><input id="nf-title" value="${this._esc(node.title)}"></div>
-      <div class="field"><label>Description</label><textarea id="nf-desc">${this._esc(node.description)}</textarea></div>
+      <div class="field"><label>Title</label><input id="nf-title" value="${this._esc(node.title)}" maxlength="100"></div>
+      <div class="field"><label>Description</label><textarea id="nf-desc" maxlength="1000">${this._esc(node.description)}</textarea></div>
       <div class="field"><label>Tone</label>
         <select id="nf-tone">${this._tones().map(v=>this._toneOption(v,t.tone)).join('')}</select>
       </div>
-      <div class="field"><label>Location</label><input id="nf-location" value="${this._esc(t.location||'')}"></div>
-      <div class="field"><label>Faction</label><input id="nf-faction" value="${this._esc(t.faction||'')}"></div>
+      <div class="field"><label>Location</label><input id="nf-location" value="${this._esc(t.location||'')}" maxlength="100"></div>
+      <div class="field"><label>Faction</label><input id="nf-faction" value="${this._esc(t.faction||'')}" maxlength="100"></div>
 
       <div class="section-head">
         Requirements <button id="add-req">+ Add</button>
@@ -1335,9 +1335,9 @@ class EditorPanel {
     return `<div class="req-item" data-req-i="${i}">
       <div class="row">
         <select class="req-type">${types}</select>
-        <input class="req-flag" placeholder="flag/stat" value="${this._esc(req.flag||req.stat||'')}" style="flex:2">
+        <input class="req-flag" placeholder="flag/stat" value="${this._esc(req.flag||req.stat||'')}" style="flex:2" maxlength="100">
         <select class="req-comp" style="flex:0.8">${comps}</select>
-        <input class="req-val" placeholder="value" value="${this._esc(req.value!==undefined?String(req.value):(req.threshold!==undefined?String(req.threshold):''))}">
+        <input class="req-val" placeholder="value" value="${this._esc(req.value!==undefined?String(req.value):(req.threshold!==undefined?String(req.threshold):''))}" maxlength="100">
         <button class="del-btn req-del">×</button>
       </div>
     </div>`;
@@ -1348,8 +1348,8 @@ class EditorPanel {
     return `<div class="eff-item" data-eff-i="${i}">
       <div class="row">
         <select class="eff-type">${types}</select>
-        <input class="eff-key" placeholder="key/stat/faction" value="${this._esc(eff.flag||eff.stat||eff.faction||'')}" style="flex:2">
-        <input class="eff-val" placeholder="val/delta" value="${this._esc(eff.value!==undefined?String(eff.value):(eff.delta!==undefined?String(eff.delta):''))}">
+        <input class="eff-key" placeholder="key/stat/faction" value="${this._esc(eff.flag||eff.stat||eff.faction||'')}" style="flex:2" maxlength="100">
+        <input class="eff-val" placeholder="val/delta" value="${this._esc(eff.value!==undefined?String(eff.value):(eff.delta!==undefined?String(eff.delta):''))}" maxlength="100">
         <button class="del-btn eff-del">×</button>
       </div>
     </div>`;
@@ -1359,7 +1359,7 @@ class EditorPanel {
     const conds = edge.conditions || [];
     return `
       <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">Edge: ${edge.from} → ${edge.to}</div>
-      <div class="field"><label>Choice Label</label><input id="ef-label" value="${this._esc(edge.label||'')}"></div>
+      <div class="field"><label>Choice Label</label><input id="ef-label" value="${this._esc(edge.label||'')}" maxlength="100"></div>
       <div class="section-head">Conditions (guard) <button id="add-econd">+ Add</button></div>
       <div id="econd-list">${conds.map((c,i)=>this._reqHtml(c,i)).join('')}</div>
       <button class="save-btn" id="ef-save">Save Edge</button>
@@ -1455,7 +1455,7 @@ class EditorPanel {
     };
   }
 
-  _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/\//g,'&#47;'); }
 }
 
 // ──────────────────────────────────────────
@@ -1840,11 +1840,44 @@ class App {
 
   // ── Save from editor
   _saveNode(id, data) {
+    // Secondary validation: defensive truncation
+    if (data.title) data.title = data.title.substring(0, 100);
+    if (data.description) data.description = data.description.substring(0, 1000);
+    if (data.tags) {
+      if (data.tags.location) data.tags.location = data.tags.location.substring(0, 100);
+      if (data.tags.faction) data.tags.faction = data.tags.faction.substring(0, 100);
+    }
+    if (data.requirements) {
+      data.requirements.forEach(r => {
+        if (r.flag) r.flag = r.flag.substring(0, 100);
+        if (r.stat) r.stat = r.stat.substring(0, 100);
+        if (r.value !== undefined && typeof r.value === 'string') r.value = r.value.substring(0, 100);
+      });
+    }
+    if (data.effects) {
+      data.effects.forEach(e => {
+        if (e.flag) e.flag = e.flag.substring(0, 100);
+        if (e.stat) e.stat = e.stat.substring(0, 100);
+        if (e.faction) e.faction = e.faction.substring(0, 100);
+        if (e.value !== undefined && typeof e.value === 'string') e.value = e.value.substring(0, 100);
+      });
+    }
+
     this.model.updateNode(id, data);
     this._flash('Beat saved', 'ok');
   }
 
   _saveEdge(id, data) {
+    // Secondary validation: defensive truncation
+    if (data.label) data.label = data.label.substring(0, 100);
+    if (data.conditions) {
+      data.conditions.forEach(c => {
+        if (c.flag) c.flag = c.flag.substring(0, 100);
+        if (c.stat) c.stat = c.stat.substring(0, 100);
+        if (c.value !== undefined && typeof c.value === 'string') c.value = c.value.substring(0, 100);
+      });
+    }
+
     this.model.updateEdge(id, data);
     this._flash('Edge saved', 'ok');
     this.view.renderEdge(this.model.edges.get(id), this.model);
@@ -2026,7 +2059,7 @@ class App {
     this._flashTimer = setTimeout(() => { el.className = 'flash'; }, 2800);
   }
 
-  _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/\//g,'&#47;'); }
 
   // ── Sample story: "The Siege of the Last City"
   _loadSample() {
