@@ -56,6 +56,9 @@
   <script type="text/babel">
     const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
+    /** Pre-allocated formatter for visit history date; significantly reduces overhead in the render loop. */
+    const DATE_FMT = new Intl.DateTimeFormat([]);
+
     const STORAGE_KEY = 'soul-mirror-v1';
 
     const CORE_CONCEPTS = [
@@ -419,7 +422,7 @@
               </div>
               {visited[selectedConcept] && (
                 <div style={{ marginTop: '1rem', fontSize: '9px', color: 'var(--text-ghost)', letterSpacing: '0.1em' }}>
-                  VISITED {visited[selectedConcept].count}× — LAST: {new Date(visited[selectedConcept].last).toLocaleDateString()}
+                  VISITED {visited[selectedConcept].count}× — LAST: {DATE_FMT.format(new Date(visited[selectedConcept].last))}
                 </div>
               )}
             </div>
