@@ -151,6 +151,25 @@ interface ChamberProps {
   clock?: Clock;
 }
 
+const LogEntryItem = React.memo(function LogEntryItem({ log }: { log: LogEntry }) {
+  return (
+    <div
+      className={`flex flex-col gap-2 ${log.type === "msg" ? "opacity-60 hover:opacity-100" : log.type === "warn" ? "opacity-80" : ""} transition-opacity`}
+    >
+      <span
+        className={`${log.type === "unknown" ? "text-white/70" : "text-white/30"} text-[9px] tracking-widest`}
+      >
+        [{log.sender}] {log.time}
+      </span>
+      <p
+        className={`${log.type === "unknown" ? "text-white/90" : "text-white/50"} font-light leading-relaxed`}
+      >
+        {log.msg}
+      </p>
+    </div>
+  );
+});
+
 export const Chamber = React.memo(function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
   const clk = clock ?? realClock;
   // Chain 7 (IframeError): initialError allows tests to start in error state
