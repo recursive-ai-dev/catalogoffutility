@@ -23,12 +23,13 @@ A brutalist web application for hosting and curating single-file HTML apps and g
 
 | Technology | Version |
 |------------|---------|
-| React | 19.0.0 |
-| Vite | 6.2.0 |
-| TypeScript | 5.8.2 |
-| Tailwind CSS | 4.1.14 |
-| Motion | 12.23.24 |
-| Lucide React | 0.546.0 |
+| React | ^19.0.0 |
+| Vite | ^6.4.1 |
+| TypeScript | ~5.8.2 (strict) |
+| Tailwind CSS | ^4.1.14 |
+| Vitest | ^4.0.18 |
+| ESLint | ^10 (flat config, `react-hooks`) |
+| Lucide React | ^0.546.0 |
 
 ---
 
@@ -36,8 +37,8 @@ A brutalist web application for hosting and curating single-file HTML apps and g
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
+- Node.js 20+
+- npm (the repository is locked with `package-lock.json`)
 
 ### Installation
 
@@ -61,8 +62,12 @@ A brutalist web application for hosting and curating single-file HTML apps and g
    
    Edit `.env.local`:
    ```env
-   APP_URL="http://localhost:3000"
+   VITE_SUPABASE_URL="https://your-project-ref.supabase.co"
+   VITE_SUPABASE_ANON_KEY="your-anon-key"
    ```
+
+   Both are optional. Without them the archive still runs — authentication is
+   disabled and every non-gated entry stays reachable.
 
 4. **Start development server**
    ```bash
@@ -178,10 +183,35 @@ Provide the raw HTML string directly in the `htmlContent` property:
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start development server (port 3000) |
-| `npm run build` | Build for production |
+| `npm run build` | Type-check, then build for production |
 | `npm run preview` | Preview production build |
-| `npm run lint` | Type-check with TypeScript |
-| `npm run clean` | Remove `dist/` directory |
+| `npm run lint` | Lint with ESLint |
+| `npm run lint:fix` | Lint and apply automatic fixes |
+| `npm run typecheck` | Type-check with TypeScript (`strict`) |
+| `npm run test` | Run the Vitest suite once |
+| `npm run test:watch` | Run the Vitest suite in watch mode |
+| `npm run test:coverage` | Run tests with coverage |
+| `npm run check` | Lint + typecheck + test + build (what CI runs) |
+| `npm run clean` | Remove `dist/` and `coverage/` |
+| `npm run electron:start` | Run the Electron shell against the dev server |
+
+---
+
+## Continuous Integration
+
+A GitHub Actions workflow covering `lint → typecheck → test → build` ships in
+[`docs/ci.workflow.yml`](docs/ci.workflow.yml).
+
+It is **not active** in that location — GitHub only runs workflows from
+`.github/workflows/`, and adding a file there requires the `workflows`
+permission. To turn it on:
+
+```bash
+mkdir -p .github/workflows
+git mv docs/ci.workflow.yml .github/workflows/ci.yml
+```
+
+The same four steps are available locally as `npm run check`.
 
 ---
 
@@ -212,9 +242,9 @@ The brutalist aesthetic is achieved through:
 
 - **CSS Classes:** Tailwind utilities with custom opacity/blur effects
 - **Atmospheric Overlays:** CSS gradients, noise textures, and vignette layers
-- **Typography:** Space Grotesk (display) + Material Symbols (icons)
+- **Typography:** Cormorant Garamond (display) + Inter (body) + JetBrains Mono (terminal) + Material Symbols (icons)
 
-To modify the theme, edit the Tailwind configuration or override CSS variables in `index.html`.
+Theme tokens live in the `@theme` block at the top of `src/index.css`; fonts are loaded from `index.html`.
 
 ### System Logs
 
@@ -222,28 +252,36 @@ The "Void Logs" sidebar in `Chamber.tsx` displays atmospheric messages. Customiz
 
 ---
 
-## Included Apps (18 Total)
+## Included Apps (22 Total)
 
 | App | Tags | Description |
 |-----|------|-------------|
-| **WHEN THE SUN DIED** | Narrative, Endless | Cosmic tragedy terminal experience |
-| **ARIA // TERMINAL** | Pointless, Interactive | Remote session with something listening |
-| **KIRA** | Narrative, Endless, Interactive | She texts back. Always. |
-| **NARRATIVE BEAT GRAPH** | Tool, Pointless | Map story structure visually |
-| **2:35 AM** | Endless, Corrupted | 3D walk through the hour of dread |
+| **WHEN THE SUN DIED** | Narrative, Endless | A cosmic tragedy unfolds |
+| **ARIA // TERMINAL** | Pointless, Interactive | A remote session with something that may or may not want your help |
+| **KIRA** | Narrative, Endless, Interactive | She texts back |
+| **NARRATIVE BEAT GRAPH** | Tool, Strategy | Every story is a web of cause and effect |
+| **2:35 AM** | Endless, Corrupted | A 3D walk through the hour when the world holds its breath |
 | **THE WORLD THAT DOESN'T CARE** | Simulation, Endless, Pointless | A simulation running without you |
-| **CHATGG** | Interactive, Pointless | Conversation with something from the void |
-| **ENTROPY BUDGET** | Simulation, Endless | Spend your finite order wisely |
-| **GENESIS ENGINE** | Simulation, Interactive | World-building simulation |
-| **LUDIC STRATA** | Narrative, Interactive | Deterministic conversational engine |
-| **OFFENSIVE LETTERS** | Interactive, Corrupted | Typing game for the damned |
-| **CURVATURE CARTOGRAPHER** | Tool, Simulation | Spacetime visualization |
+| **CHATGG** | Interactive, Pointless | A conversation with something that learned language from the void |
+| **ENTROPY BUDGET** | Simulation, Endless | You have been allocated a finite amount of order |
+| **GENESIS ENGINE** | Simulation, Interactive | A world-building simulation |
+| **LUDIC STRATA** | Narrative, Interactive | A deterministic conversational engine |
+| **OFFENSIVE LETTERS** | Interactive, Corrupted | VERBAL ASSAULT: The Typing of the Dead Letters |
+| **CURVATURE CARTOGRAPHER** | Tool, Simulation | Map the geometry of spacetime |
 | **SPECTRAL LOOP** | Narrative, Endless, Corrupted | A transmission that repeats |
-| **WARREN: INVASION PROTOCOL** | Interactive, Endless | Arcade defense game |
-| **SOUL MIRROR** | Tool, Interactive | Reflect on core concepts of existence |
-| **ABM GENERATOR** | Tool, Interactive | Atmospheric Black Metal generator |
-| **NEXUS WAR** | Interactive, Strategy | Strategic board game |
-| **QUANTUM ANT** | Simulation, Endless | Quantum consciousness visualization |
+| **WARREN: INVASION PROTOCOL** | Interactive, Endless | A CRT-aesthetic platformer across three levels of recursive architec… |
+| **SOUL MIRROR** | Tool, Interactive | Reflect on the core concepts of existence |
+| **ABM GENERATOR** | Tool, Interactive | Atmospheric Black Metal progression generator |
+| **NEXUS WAR** | Interactive, Strategy | A chess-variant of void warfare |
+| **QUANTUM ANT** | Simulation, Endless | A visualization of quantum consciousness |
+| **IMAGINE BEING TRAPPED 2** | Narrative, Horror, Interactive | An immersive retro-terminal experience with terror protocols and psy… |
+| **AGENT SMITH** | Tool, Interactive, Narrative | Security sentinel |
+| **NEURAL RUNNER** | Tool, Interactive, Simulation | An AI script execution engine |
+| **CODING ANTS** | Simulation, Tool, Interactive | Neural network simulation and AI development environment |
+
+Tags are a controlled vocabulary (`TAG_VOCABULARY` in `src/data.ts`). Maximum four per entry;
+`Tool` and `Pointless` may never co-occur. `validateCatalog()` reports violations on load in
+development and `src/test/catalog-integrity.test.ts` fails the build on them.
 
 ---
 

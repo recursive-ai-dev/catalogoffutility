@@ -1,0 +1,55 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#0a0a1a"/>
+  <!-- Neural architecture under construction -->
+  <g stroke="#4ade80" stroke-width="1.5" opacity="0.35">
+    <line x1="180" y1="150" x2="330" y2="120"/>
+    <line x1="180" y1="150" x2="330" y2="220"/>
+    <line x1="180" y1="300" x2="330" y2="220"/>
+    <line x1="180" y1="300" x2="330" y2="320"/>
+    <line x1="180" y1="450" x2="330" y2="320"/>
+    <line x1="180" y1="450" x2="330" y2="420"/>
+    <line x1="330" y1="120" x2="480" y2="220"/>
+    <line x1="330" y1="220" x2="480" y2="220"/>
+    <line x1="330" y1="220" x2="480" y2="320"/>
+    <line x1="330" y1="320" x2="480" y2="320"/>
+    <line x1="330" y1="420" x2="480" y2="320"/>
+    <line x1="480" y1="220" x2="630" y2="270"/>
+    <line x1="480" y1="320" x2="630" y2="270"/>
+  </g>
+  <!-- Nodes -->
+  <g fill="#c0c0e0">
+    <circle cx="180" cy="150" r="7"/>
+    <circle cx="180" cy="300" r="7"/>
+    <circle cx="180" cy="450" r="7"/>
+    <circle cx="330" cy="120" r="9"/>
+    <circle cx="330" cy="220" r="9"/>
+    <circle cx="330" cy="320" r="9"/>
+    <circle cx="330" cy="420" r="9"/>
+    <circle cx="480" cy="220" r="9"/>
+    <circle cx="480" cy="320" r="9"/>
+    <circle cx="630" cy="270" r="11"/>
+  </g>
+  <!-- Ants carrying weights along the edges -->
+  <g fill="#4ade80">
+    <ellipse cx="255" cy="135" rx="9" ry="5"/>
+    <circle cx="246" cy="132" r="3.5"/>
+    <ellipse cx="255" cy="285" rx="9" ry="5"/>
+    <circle cx="246" cy="282" r="3.5"/>
+    <ellipse cx="405" cy="220" rx="9" ry="5"/>
+    <circle cx="396" cy="217" r="3.5"/>
+    <ellipse cx="405" cy="370" rx="9" ry="5"/>
+    <circle cx="396" cy="367" r="3.5"/>
+    <ellipse cx="555" cy="245" rx="9" ry="5"/>
+    <circle cx="546" cy="242" r="3.5"/>
+  </g>
+  <!-- Terminal readout -->
+  <g fill="#c0c0e0" font-family="Space Grotesk" font-size="13">
+    <text x="90" y="510" opacity="0.75">&gt; colony.topology = evolve(population=512)</text>
+    <text x="90" y="532" opacity="0.55">&gt; epoch 214  loss 0.0431  convergence: emergent</text>
+  </g>
+  <g fill="#ff6666" font-family="Space Grotesk" font-size="13" opacity="0.3">
+    <text x="90" y="556">[WARNING: the ants do not know what they are building]</text>
+  </g>
+  <!-- Title -->
+  <text x="400" y="80" text-anchor="middle" font-family="Space Grotesk" font-size="30" fill="#c0c0e0" opacity="0.9">CODING ANTS</text>
+</svg>

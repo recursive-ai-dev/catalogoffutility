@@ -1,19 +1,24 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 
 const CONSENT_KEY = "void_archive_consent_v1";
 
-export function PrivacyBanner() {
-  const [visible, setVisible] = useState(false);
+/**
+ * Consent is read in the state initializer rather than in an effect: the banner
+ * is then present on the very first paint instead of appearing one frame after
+ * the page has already rendered.
+ */
+function readStoredConsent(): boolean {
+  try {
+    return !localStorage.getItem(CONSENT_KEY);
+  } catch {
+    // localStorage may be unavailable (private mode, sandboxed iframe); the
+    // banner simply stays hidden.
+    return false;
+  }
+}
 
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(CONSENT_KEY)) {
-        setVisible(true);
-      }
-    } catch {
-      // localStorage may be unavailable; silently skip the banner
-    }
-  }, []);
+export function PrivacyBanner() {
+  const [visible, setVisible] = useState(readStoredConsent);
 
   const dismiss = () => {
     try {

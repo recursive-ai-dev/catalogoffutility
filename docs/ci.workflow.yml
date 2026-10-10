@@ -1,0 +1,67 @@
+# CI workflow for the Catalog of Futility.
+#
+# NOT ACTIVE AS-IS. It lives in docs/ rather than .github/workflows/ because the
+# automated push was rejected: "refusing to allow a GitHub App to create or
+# update workflow `.github/workflows/ci.yml` without `workflows` permission".
+#
+# To activate, move it into place and commit:
+#
+#     mkdir -p .github/workflows
+#     git mv docs/ci.workflow.yml .github/workflows/ci.yml
+#     git commit -m "ci: enable lint/typecheck/test/build workflow"
+#
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint · Typecheck · Test · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        # The Electron postinstall downloads a prebuilt binary from a CDN that
+        # CI does not need; skipping it keeps the job hermetic and faster.
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npx vite build
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7

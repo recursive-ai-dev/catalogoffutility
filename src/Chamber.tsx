@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 import { Clock, realClock } from "./lib/clock";
-
-const MAX_LOGS = 100;
+import { ARCHIVE_CORRUPTION, MAX_LOGS } from "./lib/constants";
+import { trapTabFocus } from "./lib/focus";
 
 const HOTLINK_SCRIPT_TEMPLATE = `<script>
   document.addEventListener('click', function(e) {
@@ -69,11 +69,7 @@ function isSafeImageSrc(src: string): boolean {
     if (url.protocol === "http:") {
       return url.hostname === "localhost" || url.hostname === "127.0.0.1";
     }
-    if (url.protocol === "data:") {
-      // Allow only common raster image formats; explicitly block image/svg+xml
-      // to mitigate potential XSS risks in certain rendering contexts.
-      return /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i.test(src);
-    }
+    // Note: `data:` is handled by the early return above and never reaches here.
     return false;
   } catch {
     // Parsing failed; reject.
@@ -217,17 +213,34 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
   const iframeDocRef = useRef<Document | null>(null);
   const iframeClickHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
+  const modalPanelRef = useRef<HTMLDivElement>(null);
 
-  // Focus the close button when the hotlinked image modal opens
+  /** Element that held focus before the asset viewer opened; restored on close. */
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
+
+  // Focus the close button when the hotlinked image modal opens, and remember
+  // where focus came from so it can be handed back on close.
   useEffect(() => {
     if (hotlinkedImage) {
+      const active = document.activeElement;
+      // `<body>` is not a meaningful restore target — capturing it would just
+      // re-focus the page root on close.
+      lastFocusedRef.current =
+        active instanceof HTMLElement && active !== document.body ? active : null;
       modalCloseRef.current?.focus();
+    } else if (lastFocusedRef.current) {
+      lastFocusedRef.current.focus();
+      lastFocusedRef.current = null;
     }
   }, [hotlinkedImage]);
 
-  // Close modal on Escape key
-  const handleModalKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Escape") setHotlinkedImage(null);
+  /**
+   * WCAG 2.1 SC 2.1.2 — constrain Tab to the modal while `aria-modal="true"`.
+   * Without this, keyboard users tabbed straight through the overlay into the
+   * Chamber controls behind it.
+   */
+  const handleModalKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    trapTabFocus(e, modalPanelRef.current, document.activeElement);
   }, []);
 
   // Keep hotlinkedImage in a ref for the global keydown listener to avoid
@@ -235,15 +248,26 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
   const hotlinkedImageRef = useRef(hotlinkedImage);
   hotlinkedImageRef.current = hotlinkedImage;
 
-  // Global Escape listener for navigation and modal closure
+  // Same treatment for fullscreen state — see the layered Escape handler below.
+  const isFullscreenRef = useRef(isFullscreen);
+  isFullscreenRef.current = isFullscreen;
+
+  // Global Escape listener. Dismissal is layered, innermost overlay first:
+  //   1. hotlinked-image modal  2. fullscreen viewport  3. the view itself
+  // Fullscreen was previously skipped, so Escape from a fullscreen session threw
+  // the user out of the Chamber instead of returning them to the framed view.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || e.repeat) return;
       if (hotlinkedImageRef.current) {
         setHotlinkedImage(null);
-      } else {
-        onBack();
+        return;
       }
+      if (isFullscreenRef.current) {
+        setIsFullscreen(false);
+        return;
+      }
+      onBack();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -281,6 +305,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
       }, 2000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isInitialized, app.title, clk]);
 
   useEffect(() => {
@@ -391,8 +416,8 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
       : app.htmlContent + HOTLINK_SCRIPT_TEMPLATE;
   }, [app.htmlContent]);
 
-  const corruption = 85;
-  
+  const corruption = ARCHIVE_CORRUPTION;
+
   return (
     <div className="font-sans bg-black text-white antialiased overflow-hidden h-screen flex flex-col selection:bg-white/20 selection:text-white relative">
       {/* Atmospheric Background */}
@@ -406,7 +431,8 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
       {/* Top Navigation */}
       <header className="relative z-30 flex items-center justify-between whitespace-nowrap border-b border-white/10 bg-black/40 backdrop-blur-xl px-10 py-6">
         <button
-          className="flex items-center gap-6 text-white/70 hover:text-white cursor-pointer transition-colors group"
+          type="button"
+          className="flex items-center gap-6 text-white/70 hover:text-white cursor-pointer transition-colors group focus-visible:ring-1 focus-visible:ring-white/40 outline-none rounded-sm"
           onClick={onBack}
           title="Back to product (Esc)"
           aria-label="Back to product page"
@@ -426,13 +452,16 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
 
         <div className="flex items-center gap-8">
           <button
+            type="button"
             onClick={() => setNoiseEnabled(!noiseEnabled)}
-            className={`hidden md:flex items-center gap-3 text-[10px] font-mono tracking-widest uppercase px-4 py-2 rounded-full border transition-all duration-300 ${noiseEnabled ? "border-white/20 text-white bg-white/5" : "border-transparent text-white/40 hover:text-white hover:bg-white/5"}`}
+            aria-pressed={noiseEnabled}
+            aria-label="Toggle static noise overlay"
+            className={`flex items-center gap-3 text-[10px] font-mono tracking-widest uppercase px-4 py-2 rounded-full border transition-all duration-300 focus-visible:ring-1 focus-visible:ring-white/40 outline-none ${noiseEnabled ? "border-white/20 text-white bg-white/5" : "border-transparent text-white/40 hover:text-white hover:bg-white/5"}`}
           >
             <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
               {noiseEnabled ? "grain" : "lens_blur"}
             </span>
-            <span>NOISE</span>
+            <span className="hidden sm:inline">NOISE</span>
           </button>
           <div className="hidden md:flex items-center gap-3 text-[10px] font-mono tracking-widest uppercase text-white/40">
             <span className="inline-block size-1.5 rounded-full bg-white/60 animate-pulse"></span>
@@ -458,7 +487,10 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
       {/* Main Content Area */}
       <main id="main-content" tabIndex={-1} className="flex-1 flex overflow-hidden relative z-20 outline-none">
         {/* Game Viewport Area */}
-        <section className="flex-1 flex flex-col items-center justify-center relative p-6 md:p-10 lg:p-14">
+        <section
+          aria-label="Simulation viewport"
+          className="flex-1 flex flex-col items-center justify-center relative p-6 md:p-10 lg:p-14"
+        >
           {/* Vignette */}
           <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)]"></div>
 
@@ -488,11 +520,14 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
               {/* Fullscreen Toggle Button */}
               {isInitialized && (
                 <button
+                  type="button"
                   onClick={toggleFullscreen}
-                  className="absolute top-6 right-6 z-30 p-3 bg-black/40 hover:bg-white/10 text-white/50 hover:text-white rounded-full border border-white/10 hover:border-white/30 transition-all backdrop-blur-md cursor-pointer"
+                  className="absolute top-6 right-6 z-30 p-3 bg-black/40 hover:bg-white/10 text-white/50 hover:text-white rounded-full border border-white/10 hover:border-white/30 transition-all backdrop-blur-md cursor-pointer focus-visible:ring-1 focus-visible:ring-white/40 outline-none"
                   title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                  aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                  aria-pressed={isFullscreen}
                 >
-                  <span className="material-symbols-outlined text-sm font-light">
+                  <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                     {isFullscreen ? "fullscreen_exit" : "fullscreen"}
                   </span>
                 </button>
@@ -513,6 +548,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                         Ready to render {app.title}...
                       </p>
                       <button
+                        type="button"
                         onClick={() => {
                           // Chain 3 (ChamberInit): reset error/loading state before initializing
                           // so a re-enter after an error gets a clean slate
@@ -543,10 +579,9 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                         {iframeErrorDetails}
                       </div>
                     )}
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
+                    <button
+                      type="button"
+                      onClick={() => {
                         setLogs((prev) =>
                           appendLog(prev, {
                             sender: "SYSTEM",
@@ -556,14 +591,15 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                           }),
                         );
                       }}
-                      className="inline-block mt-4 text-xs text-primary/70 hover:text-primary underline decoration-primary/30 underline-offset-4"
+                      className="inline-block mt-4 text-xs text-primary/70 hover:text-primary underline decoration-primary/30 underline-offset-4 cursor-pointer focus-visible:ring-1 focus-visible:ring-white/40 outline-none rounded-sm"
                     >
                       View Debugging Guide
-                    </a>
+                    </button>
                     {/* Chain 7 (IframeError): Re-Initialize resets to clean standby so the user
                         can retry without navigating away. Invariant: all three error-state fields
                         must be cleared atomically; isInitialized=false returns to STANDBY. */}
                     <button
+                      type="button"
                       onClick={() => {
                         setIsInitialized(false);
                         setIframeError(false);
@@ -594,6 +630,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                         srcDoc={app.url ? undefined : htmlContentWithScript}
                         className="w-full h-full border-none bg-black"
                         title={app.title}
+                        referrerPolicy="no-referrer"
                         // Default to allow-scripts and allow-same-origin (if app.url)
                         // This allows cross-origin communication when app.url is used from the same domain.
                         // Without allow-same-origin, some local storage or origin-based APIs may fail.
@@ -646,7 +683,9 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
             </div>
             <div className="flex justify-between mt-4 text-[9px] font-mono text-white/30 tracking-widest">
               <span>NORMAL</span>
-              <span className="text-white/60">85% CORRUPTION</span>
+              {/* Interpolated, not hard-coded: the literal used to say "85%"
+                  regardless of the value actually driving the bar above. */}
+              <span className="text-white/60">{corruption}% CORRUPTION</span>
             </div>
           </div>
 
@@ -658,6 +697,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
               </span>
               <div className="flex items-center gap-4">
                 <button
+                  type="button"
                   onClick={() => setShowLogs(!showLogs)}
                   className="text-white/40 hover:text-white transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
                   title={showLogs ? "Hide Logs" : "Show Logs"}
@@ -672,7 +712,13 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
               </div>
             </div>
             {showLogs ? (
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 font-mono text-xs void-scroll">
+              <div
+                role="log"
+                aria-live="polite"
+                aria-relevant="additions"
+                aria-label="Void log"
+                className="flex-1 overflow-y-auto p-6 space-y-6 font-mono text-xs void-scroll"
+              >
                 {logs.map((log) => (
                   <LogEntryItem key={log.id} log={log} />
                 ))}
@@ -687,6 +733,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
             {/* Input Area (Disabled style) */}
             <div className="p-6 border-t border-white/10 bg-white/5 flex flex-col gap-4">
               <button
+                type="button"
                 onClick={() =>
                   setLogs((prev) =>
                     appendLog(prev, {
@@ -705,6 +752,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                 </span>
               </button>
               <button
+                type="button"
                 onClick={() =>
                   setLogs((prev) =>
                     appendLog(prev, {
@@ -728,6 +776,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
           {/* Footer Controls */}
           <div className="p-8 border-t border-white/10 bg-white/5">
             <button
+              type="button"
               onClick={onBack}
               title="Cease (Esc)"
               className="group w-full relative h-12 bg-transparent border border-white/20 hover:border-white/50 hover:bg-white/5 transition-all duration-300 overflow-hidden flex items-center justify-center gap-4 cursor-pointer rounded-full"
@@ -771,6 +820,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
           onKeyDown={handleModalKeyDown}
         >
           <div
+            ref={modalPanelRef}
             className="relative max-w-5xl max-h-full border border-white/10 bg-black/60 p-4 shadow-2xl rounded-2xl backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -780,6 +830,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
               </span>
               <button
                 ref={modalCloseRef}
+                type="button"
                 onClick={() => setHotlinkedImage(null)}
                 className="text-white/40 hover:text-white transition-colors cursor-pointer"
                 aria-label="Close image viewer"

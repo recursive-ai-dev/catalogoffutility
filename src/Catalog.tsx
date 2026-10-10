@@ -1,8 +1,19 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect, useDeferredValue } from "react";
 import { X } from "lucide-react";
-import { CATALOG_ENTRIES, AppEntry } from "./data";
+import { CATALOG_ENTRIES, FILTER_TAGS, AppEntry } from "./data";
 import { useAuth, useAuthModal } from "./lib/auth";
 import { Clock, realClock } from "./lib/clock";
+import { ARCHIVE_CORRUPTION, DEFAULT_TAG } from "./lib/constants";
+
+/**
+ * Re-exported for backwards compatibility: the "show all" sentinel now lives in
+ * `lib/constants` so that `data.ts` can build the filter chip list from it
+ * without a circular import back into this component.
+ */
+export { DEFAULT_TAG };
+
+/** An entry with its pre-computed lowercase search blob attached. */
+type SearchableEntry = AppEntry & { searchBlob: string };
 
 interface CatalogProps {
   onSelectApp: (app: AppEntry) => void;
@@ -24,7 +35,7 @@ const LOCKED_COUNT = CATALOG_ENTRIES.filter((e) => e.requiresAuth).length;
 
 // Pre-calculate search blobs to avoid redundant string operations during filtering.
 // This reduces main-thread work by ~40% during active search.
-const SEARCHABLE_ENTRIES = CATALOG_ENTRIES.map((entry) => ({
+const SEARCHABLE_ENTRIES: SearchableEntry[] = CATALOG_ENTRIES.map((entry) => ({
   ...entry,
   searchBlob: [
     entry.id,
@@ -35,9 +46,6 @@ const SEARCHABLE_ENTRIES = CATALOG_ENTRIES.map((entry) => ({
     ...(entry.tech || []),
   ].join(" ").toLowerCase(),
 }));
-
-/** Sentinel value representing the "show all" filter state. Single-sourced here. */
-export const DEFAULT_TAG = "All_Entries" as const;
 
 /**
  * Pre-indexed catalog by tag. Allows O(1) lookup of entries for a given tag,
@@ -51,20 +59,7 @@ const MAP_BY_TAG = SEARCHABLE_ENTRIES.reduce((acc, entry) => {
     });
   }
   return acc;
-}, {} as Record<string, typeof SEARCHABLE_ENTRIES>);
-
-const FILTER_TAGS = [
-  DEFAULT_TAG,
-  "Pointless",
-  "Endless",
-  "Corrupted",
-  "Narrative",
-  "Interactive",
-  "Tool",
-  "Simulation",
-  "Strategy",
-  "Horror",
-];
+}, {} as Record<string, SearchableEntry[]>);
 
 /**
  * Pre-allocated formatter for "MMM YYYY" profile dates.
@@ -102,6 +97,24 @@ const UserSection = React.memo(function UserSection() {
   const { user, profile, loading, signOut } = useAuth();
   const { showAuthModal } = useAuthModal();
   const [signingOut, setSigningOut] = useState(false);
+
+  // All hooks must run on every render, unconditionally, BEFORE any early
+  // return. These three previously sat below the `loading` / `!user` guards, so
+  // the component executed 3 hooks while signed out and 6 once a session
+  // arrived — React aborts that render with "Rendered more hooks than during the
+  // previous render", blanking the catalog on every successful sign-in.
+  const displayName = useMemo(
+    () => profile?.username ?? user?.email?.split("@")[0] ?? "entity",
+    [profile?.username, user?.email],
+  );
+
+  const joined = useMemo(() => {
+    if (!profile?.created_at) return null;
+    const date = new Date(profile.created_at);
+    return Number.isNaN(date.getTime()) ? null : PROFILE_DATE_FORMATTER.format(date);
+  }, [profile?.created_at]);
+
+  const userInitials = useMemo(() => initials(displayName), [displayName]);
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -142,6 +155,7 @@ const UserSection = React.memo(function UserSection() {
           </div>
         </div>
         <button
+          type="button"
           onClick={showAuthModal}
           className="w-full flex items-center justify-center gap-2 py-2 border border-white/10 hover:border-white/25 text-white/30 hover:text-white/60 text-[9px] font-mono tracking-widest uppercase rounded-lg transition-all cursor-pointer"
         >
@@ -153,21 +167,6 @@ const UserSection = React.memo(function UserSection() {
       </div>
     );
   }
-
-  const displayName = useMemo(
-    () => profile?.username ?? user.email?.split("@")[0] ?? "entity",
-    [profile?.username, user.email],
-  );
-
-  const joined = useMemo(() => {
-    if (!profile?.created_at) return null;
-    const date = new Date(profile.created_at);
-    return Number.isNaN(date.getTime())
-      ? null
-      : PROFILE_DATE_FORMATTER.format(date);
-  }, [profile?.created_at]);
-
-  const userInitials = useMemo(() => initials(displayName), [displayName]);
 
   return (
     <div className="px-4 py-4 border-t border-white/5">
@@ -193,6 +192,7 @@ const UserSection = React.memo(function UserSection() {
         </div>
       </div>
       <button
+        type="button"
         onClick={handleSignOut}
         disabled={signingOut}
         className="w-full flex items-center justify-center gap-2 py-2 border border-white/5 hover:border-white/15 text-white/15 hover:text-white/35 text-[9px] font-mono tracking-widest uppercase rounded-lg transition-all cursor-pointer disabled:opacity-40"
@@ -250,13 +250,6 @@ const Card = React.memo(function Card({
     imgRef.current.style.transform = "scale(1) translate(0px, 0px)";
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      if (!isDisabled) onSelect(entry);
-    }
-  };
-
   const ariaLabel = entry.missing
     ? `${entry.title} — unavailable`
     : isAuthLocked
@@ -264,18 +257,12 @@ const Card = React.memo(function Card({
       : `Open ${entry.title}`;
 
   return (
-    <div
+    <article
       ref={cardRef}
-      role="button"
-      tabIndex={entry.missing ? -1 : 0}
-      aria-disabled={isDisabled}
-      aria-label={ariaLabel}
-      onClick={() => onSelect(entry)}
-      onKeyDown={handleKeyDown}
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+      className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm ${
         entry.missing
           ? "opacity-40 hover:opacity-60 cursor-not-allowed"
           : isAuthLocked
@@ -283,6 +270,20 @@ const Card = React.memo(function Card({
             : "hover:border-white/20 hover:bg-white/5 cursor-pointer"
       }`}
     >
+      {/*
+        Stretched activation target. A real <button> gives us native keyboard
+        activation, a native accessible name and a browser-managed focus ring,
+        so the card no longer has to fake button semantics — and the tag filter
+        buttons below can sit above it without being nested inside a button.
+      */}
+      {!entry.missing && (
+        <button
+          type="button"
+          onClick={() => onSelect(entry)}
+          aria-label={ariaLabel}
+          className="absolute inset-0 z-20 rounded-xl cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-white/40"
+        />
+      )}
       {entry.version && !isAuthLocked && (
         <div className="absolute top-3 right-3 z-10 bg-black/60 backdrop-blur-md px-2 py-1 rounded-full border border-white/10">
           <span className="text-[9px] text-white/70 font-mono uppercase tracking-widest">
@@ -302,8 +303,12 @@ const Card = React.memo(function Card({
         ) : (
           <img
             ref={imgRef}
-            alt={entry.title}
+            alt=""
+            aria-hidden="true"
             loading="lazy"
+            decoding="async"
+            width={800}
+            height={600}
             className={`w-full h-full object-cover transition-transform duration-700 ease-out mix-blend-luminosity ${
               isAuthLocked
                 ? "opacity-15 group-hover:opacity-20"
@@ -353,19 +358,12 @@ const Card = React.memo(function Card({
 
         {/* Tags */}
         {entry.tags && entry.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="relative z-30 flex flex-wrap gap-1.5">
             {entry.tags.map((tag) => (
               <button
                 key={tag}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTagSelect(tag);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation();
-                  }
-                }}
+                type="button"
+                onClick={() => onTagSelect(tag)}
                 aria-label={`Filter by ${tag}`}
                 className="text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 border border-white/8 text-white/25 rounded-full hover:border-white/30 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
               >
@@ -423,7 +421,7 @@ const Card = React.memo(function Card({
           </span>
         </div>
       </div>
-    </div>
+    </article>
   );
 });
 
@@ -477,6 +475,7 @@ const Sidebar = React.memo(function Sidebar({
 
       <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
         <button
+          type="button"
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           onClick={() => {
             const navigable = CATALOG_ENTRIES.filter((e) => !e.missing && (!e.requiresAuth || user));
@@ -501,6 +500,7 @@ const Sidebar = React.memo(function Sidebar({
               ? "border-red-900/50 bg-red-950/20"
               : "border-white/10 bg-white/5"
           }`}
+          type="button"
           onClick={handleForgetClick}
           aria-label={isConfirmingForget ? "Confirm: Forget memories" : "Forget memories"}
         >
@@ -522,6 +522,7 @@ const Sidebar = React.memo(function Sidebar({
         </button>
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          type="button"
           onClick={() => showNotification("Giving up is not an option.")}
         >
           <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -534,6 +535,7 @@ const Sidebar = React.memo(function Sidebar({
         <div className="h-px bg-white/10 my-4 w-full"></div>
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          type="button"
           onClick={() => showNotification("Staring into the void...")}
         >
           <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -545,6 +547,7 @@ const Sidebar = React.memo(function Sidebar({
         </button>
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
+          type="button"
           onClick={() => showNotification("Exit mechanism destroyed.")}
         >
           <span className="material-symbols-outlined text-white/40 group-hover:text-white transition-colors text-xl font-light" aria-hidden="true">
@@ -611,12 +614,19 @@ const SearchHeader = React.memo(function SearchHeader({
         <h2 className="text-4xl font-light text-white uppercase tracking-widest font-display">
           The Archive
         </h2>
-        <div className="hidden sm:flex px-3 py-1 bg-white/5 border border-white/10 text-[9px] text-white/50 font-mono tracking-widest uppercase rounded-full">
+        <p
+          role="status"
+          aria-live="polite"
+          className="hidden sm:flex px-3 py-1 bg-white/5 border border-white/10 text-[9px] text-white/50 font-mono tracking-widest uppercase rounded-full"
+        >
           {filteredEntriesCount} of {totalEntriesCount} Entries
-        </div>
+        </p>
       </div>
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors">
+        <div
+          role="search"
+          className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors"
+        >
           <button
             type="button"
             onClick={() => searchInputRef.current?.focus()}
@@ -633,6 +643,9 @@ const SearchHeader = React.memo(function SearchHeader({
             aria-label="Search catalog entries (Press / to focus)"
             placeholder="Search the void..."
             maxLength={200}
+            enterKeyHint="search"
+            autoComplete="off"
+            spellCheck={false}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
@@ -671,6 +684,7 @@ const FilterBar = React.memo(function FilterBar({
       {FILTER_TAGS.map((tag) => (
         <button
           key={tag}
+          type="button"
           onClick={() => onTagSelect(tag)}
           aria-pressed={selectedTag === tag}
           className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
@@ -824,6 +838,15 @@ export const Catalog = React.memo(function Catalog({
   );
   const deferredQuery = useDeferredValue(normalizedQuery);
 
+  // Whether any filter is currently narrowing the grid. Mirrored into a ref so
+  // the global keydown listener can read the latest value without having to
+  // re-register on every keystroke.
+  const isFilterActive = searchQuery !== "" || selectedTag !== DEFAULT_TAG;
+  const isFilterActiveRef = useRef(isFilterActive);
+  useEffect(() => {
+    isFilterActiveRef.current = isFilterActive;
+  }, [isFilterActive]);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Capture the exact time the catalog first mounted — displayed in system logs.
   // useRef lazy-init is the correct React idiom for "compute once at mount";
@@ -869,6 +892,10 @@ export const Catalog = React.memo(function Catalog({
       if (isInDialog) return;
 
       if (e.key === "Escape") {
+        // Only clear when something is actually filtered; firing resetFilters()
+        // unconditionally re-focused the search input on every stray Escape and
+        // announced an empty aria-live region for no reason.
+        if (!isFilterActiveRef.current) return;
         resetFilters();
         return;
       }
@@ -945,9 +972,8 @@ export const Catalog = React.memo(function Catalog({
 
   // Derived from the static registry — stable across all renders.
   const lockedCount = LOCKED_COUNT;
-  const corruption = 85;
+  const corruption = ARCHIVE_CORRUPTION;
 
-  const isFilterActive = searchQuery !== "" || selectedTag !== DEFAULT_TAG;
   const userDisplayName = useMemo(
     () => user?.email?.split("@")[0] ?? null,
     [user],

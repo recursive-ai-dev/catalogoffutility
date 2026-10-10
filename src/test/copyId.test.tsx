@@ -1,6 +1,5 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 import { ProductPage } from '../ProductPage';
@@ -47,6 +46,10 @@ describe('UX Enhancements — Copy ID & Search', () => {
     // Check success state
     expect(screen.getByText(/COPIED/i)).toBeTruthy();
     expect(screen.getByLabelText(/ID copied/i)).toBeTruthy();
+    // ...and that the outcome is also announced, not just shown.
+    expect(screen.getByRole('status')).toHaveTextContent(
+      `Entry ID ${testApp.id} is on the clipboard.`,
+    );
 
     // Verify it reverts after 2000ms
     await act(async () => {
@@ -79,8 +82,16 @@ describe('UX Enhancements — Copy ID & Search', () => {
     render(
       <App />
     );
-    // Navigate to product page
-    fireEvent.click(screen.getByText(testApp.title));
+    // Navigate to product page via the card's activation button.
+    fireEvent.click(
+      screen.getByRole('button', { name: `Open ${testApp.title}` }),
+    );
+    // Assert the navigation actually happened — the skip link is rendered on
+    // every view, so checking for it alone would pass even on a no-op click.
+    // Synchronous (not waitFor): this suite runs on fake timers, and the view
+    // transition commits through flushSync, so the product page is present by
+    // the time the click handler returns.
+    expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
 
     const skipLink = screen.getByText(/Skip to main content/i);
     expect(skipLink).toBeTruthy();

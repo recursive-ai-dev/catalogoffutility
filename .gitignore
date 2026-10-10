@@ -7,3 +7,11 @@ coverage/
 .env*
 !.env.example
 .vercel
+
+# Tooling caches
+.eslintcache
+.vite/
+*.tsbuildinfo
+
+# Editors
+.idea/

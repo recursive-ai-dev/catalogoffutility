@@ -78,8 +78,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
+  // When Supabase is unconfigured there is no session to wait for, so the
+  // initial state is already terminal. Seeding it here (rather than assigning
+  // it inside the subscription effect) avoids a loading flash and a cascading
+  // second render on every cold start.
+  const [loading, setLoading] = useState(supabaseAvailable);
+  const [connectionError, setConnectionError] = useState<string | null>(
+    supabaseAvailable
+      ? null
+      : "Authentication service is unavailable. Non-gated entries remain accessible.",
+  );
 
   const fetchProfile = useCallback(async (userId: string, email: string) => {
     const now = new Date().toISOString();
@@ -123,10 +131,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // If Supabase is not configured, degrade gracefully — auth is unavailable
     // but the rest of the app (non-gated entries) remains fully functional.
+    // `loading` and `connectionError` were already seeded to the correct values,
+    // so there is nothing to assign here.
     if (!supabaseAvailable) {
-      setConnectionError("Authentication service is unavailable. Non-gated entries remain accessible.");
-      setLoading(false);
-      return;
+      return undefined;
     }
 
     // In Supabase v2, onAuthStateChange fires INITIAL_SESSION on subscribe,
@@ -151,8 +159,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Supabase client threw during subscription setup — surface as a recoverable error.
       const msg = err instanceof Error ? err.message : "Unknown connection error";
       console.error("[void] Auth subscription failed:", msg);
+      /* eslint-disable react-hooks/set-state-in-effect -- error path of an
+         external-system subscription. It cannot run on a normal mount, and no
+         render-time state can represent "the subscription call threw". */
       setConnectionError(`Authentication service connection failed: ${msg}`);
       setLoading(false);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
 
     return () => subscription?.unsubscribe();
@@ -201,8 +213,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    // Clear local identity first: if the network call throws, the session token
+    // is still being discarded locally and the UI must not keep claiming a
+    // signed-in observer.
     setProfile(null);
+    setUser(null);
+    setSession(null);
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Connection failed";
+      console.warn("[void] Sign-out could not reach the archive:", msg);
+    }
   }, []);
 
   // Memoize the context value — contains only auth state, no modal fields,
@@ -234,12 +256,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 // Hooks
 // ---------------------------------------------------------------------------
 
+// eslint-disable-next-line react-refresh/only-export-components -- the hook belongs with the provider it reads.
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- the hook belongs with the provider it reads.
 export function useAuthModal(): AuthModalContextValue {
   const ctx = useContext(AuthModalContext);
   if (!ctx) throw new Error("useAuthModal must be used inside AuthModalProvider");

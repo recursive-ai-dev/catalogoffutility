@@ -7,6 +7,9 @@ import { AppEntry } from "./data";
 import { AuthProvider, useAuth, useAuthModal } from "./lib/auth";
 import { AuthModal } from "./AuthModal";
 import { PrivacyBanner } from "./PrivacyBanner";
+import { ErrorBoundary } from "./ErrorBoundary";
+import { resetDocumentMeta, setDocumentMeta } from "./lib/metadata";
+import { SITE_TITLE, chamberTitle, productTitle } from "./lib/constants";
 
 type View = "catalog" | "product" | "chamber";
 
@@ -36,7 +39,9 @@ function AppInner() {
   const [view, setView] = useState<View>("catalog");
   const [selectedApp, setSelectedApp] = useState<AppEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState(DEFAULT_TAG);
+  // `DEFAULT_TAG` is an `as const` literal, so without the annotation the state
+  // type collapses to "All_Entries" and every real tag assignment is rejected.
+  const [selectedTag, setSelectedTag] = useState<string>(DEFAULT_TAG);
   const { user } = useAuth();
   const isLoggedIn = !!user;
   const { authModalVisible, showAuthModal } = useAuthModal();
@@ -127,34 +132,34 @@ function AppInner() {
   const isUnauthorized = !isLoggedIn && selectedApp?.requiresAuth;
   const effectiveView = isUnauthorized ? "catalog" : view;
 
-  // Dynamic Metadata: update document title and description based on current state
+  // Dynamic metadata. Routed through lib/metadata so the og:/twitter: tags move
+  // with the view too — previously they stayed pinned to the generic catalog
+  // copy, so sharing a specific entry always previewed as the archive root.
   useEffect(() => {
     if (effectiveView === "product" && selectedApp) {
-      document.title = `${selectedApp.title} | Catalog of Futility`;
-      const metaDescription = document.querySelector('meta[name="description"]');
-      if (metaDescription) {
-        metaDescription.setAttribute("content", selectedApp.description);
-      }
+      setDocumentMeta(productTitle(selectedApp.title), selectedApp.description);
     } else if (effectiveView === "chamber" && selectedApp) {
-      document.title = `[CHAMBER] ${selectedApp.title}`;
+      setDocumentMeta(chamberTitle(selectedApp.title), selectedApp.description);
     } else {
-      document.title = "Catalog of Futility";
-      const metaDescription = document.querySelector('meta[name="description"]');
-      if (metaDescription) {
-        metaDescription.setAttribute("content", "A brutalist archive of digital artifacts, simulations, and interactive tragedies.");
-      }
+      resetDocumentMeta(SITE_TITLE);
     }
   }, [effectiveView, selectedApp]);
 
   // If a logged-out user somehow reaches a product or chamber view for an
   // auth-gated entry, synchronise the underlying view state so that logging
   // back in does not silently teleport them back to the gated page.
-  useEffect(() => {
-    if (!isLoggedIn && selectedApp?.requiresAuth && view !== "catalog") {
+  //
+  // Written as a render-time state adjustment (the pattern React documents for
+  // "adjust state when a prop changes") rather than an effect, so the correction
+  // lands in the same commit instead of triggering a second render.
+  const [wasLoggedIn, setWasLoggedIn] = useState(isLoggedIn);
+  if (wasLoggedIn !== isLoggedIn) {
+    setWasLoggedIn(isLoggedIn);
+    if (!isLoggedIn && selectedApp?.requiresAuth) {
       setView("catalog");
       setSelectedApp(null);
     }
-  }, [isLoggedIn, selectedApp, view]);
+  }
 
   // Use effectiveView in render (not raw `view`) so that auth-gated pages
   // never flash for a frame before the useEffect above fires on logout.
@@ -194,8 +199,12 @@ function AppInner() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppInner />
-    </AuthProvider>
+    // Outside AuthProvider: an auth-provider throw must not take the recovery UI
+    // down with it.
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppInner />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
