@@ -40,6 +40,17 @@ Items completed during the 2026-10-10 polish run are marked done and cross-refer
 - [x] **Data integrity**: `validateCatalog()` enforces the tag taxonomy at load; `src/test/catalog-integrity.test.ts` also verifies every `image` and `url` resolves to a real file under `public/`.
 - [ ] **Sitemap**: `public/sitemap.xml` uses a relative `<loc>/</loc>`, which the sitemaps protocol requires to be absolute. It needs the production domain.
 
+## 🚨 Deploy
+- [ ] **The Vercel deployment is failing, and has been since before this branch.** Verified on
+  `4418b41` (the `main` commit this branch was cut from) and on merged PR #312 (2026-08-14) —
+  both report `Vercel: failure`. Not caused by the 2026-10-10 polish run, but it means
+  production is not being deployed. Read the build log with
+  `npx vercel inspect <deployment-id> --logs` (needs Vercel auth, which CI here does not have).
+- [ ] Note: `npm run build` now runs `npm run typecheck` first, so the deploy path requires
+  `typescript` from `devDependencies`. Vercel installs dev dependencies during builds, so this
+  should be a non-issue — but if the project is configured to skip them, set `buildCommand` to
+  `npx vite build` in `vercel.json`.
+
 ## 🛡️ Security & Stability
 - [x] **Iframe Sandboxing**: Restrictive default with per-app overrides; `referrerPolicy="no-referrer"` added.
 - [x] **Error Handling**: Descriptive Supabase failure recovery, plus a top-level `ErrorBoundary` so a render throw no longer blanks the app.
