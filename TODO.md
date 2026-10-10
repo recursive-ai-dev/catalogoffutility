@@ -1,9 +1,13 @@
 # Catalog of Futility — TODO
 
+Items completed during the 2026-10-10 polish run are marked done and cross-referenced to
+`IMPROVEMENT.md`.
+
 ## 🌑 Core System & Architecture
 - [ ] **Supabase Sync**: Implement cross-device persistence for "Artifacts" (e.g., Agent Smith snapshots, Neural Runner scripts, Soul Mirror history) by syncing LocalStorage to Supabase profiles.
-- [x] **Dynamic Metadata**: Update `metadata.json` or head tags dynamically based on the selected `AppEntry` for better SEO and social sharing.
-- [ ] **Offline Mode**: Add a Service Worker to enable PWA capabilities, allowing the "Void" to be accessed without an active connection.
+- [x] **Dynamic Metadata**: Update metadata dynamically based on the selected `AppEntry`. Now routed through `src/lib/metadata.ts` so `og:*` / `twitter:*` move with the view, not just `<title>`.
+- [ ] **Offline Mode**: Add a Service Worker to enable PWA capabilities. `public/site.webmanifest` now exists; the worker does not.
+- [ ] **Browser navigation**: There is no router, so the browser Back button exits the app instead of returning to the catalog. Consider `history.pushState` integration behind the existing `handleBackTo*` handlers.
 - [ ] **Telemetric Logs**: (Optional) Allow users to opt-in to sending "Void Logs" to a central database for aggregate "existential metrics."
 
 ## 🧮 Mathematical Rigor & Validation
@@ -14,31 +18,52 @@
 - [ ] **Abm-Generator**: Validate the procedural harmony generation against formal music theory matrices for "atmospheric" dissonance.
 
 ## 🏗️ Engineering Standards & CI/CD
-- [ ] **TypeScript Conversion**: Migrate all standalone HTML apps in `public/` to TypeScript to ensure type safety for complex physics/math logic.
-- [ ] **Unit Testing (Math Logic)**: Add Vitest/Jest suites specifically to validate the outputs of the physics engines (e.g., ensuring energy conservation in simulations).
-- [ ] **Linting & Formatting**: Harmonize ESLint and Prettier configs across the React root and the legacy HTML/JS files in `public/`.
-- [ ] **Automated Dependency Audits**: Integrate `npm audit` or Dependabot to manage vulnerabilities in the growing list of dependencies.
+- [x] **Linting**: ESLint flat config with `typescript-eslint` + `eslint-plugin-react-hooks`. This is the rule that catches hooks called after an early return — a live crash that the type-checker could not see.
+- [ ] **Formatting**: Prettier is still absent; only ESLint is wired up.
+- [x] **TypeScript strictness**: `strict` enabled, `@types/react` / `@types/react-dom` installed (they were missing, so nothing React-related was actually being type-checked).
+- [x] **Unit Testing (Math Logic)**: `src/test/math-physics.test.ts` covers the physics engines; suite is now 170 tests across 11 files.
+- [ ] **CI**: The workflow (lint → typecheck → test → build + artifact upload) is written and ships in `docs/ci.workflow.yml`, but GitHub only executes workflows from `.github/workflows/`. Move it there to activate — adding a file at that path requires the `workflows` permission, which the automated push was denied.
+- [ ] **Automated Dependency Audits**: Add `npm audit --audit-level=high` to CI and enable Dependabot.
 
 ## 🎨 UI & Aesthetics
-- [ ] **Mobile Refinement**: Audit the "Chamber" and "ProductPage" on small viewports. Ensure the sidebar navigation is intuitive on touch devices.
+- [ ] **Mobile Refinement**: Audit the "Chamber" and "ProductPage" on small viewports. The Chamber's 320px control sidebar still has no responsive collapse.
 - [ ] **Custom Shaders**: Experiment with more advanced GLSL noise or CRT effects in the `Chamber` backdrop for deeper immersion.
-- [x] **Transition Polish**: Add View Transitions API support for seamless navigation between Catalog and Product pages.
-- [ ] **Accessibility (A11y)**: Further improve keyboard navigation in the `Chamber` (e.g., focus trapping within the iframe when active).
+- [x] **Transition Polish**: View Transitions API support for navigation between Catalog / Product / Chamber.
+- [x] **Accessibility (A11y)**: Nested interactive controls removed from catalog cards, focus traps fixed and shared, live regions added, `prefers-reduced-motion` implemented, global focus fallback. See `IMPROVEMENT.md` §C.
+- [ ] **Icon font weight**: `Material Symbols Outlined` is loaded as a full variable font. Subsetting to the glyphs actually used would cut a large share of first-load bytes.
+- [x] **Focus restoration**: Modals now return focus to their opener instead of dropping it on `<body>`.
 
 ## 🧩 App Catalog & Content
-- [x] **Search Enhancements**: Add "Search by Tech Stack" or "Search by Version" to the catalog.
+- [x] **Search Enhancements**: "Search by Tech Stack" and "Search by Version".
 - [ ] **App Categories**: Introduce nested categories or "Collections" (e.g., "The Experimental Suite," "The Tragedy Cycle").
 - [ ] **Favorites System**: Allow authenticated users to "pin" or "favorite" specific apps to their profile.
+- [x] **Data integrity**: `validateCatalog()` enforces the tag taxonomy at load; `src/test/catalog-integrity.test.ts` also verifies every `image` and `url` resolves to a real file under `public/`.
+- [ ] **Sitemap**: `public/sitemap.xml` uses a relative `<loc>/</loc>`, which the sitemaps protocol requires to be absolute. It needs the production domain.
+
+## 🚨 Deploy
+- [ ] **The Vercel deployment is failing, and has been since before this branch.** Verified on
+  `4418b41` (the `main` commit this branch was cut from) and on merged PR #312 (2026-08-14) —
+  both report `Vercel: failure`. Not caused by the 2026-10-10 polish run, but it means
+  production is not being deployed. Read the build log with
+  `npx vercel inspect <deployment-id> --logs` (needs Vercel auth, which CI here does not have).
+- [ ] Note: `npm run build` now runs `npm run typecheck` first, so the deploy path requires
+  `typescript` from `devDependencies`. Vercel installs dev dependencies during builds, so this
+  should be a non-issue — but if the project is configured to skip them, set `buildCommand` to
+  `npx vite build` in `vercel.json`.
 
 ## 🛡️ Security & Stability
-- [x] **Iframe Sandboxing**: Audit `sandbox` attributes for all apps. Consider a more restrictive default with specific overrides per app.
-- [x] **Error Handling**: Implement a more descriptive error recovery flow for Supabase connection failures.
-- [x] **PostMessage Validation**: Add a secondary validation layer for `postMessage` payloads to ensure they match expected JSON schemas.
+- [x] **Iframe Sandboxing**: Restrictive default with per-app overrides; `referrerPolicy="no-referrer"` added.
+- [x] **Error Handling**: Descriptive Supabase failure recovery, plus a top-level `ErrorBoundary` so a render throw no longer blanks the app.
+- [x] **PostMessage Validation**: Origin + source + JSON-schema validation layers.
+- [x] **Electron hardening**: Explicit `contextIsolation` / `sandbox` / `nodeIntegration: false`, and external links routed to the OS browser.
+- [ ] **Shipped source artifacts**: `public/*.jsx`, `public/*.tsx` and `public/QuantumAntVisualization.ts` are authored source, not assets, but are served in production. Decide whether to move them out of `public/`.
 
 ## 🧪 Testing & DX
 - [ ] **Visual Regression Tests**: Add Playwright or similar for visual regression testing of the "Void" aesthetic.
 - [ ] **Benchmarking**: Create a performance benchmark for the Catalog grid with 100+ entries to ensure search remains sub-10ms.
 - [ ] **Documentation**: Expand `.jules/` documentation with "How to Build a Void-Compatible App" guide for contributors.
+- [x] **Determinism**: `Clock` provider (`src/lib/clock.ts`) and a `matchMedia` stub (`src/test/matchMedia.ts`) make time- and motion-dependent paths testable.
+- [ ] **Code splitting**: Vendor chunks are now cache-stable, but `Chamber` is still eagerly bundled. Lazy-loading it would cut the entry payload further.
 
 ---
 *The void is never finished, only abandoned.*

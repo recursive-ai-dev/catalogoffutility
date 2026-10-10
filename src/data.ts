@@ -1,3 +1,5 @@
+import { DEFAULT_TAG } from "./lib/constants";
+
 export interface AppEntry {
   id: string;
   title: string;
@@ -85,7 +87,11 @@ export const CATALOG_ENTRIES: AppEntry[] = [
       "Every story is a web of cause and effect. This tool lets you see the skeleton beneath the flesh. Map your tragedies before they happen.",
     longDescription: `All narratives are graphs. Hero meets obstacle, hero fails, hero transforms, hero succeeds or doesn't. The nodes are moments. The edges are consequence.\n\nThe Narrative Beat Graph is a visualization tool for mapping story structure — the emotional beats, tonal shifts, and branching decisions that compose a narrative. Drag nodes across the canvas. Connect moments of hope to moments of dread. Watch your story emerge as a web of inevitability.\n\nThe tool supports multiple tonal categories: dramatic, mystery, hope, dread, climax, and resolution. Each node carries weight. Each connection implies causality.\n\nThis was built for writers. It was kept because it revealed something uncomfortable: the same graph that maps a tragedy also maps a hero's journey. The shape of the thing does not change. Only the labels do.`,
     size: "76 KB",
-    tags: ["Tool", "Pointless"],
+    // `Tool` and `Pointless` are mutually exclusive in the controlled taxonomy
+    // (see CONTRADICTORY_TAG_PAIRS below): an entry cannot simultaneously be a
+    // practical utility and deliberately without purpose. This entry produces a
+    // real artifact — a beat graph — so it is a Tool, not Pointless.
+    tags: ["Tool", "Strategy"],
     tech: ["HTML", "SVG", "JavaScript", "Drag & Drop"],
     image: "/images/narrative-beat-graph.svg",
     url: "/narrative-beat-graph.html",
@@ -287,7 +293,7 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     version: "v.2.0",
     description:
       "An immersive retro-terminal experience with terror protocols and psychological horror. CRT aesthetics meet existential dread.",
-    longDescription: `You are trapped. Not in space, not in time — in the architecture of perception itself.\n\nIMAGINE BEING TRAPPED 2 is a terminal-style psychological horror experience where reality fractures at the edges of your awareness. The interface responds to your presence, but not always in ways you expect. The loading screen warns you: \"The darkness sees you...\"\n\nNavigate through corrupted interfaces, decode fragmented transmissions, and confront entities that remember your choices. The game adapts to your sanity level, revealing hidden truths when you're most vulnerable.\n\nThere is no escape. There is only the protocol. And the protocol is already running.\n\nPress any key to begin. Or don't. The system will wait.`,
+    longDescription: `You are trapped. Not in space, not in time — in the architecture of perception itself.\n\nIMAGINE BEING TRAPPED 2 is a terminal-style psychological horror experience where reality fractures at the edges of your awareness. The interface responds to your presence, but not always in ways you expect. The loading screen warns you: "The darkness sees you..."\n\nNavigate through corrupted interfaces, decode fragmented transmissions, and confront entities that remember your choices. The game adapts to your sanity level, revealing hidden truths when you're most vulnerable.\n\nThere is no escape. There is only the protocol. And the protocol is already running.\n\nPress any key to begin. Or don't. The system will wait.`,
     size: "256 KB",
     tags: ["Narrative", "Horror", "Interactive"],
     tech: ["HTML", "CSS", "JavaScript", "React"],
@@ -338,3 +344,87 @@ export const CATALOG_ENTRIES: AppEntry[] = [
     requiresAuth: true,
   }
 ];
+
+// ---------------------------------------------------------------------------
+// Controlled tag taxonomy
+// ---------------------------------------------------------------------------
+// Per docs/ux-foundation.md §5, tags are a controlled vocabulary. The list used
+// to live inside Catalog.tsx while the data it constrained lived here, so the
+// two could drift. The taxonomy now lives with the data it governs and the UI
+// imports it.
+
+/** The complete set of permitted tags. Any tag outside this set is a data defect. */
+export const TAG_VOCABULARY = [
+  "Narrative",
+  "Endless",
+  "Interactive",
+  "Simulation",
+  "Tool",
+  "Corrupted",
+  "Pointless",
+  "Strategy",
+  "Horror",
+] as const;
+
+export type CatalogTag = (typeof TAG_VOCABULARY)[number];
+
+/** Hard ceiling on tags per entry (docs/ux-foundation.md §5). */
+export const MAX_TAGS_PER_ENTRY = 4;
+
+/**
+ * Tag pairs that may never co-occur. `Tool` asserts practical utility while
+ * `Pointless` asserts the deliberate absence of purpose — asserting both makes
+ * the filter taxonomy self-contradictory.
+ */
+export const CONTRADICTORY_TAG_PAIRS: ReadonlyArray<readonly [CatalogTag, CatalogTag]> = [
+  ["Tool", "Pointless"],
+];
+
+/** Filter chips, in display order: the sentinel first, then the vocabulary. */
+export const FILTER_TAGS: readonly string[] = [DEFAULT_TAG, ...TAG_VOCABULARY];
+
+/**
+ * Validates the registry against the taxonomy invariants.
+ *
+ * Returns a list of human-readable defect descriptions; an empty list means the
+ * catalog is well-formed. Called on module load in development builds so a
+ * malformed entry surfaces in the console immediately rather than presenting as
+ * a filter that silently matches nothing.
+ */
+export function validateCatalog(entries: readonly AppEntry[] = CATALOG_ENTRIES): string[] {
+  const defects: string[] = [];
+  const seen = new Set<string>();
+
+  for (const entry of entries) {
+    if (seen.has(entry.id)) defects.push(`duplicate id "${entry.id}"`);
+    seen.add(entry.id);
+
+    const tags = entry.tags ?? [];
+
+    if (tags.length > MAX_TAGS_PER_ENTRY) {
+      defects.push(`"${entry.id}" has ${tags.length} tags (max ${MAX_TAGS_PER_ENTRY})`);
+    }
+    for (const tag of tags) {
+      if (!TAG_VOCABULARY.includes(tag as CatalogTag)) {
+        defects.push(`"${entry.id}" uses unknown tag "${tag}"`);
+      }
+    }
+    for (const [a, b] of CONTRADICTORY_TAG_PAIRS) {
+      if (tags.includes(a) && tags.includes(b)) {
+        defects.push(`"${entry.id}" combines contradictory tags ${a} + ${b}`);
+      }
+    }
+    if (!entry.url && !entry.htmlContent && !entry.missing) {
+      defects.push(`"${entry.id}" has neither url nor htmlContent`);
+    }
+  }
+
+  return defects;
+}
+
+if (import.meta.env.DEV) {
+  const defects = validateCatalog();
+  if (defects.length > 0) {
+    console.error("[void] Catalog taxonomy defects detected:\n- " + defects.join("\n- "));
+  }
+}

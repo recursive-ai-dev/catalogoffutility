@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth, useAuthModal } from "./lib/auth";
+import { trapTabFocus } from "./lib/focus";
 
 type Mode = "signin" | "signup";
 
@@ -36,37 +37,27 @@ export function AuthModal() {
   const emailInputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Focus the email input when the modal mounts
+  /** Element that held focus before the modal opened; restored on unmount. */
+  const openerRef = useRef<HTMLElement | null>(null);
+
+  // Focus the email input when the modal mounts, and remember where focus came
+  // from so it can be returned when the modal closes — otherwise focus is
+  // dropped on <body> and the next Tab starts over from the top of the page.
   useEffect(() => {
+    const active = document.activeElement;
+    openerRef.current =
+      active instanceof HTMLElement && active !== document.body ? active : null;
     emailInputRef.current?.focus();
+    return () => {
+      openerRef.current?.focus();
+    };
   }, []);
 
   // WCAG 2.1 SC 2.1.2: Trap focus inside the modal while it is open.
   // All Tab / Shift+Tab keypresses are constrained to focusable descendants
   // of the modal panel so keyboard users cannot navigate behind the overlay.
   const handleFocusTrap = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== "Tab") return;
-    const panel = panelRef.current;
-    if (!panel) return;
-    const focusable = Array.from(
-      panel.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      ),
-    ).filter((el) => (el as HTMLElement).offsetParent !== null); // visible elements only
-    if (focusable.length === 0) return;
-    const first = focusable[0] as HTMLElement;
-    const last = focusable[focusable.length - 1] as HTMLElement;
-    if (e.shiftKey) {
-      if (document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      }
-    } else {
-      if (document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
+    trapTabFocus(e, panelRef.current, document.activeElement);
   }, []);
 
   // Reset state when toggling modes
@@ -157,11 +148,12 @@ export function AuthModal() {
             </h2>
           </div>
           <button
+            type="button"
             onClick={hideAuthModal}
-            className="text-white/20 hover:text-white/70 transition-colors cursor-pointer"
+            className="text-white/20 hover:text-white/70 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/40 outline-none rounded-sm"
             aria-label="Close"
           >
-            <span className="material-symbols-outlined font-light text-xl">
+            <span className="material-symbols-outlined font-light text-xl" aria-hidden="true">
               close
             </span>
           </button>
@@ -210,7 +202,11 @@ export function AuthModal() {
           </div>
         ) : (
           /* Form */
-          <form onSubmit={handleSubmit} className="px-8 py-8 flex flex-col gap-6">
+          <form
+            onSubmit={handleSubmit}
+            aria-busy={loading}
+            className="px-8 py-8 flex flex-col gap-6"
+          >
             {/* Subtitle */}
             <p className="text-white/25 font-light text-xs leading-relaxed">
               {mode === "signin"

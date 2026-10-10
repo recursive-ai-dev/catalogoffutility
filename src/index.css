@@ -12,10 +12,36 @@
   --font-mono: "JetBrains Mono", monospace;
 }
 
+/* Dark UI in every browser surface — native form controls, scrollbars, and the
+   default canvas — rather than only inside the React tree. */
+:root {
+  color-scheme: dark;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--color-background-dark);
   color: #ffffff;
+}
+
+/* Text selection was only styled on the Chamber root; make it global so the
+   catalog and product views match. */
+::selection {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/*
+ * Global focus fallback.
+ *
+ * Many components in this codebase set `outline-none` and then rely on a
+ * `focus-visible:ring-1` utility. That is correct, but a control that forgets
+ * the ring becomes invisible to keyboard users. This guarantees a minimum
+ * visible indicator; the per-component rings still apply on top of it.
+ */
+:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
 }
 
 /* Custom scrollbar for webkit to match minimal theme */
@@ -217,4 +243,38 @@ body {
 
 ::view-transition-new(root) {
   animation: 220ms ease-in both fade-in;
+}
+
+/* ---------------------------------------------------------------------------
+ * Reduced motion
+ *
+ * docs/ux-foundation.md §8 requires that the CRT overlay, glitch animation and
+ * atmosphere layer all stop under `prefers-reduced-motion`. That block was
+ * documented but never written, so the scanline and flicker animations ran for
+ * every visitor regardless of their OS setting. Tailwind's own motion utilities
+ * (`animate-pulse`, `animate-ping`, `animate-spin`) are included because the
+ * Chamber loading spinner and the log pulse dot use them.
+ * ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .crt-overlay,
+  .crt-scanline,
+  .glitch-hover:hover,
+  .atmosphere,
+  .animate-flicker,
+  .animate-glitch,
+  .group:hover .animate-glitch,
+  .animate-pulse,
+  .animate-ping,
+  .animate-spin,
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    transition: none;
+  }
+
+  /* The parallax card thumbnails translate on pointer move via inline styles;
+     dropping the transition leaves the transform instant rather than gliding. */
+  .group img {
+    transition: none;
+  }
 }

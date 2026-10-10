@@ -11,17 +11,33 @@ interface ProductPageProps {
 export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnter, onTagSelect }: ProductPageProps) {
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
+  /** Announced through the aria-live status region next to the button. */
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleCopyId = useCallback(async () => {
-    if (!navigator.clipboard) return;
+    if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+
+    // `navigator.clipboard` is undefined outside a secure context, so the old
+    // early-return left the user with a button that did nothing at all.
+    if (!navigator.clipboard?.writeText) {
+      setCopyStatus("Copy unavailable in this context.");
+      copyResetTimerRef.current = setTimeout(() => setCopyStatus(null), 2000);
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(app.id);
       setCopied(true);
-      if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
-      copyResetTimerRef.current = setTimeout(() => setCopied(false), 2000);
+      setCopyStatus(`Entry ID ${app.id} is on the clipboard.`);
+      copyResetTimerRef.current = setTimeout(() => {
+        setCopied(false);
+        setCopyStatus(null);
+      }, 2000);
     } catch (err) {
       console.error("Failed to copy ID:", err);
+      setCopyStatus("Copy failed. The archive withheld the ID.");
+      copyResetTimerRef.current = setTimeout(() => setCopyStatus(null), 2000);
     }
   }, [app.id]);
 
@@ -64,7 +80,11 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
       >
         <img
           src={app.image}
-          alt={app.title}
+          alt=""
+          aria-hidden="true"
+          width={800}
+          height={600}
+          decoding="async"
           className="absolute inset-0 w-full h-full object-cover scale-110 opacity-25 mix-blend-luminosity"
           style={{ filter: "blur(3px)" }}
         />
@@ -87,6 +107,7 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
         {/* Header */}
         <header className="shrink-0 flex items-center justify-between px-8 py-5 border-b border-white/10 bg-black/50 backdrop-blur-xl">
           <button
+            type="button"
             onClick={onBack}
             title="Back to catalog (Esc)"
             className="flex items-center gap-3 text-white/50 hover:text-white transition-colors group cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
@@ -107,6 +128,7 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
               Entry // <span className="text-white/40">{app.id.toUpperCase()}</span>
             </div>
             <button
+              type="button"
               onClick={handleCopyId}
               className={`min-w-[100px] flex items-center justify-center gap-2 px-3 py-1.5 border rounded-full transition-all duration-300 text-[9px] font-mono tracking-widest uppercase cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
                 copied
@@ -115,11 +137,16 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
               }`}
               aria-label={copied ? "ID copied" : "Copy entry ID"}
             >
-              <span className="material-symbols-outlined !text-xs font-light">
+              <span className="material-symbols-outlined !text-xs font-light" aria-hidden="true">
                 {copied ? "check" : "content_copy"}
               </span>
               <span>{copied ? "COPIED" : "Copy ID"}</span>
             </button>
+            {/* Polite live region: the visual swap to "COPIED" is not announced
+                otherwise, so a screen-reader user gets no confirmation. */}
+            <p role="status" aria-live="polite" className="sr-only">
+              {copyStatus ?? ""}
+            </p>
           </div>
         </header>
 
@@ -129,7 +156,11 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
           <div className="lg:hidden relative h-48 w-full overflow-hidden">
             <img
               src={app.image}
-              alt={app.title}
+              alt=""
+              aria-hidden="true"
+              width={800}
+              height={600}
+              decoding="async"
               className="w-full h-full object-cover opacity-30"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent pointer-events-none"></div>
@@ -160,6 +191,7 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
                 {app.tags.map((tag) => (
                   <button
                     key={tag}
+                    type="button"
                     onClick={() => onTagSelect(tag)}
                     aria-label={`Filter by ${tag}`}
                     className="px-3 py-1 border border-white/10 text-white/35 hover:text-white/70 hover:border-white/30 transition-colors text-[9px] font-mono tracking-widest uppercase rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
@@ -182,9 +214,9 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
                   CLASSIFIED_NOTES //
                 </p>
                 <div className="space-y-5">
-                  {paragraphs.map((para, i) => (
+                  {paragraphs.map((para) => (
                     <p
-                      key={i}
+                      key={`${para.slice(0, 24)}-${para.length}`}
                       className="text-white/45 text-sm font-light leading-7"
                     >
                       {para}
@@ -257,6 +289,7 @@ export const ProductPage = React.memo(function ProductPage({ app, onBack, onEnte
         {/* Enter Chamber CTA */}
         <div className="shrink-0 px-8 py-6 border-t border-white/10 bg-black/60 backdrop-blur-xl">
           <button
+            type="button"
             onClick={onEnter}
             className="w-full group relative h-13 bg-white/[0.03] border border-white/20 hover:border-white/50 hover:bg-white/8 transition-all duration-500 flex items-center justify-center gap-4 cursor-pointer rounded-full overflow-hidden py-4 focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           >

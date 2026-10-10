@@ -3,11 +3,13 @@
 Automated PR merger for catalogoffutility repository.
 Merges PRs in intelligent order based on type and dependencies.
 """
-import requests
-import json
+import argparse
+import os
 import time
 from typing import List, Dict
 import sys
+
+import requests
 
 # Configuration
 REPO = "recursive-ai-dev/catalogoffutility"
@@ -119,14 +121,27 @@ def merge_pr(token: str, pr: Dict, dry_run: bool = True) -> bool:
         return False
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python bulk_merge_prs.py <github_token> [--dry-run]")
-        print("Get a token from: https://github.com/settings/tokens")
-        print("Required scope: repo")
+    parser = argparse.ArgumentParser(
+        description="Merge open PRs in dependency order.",
+        epilog="The token is read from $GITHUB_TOKEN. Do not pass it as an "
+        "argument: argv is visible to every local user via `ps` and is "
+        "recorded in shell history.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="report what would be merged without calling the merge endpoint",
+    )
+    args = parser.parse_args()
+
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        print("error: GITHUB_TOKEN is not set.", file=sys.stderr)
+        print("Get a token from: https://github.com/settings/tokens", file=sys.stderr)
+        print("Required scope: repo", file=sys.stderr)
         sys.exit(1)
-    
-    token = sys.argv[1]
-    dry_run = "--dry-run" in sys.argv or len(sys.argv) > 2 and sys.argv[2] == "--dry-run"
+
+    dry_run = args.dry_run
     
     print(f"Fetching all open PRs for {REPO}...")
     prs = get_all_open_prs(token)

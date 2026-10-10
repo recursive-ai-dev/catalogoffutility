@@ -4,20 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Catalog of Futility</title>
-    <meta name="description" content="A catalog of futile endeavors. Explore strange interactive experiences, simulations, and games designed to provoke, unsettle, and occupy your time meaninglessly." />
+
+    <!--
+      This description is the canonical default. It must match SITE_DESCRIPTION
+      in src/lib/constants.ts — App.tsx restores this exact string when leaving
+      an entry view, and src/test/site.test.tsx asserts the two agree.
+    -->
+    <meta name="description" content="A brutalist archive of digital artifacts, simulations, and interactive tragedies." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="color-scheme" content="dark" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Catalog of Futility" />
-    <meta property="og:description" content="A catalog of futile endeavors. Explore strange interactive experiences, simulations, and games designed to provoke, unsettle, and occupy your time meaninglessly." />
+    <meta property="og:description" content="A brutalist archive of digital artifacts, simulations, and interactive tragedies." />
     <meta property="og:site_name" content="Catalog of Futility" />
+    <!-- Same banner asset the README uses, so the preview matches the repo. -->
+    <meta property="og:image" content="https://github.com/user-attachments/assets/0aa67016-6eaf-4554-a0b5-a7a51a8e05ce" />
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Catalog of Futility" />
-    <meta name="twitter:description" content="A catalog of futile endeavors. Explore strange interactive experiences, simulations, and games." />
+    <meta name="twitter:description" content="A brutalist archive of digital artifacts, simulations, and interactive tragedies." />
+    <meta name="twitter:image" content="https://github.com/user-attachments/assets/0aa67016-6eaf-4554-a0b5-a7a51a8e05ce" />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/site.webmanifest">
 
     <!-- Preconnect to Google Fonts to reduce latency -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

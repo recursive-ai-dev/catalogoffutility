@@ -5,14 +5,12 @@
  * Tests prove the chain contract defined in Phase 3.
  */
 
-import React from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { makeFakeClock } from '../lib/clock';
 
 import App from '../App';
-import { Catalog } from '../Catalog';
 import { Chamber } from '../Chamber';
 import { ProductPage } from '../ProductPage';
 import { AppEntry, CATALOG_ENTRIES } from '../data';
@@ -39,6 +37,22 @@ const makeApp = (overrides: Partial<AppEntry> = {}): AppEntry => ({
 const firstNavigableEntry = CATALOG_ENTRIES.find(
   (e) => !e.missing && !e.requiresAuth,
 )!;
+
+/**
+ * Activates a catalog card through its stretched activation <button>.
+ *
+ * Cards are <article> elements containing a real button rather than a
+ * role="button" wrapper, so the accessible name of the activation target — not
+ * the visible <h3> — is what a keyboard or screen-reader user actually presses.
+ */
+function clickCard(title: string) {
+  const names = [
+    `Open ${title}`,
+    `${title} — authentication required`,
+    `${title} — unavailable`,
+  ];
+  fireEvent.click(screen.getByRole('button', { name: (n) => names.includes(n) }));
+}
 
 afterEach(() => cleanup());
 
@@ -118,7 +132,7 @@ describe('Chain 2 — AppSelection', () => {
 
   it('non-missing entry navigates to product page', () => {
     render(<App />);
-    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    clickCard(firstNavigableEntry.title);
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
   });
 });
@@ -354,7 +368,7 @@ describe('Chain 14 — NavButtonActions', () => {
 describe('Chain 9 — EnterChamber', () => {
   it('navigates catalog → product → chamber', () => {
     render(<App />);
-    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    clickCard(firstNavigableEntry.title);
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
     fireEvent.click(screen.getByText(/Enter Chamber/i));
     expect(screen.getByText('The Chamber')).toBeTruthy();
@@ -368,7 +382,7 @@ describe('Chain 9 — EnterChamber', () => {
 describe('Chain 12 — BackNavigation', () => {
   it('back from product returns to catalog and clears selected app', () => {
     render(<App />);
-    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    clickCard(firstNavigableEntry.title);
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Archive/i }));
     expect(screen.getByRole('heading', { name: /The Archive/i })).toBeTruthy();
@@ -377,7 +391,7 @@ describe('Chain 12 — BackNavigation', () => {
 
   it('back from chamber returns to product page', () => {
     render(<App />);
-    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    clickCard(firstNavigableEntry.title);
     fireEvent.click(screen.getByText(/Enter Chamber/i));
     expect(screen.getByText('The Chamber')).toBeTruthy();
     fireEvent.click(screen.getByText(/Cease/i));
@@ -386,7 +400,7 @@ describe('Chain 12 — BackNavigation', () => {
 
   it('Escape key in product view returns to catalog', () => {
     render(<App />);
-    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    clickCard(firstNavigableEntry.title);
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.getByRole('heading', { name: /The Archive/i })).toBeTruthy();
@@ -394,7 +408,7 @@ describe('Chain 12 — BackNavigation', () => {
 
   it('Escape key in chamber view returns to product page', () => {
     render(<App />);
-    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    clickCard(firstNavigableEntry.title);
     fireEvent.click(screen.getByText(/Enter Chamber/i));
     expect(screen.getByText('The Chamber')).toBeTruthy();
     fireEvent.keyDown(window, { key: 'Escape' });
@@ -402,8 +416,8 @@ describe('Chain 12 — BackNavigation', () => {
   });
 
   it('Escape key in chamber view closes image modal before navigating back', async () => {
-    const { container } = render(<App />);
-    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    render(<App />);
+    clickCard(firstNavigableEntry.title);
     fireEvent.click(screen.getByText(/Enter Chamber/i));
 
     // In JSDOM, we must initialize to render the iframe and get its contentWindow
@@ -938,7 +952,7 @@ describe('DEFAULT_TAG & resetFilters — Catalog', () => {
   it('Product page tag click updates filter and returns to catalog', async () => {
     render(<App />);
     // Navigate to a product
-    fireEvent.click(screen.getByText(firstNavigableEntry.title));
+    clickCard(firstNavigableEntry.title);
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
 
     // Find a tag on the product page and click it
@@ -960,7 +974,7 @@ describe('DEFAULT_TAG & resetFilters — Catalog', () => {
     expect(screen.queryByText('WHEN THE SUN DIED')).toBeNull();
 
     // Navigate to THE WORLD THAT DOESN'T CARE product page
-    fireEvent.click(screen.getByText("THE WORLD THAT DOESN'T CARE"));
+    clickCard("THE WORLD THAT DOESN'T CARE");
     expect(screen.getByText(/Enter Chamber/i)).toBeTruthy();
 
     // Navigate back to catalog
@@ -1059,8 +1073,7 @@ describe('Chain 15 — Agent Smith & Neural Runner Entries', () => {
   it('AGENT SMITH shows auth modal when unauthenticated user clicks it', async () => {
     render(<App />);
     // Click the card — it should trigger showAuthModal, not navigate
-    const card = screen.getByText('AGENT SMITH').closest('[role="button"]')!;
-    fireEvent.click(card);
+    clickCard('AGENT SMITH');
     // Auth modal heading appears (state update is synchronous from click handler)
     await waitFor(() => expect(screen.getByRole('heading', { name: /Authenticate/i })).toBeTruthy());
     // Should NOT have navigated to product page
