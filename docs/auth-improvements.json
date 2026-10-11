@@ -1,0 +1,459 @@
+[
+  {
+    "description": "Trim environment credentials so accidental surrounding whitespace does not break service configuration.",
+    "files": [
+      "src/lib/supabase.ts"
+    ],
+    "validation": "src/test/supabase-reliability.test.ts: normalizes whitespace in environment credentials"
+  },
+  {
+    "description": "Reject malformed, unsupported, credential-bearing, query-bearing, and fragment-bearing Supabase URLs before client initialization.",
+    "files": [
+      "src/lib/supabase.ts"
+    ],
+    "validation": "src/test/supabase-reliability.test.ts: invalid service URL parameterized regression cases"
+  },
+  {
+    "description": "Keep the archive available in production when authentication credentials are missing instead of crashing during import.",
+    "files": [
+      "src/lib/supabase.ts"
+    ],
+    "validation": "src/test/supabase-reliability.test.ts: keeps the archive importable in production with no credentials"
+  },
+  {
+    "description": "Disable storage persistence, refresh requests, and URL session detection on the unconfigured fallback authentication client.",
+    "files": [
+      "src/lib/supabase.ts"
+    ],
+    "validation": "src/test/supabase-reliability.test.ts: disables session storage, background refresh, and URL token detection"
+  },
+  {
+    "description": "Defer profile database queries until the synchronous auth listener has released the Supabase authentication lock.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: defers database queries until after the auth callback releases its lock"
+  },
+  {
+    "description": "Clear the previous account profile immediately when the authenticated user changes.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: clears the former profile immediately when a different account arrives"
+  },
+  {
+    "description": "Ignore stale profile results after a different account signs in.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: ignores a late profile result belonging to the previous account"
+  },
+  {
+    "description": "Invalidate pending profile synchronization when signing out so late results cannot restore a signed-out profile.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: does not recreate an identity from a profile that completes after sign-out"
+  },
+  {
+    "description": "Avoid duplicate profile writes on token refresh and repeated sign-in notifications for the same account.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: does not repeat profile writes for token refresh or repeated sign-in events"
+  },
+  {
+    "description": "Distinguish a failed profile update from an absent row and avoid inserting after transport or permission errors.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: does not attempt a profile insert after an update error"
+  },
+  {
+    "description": "Contain thrown profile-query failures so they cannot reject auth notifications or revoke authentication.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: contains rejected profile requests without losing authentication"
+  },
+  {
+    "description": "Recover concurrent profile creation conflicts by reading the existing row without overwriting its customized username.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: recovers a concurrent insert by reading the existing custom username"
+  },
+  {
+    "description": "Create a nonempty initial profile username for authenticated users without an email address.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: gives an email-less user a nonempty initial username"
+  },
+  {
+    "description": "Select only public profile fields instead of retrieving every database column.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "Targeted ESLint and global TypeScript check; profile queries explicitly select id,username,created_at,last_seen_at."
+  },
+  {
+    "description": "Verify returned profile IDs before attaching database rows to the current identity.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: rejects a database row belonging to another identity"
+  },
+  {
+    "description": "Cancel queued profile work, startup deadlines, and authentication subscriptions when the provider unmounts.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: cancels queued profile synchronization and subscription on unmount"
+  },
+  {
+    "description": "Reset profile request identity during Strict Mode teardown so a resubscription can load the restored profile correctly.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: survives Strict Mode resubscription and fetches the restored profile once"
+  },
+  {
+    "description": "End a stalled authentication initialization after ten seconds and recover when a later session notification arrives.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: leaves loading after a stalled initialization and recovers when a session later arrives"
+  },
+  {
+    "description": "Short-circuit sign-in, signup, and sign-out network operations when authentication is unconfigured.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "Targeted ESLint and global TypeScript check; unavailable-provider guards precede all authentication service operations."
+  },
+  {
+    "description": "Normalize email input and reject empty credentials at the provider boundary, including nonmodal consumers.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: trims email addresses at the provider boundary; rejects empty credentials without a network request"
+  },
+  {
+    "description": "Keep failed sign-in and signup requests retryable instead of permanently replacing the authentication form with a connection failure screen.",
+    "files": [
+      "src/lib/auth.tsx",
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: keeps a transient sign-in rejection retryable; src/test/auth-modal-reliability.test.tsx: keeps a connection warning retryable in the form"
+  },
+  {
+    "description": "Require an actual browser session after signup even when a returned user has historical email confirmation metadata.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: requires a session even if signup returns old confirmation metadata"
+  },
+  {
+    "description": "Handle returned sign-out errors, restore the still-active identity when credentials were not removed, and reject with a safe error so consumers can show retry controls.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: restores a still-active identity when Supabase returns a sign-out error"
+  },
+  {
+    "description": "Prevent concurrent sign-out operations from racing with authentication notifications.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "Targeted ESLint and global TypeScript check; signingOutRef guards duplicate operations and ignores nonnull session callbacks while sign-out is pending."
+  },
+  {
+    "description": "Present generic subscription setup errors without exposing infrastructure details.",
+    "files": [
+      "src/lib/auth.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: contains subscription setup exceptions without exposing server details"
+  },
+  {
+    "description": "Prevent duplicate authentication submissions with a synchronous in-flight guard.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: prevents duplicate submissions and freezes credentials and mode during a request"
+  },
+  {
+    "description": "Disable credential edits, password visibility changes, and mode switches while authentication is pending.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: prevents duplicate submissions and freezes credentials and mode during a request"
+  },
+  {
+    "description": "Catch unexpected sign-in or signup promise rejections and restore an actionable form error.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: catches an unexpected rejection and makes the form usable again"
+  },
+  {
+    "description": "Invalidate dismissed modal requests so late success responses cannot close a newly opened dialog.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: does not close a later dialog when a request resolves after this one was dismissed"
+  },
+  {
+    "description": "Validate the form before invoking authentication, including programmatic submission events.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: enforces signup length without calling the service for an invalid form"
+  },
+  {
+    "description": "Apply signup password-length limits only to signup so legacy sign-in passwords remain usable.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: allows a previously configured short password during sign-in"
+  },
+  {
+    "description": "Announce signup email confirmation and move focus to the replacement confirmation surface.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: announces and focuses confirmation after signup"
+  },
+  {
+    "description": "Clear the stored passphrase and visibility state after a signup enters email confirmation.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "Targeted ESLint; confirmation success explicitly clears password and showPassword before replacing the form."
+  },
+  {
+    "description": "Give each dialog and its fields unique IDs with a descriptive relationship for assistive technology.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: gives the dialog a description and email entry stable password-manager metadata"
+  },
+  {
+    "description": "Connect authentication errors to both credential fields and expose their invalid state to assistive technology.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: connects an auth error to the fields and clears it when credentials change"
+  },
+  {
+    "description": "Clear stale form errors as users correct their credentials.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: connects an auth error to the fields and clears it when credentials change"
+  },
+  {
+    "description": "Recognize email rate-limit errors before the generic malformed-email mapping and instruct the user to wait.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: reports rate-limited email requests before the generic email error"
+  },
+  {
+    "description": "Explain unconfirmed email separately from malformed email.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: describes unconfirmed email accurately instead of calling it malformed"
+  },
+  {
+    "description": "Lock background scrolling while the auth dialog is open and restore the prior overflow value on close.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: prevents background scrolling and restores its original overflow on close"
+  },
+  {
+    "description": "Contain programmatic focus attempts behind the authentication dialog.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: contains programmatic focus attempts behind the modal"
+  },
+  {
+    "description": "Restore focus only to a connected opener and avoid scrolling the document during focus transitions.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: restores the connected opener after unmount"
+  },
+  {
+    "description": "Focus the first available dialog control when the email form is absent, including service-unavailable states.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "Targeted ESLint; mount focus falls back from emailInputRef to available tab stops and panelRef."
+  },
+  {
+    "description": "Ignore Escape during input-method composition so text entry is not dismissed accidentally.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: ignores Escape during input-method composition"
+  },
+  {
+    "description": "Consume a locally handled Escape event so parent keyboard handlers do not also navigate away.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: handles Escape locally so outer keyboard handlers do not also run"
+  },
+  {
+    "description": "Constrain the auth panel to the dynamic viewport and allow its contents to scroll on short mobile displays.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "Targeted ESLint; dialog has max-h-[calc(100dvh-1rem)] and overflow-y-auto."
+  },
+  {
+    "description": "Place the authentication dialog above the privacy notice so the notice cannot cover modal controls.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "Targeted ESLint; auth overlay uses z-[80], above PrivacyBanner z-[70]."
+  },
+  {
+    "description": "Provide explicit email/password field names, email capitalization suppression, and spellcheck suppression for credential entry.",
+    "files": [
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-modal-reliability.test.tsx: gives the dialog a description and email entry stable password-manager metadata"
+  },
+  {
+    "description": "Treat only the recognized saved acknowledgment value as a dismissed privacy notice.",
+    "files": [
+      "src/PrivacyBanner.tsx"
+    ],
+    "validation": "src/test/privacy-reliability.test.tsx: accepts only the recognized acknowledgment value"
+  },
+  {
+    "description": "Show the privacy notice when storage reads are blocked instead of silently treating failure as acknowledgment.",
+    "files": [
+      "src/PrivacyBanner.tsx"
+    ],
+    "validation": "src/test/privacy-reliability.test.tsx: still explains external requests when storage access is denied"
+  },
+  {
+    "description": "Synchronize privacy acknowledgment and clearing between browser tabs while ignoring unrelated storage events.",
+    "files": [
+      "src/PrivacyBanner.tsx"
+    ],
+    "validation": "src/test/privacy-reliability.test.tsx: dismisses when another tab acknowledges; shows after clearing; ignores unrelated storage keys and session-storage events"
+  },
+  {
+    "description": "Represent the nonmodal privacy notice as a labeled, described region without misleading dialog semantics.",
+    "files": [
+      "src/PrivacyBanner.tsx"
+    ],
+    "validation": "src/test/privacy-reliability.test.tsx: shows a labeled region on the first render when no preference exists"
+  },
+  {
+    "description": "Explain when third-party requests occur and distinguish notice acknowledgment from browser privacy settings.",
+    "files": [
+      "src/PrivacyBanner.tsx"
+    ],
+    "validation": "src/test/privacy-reliability.test.tsx: labeled region accessible description; notice explicitly describes content-load requests and stored preference."
+  },
+  {
+    "description": "Make privacy acknowledgment a non-submit button so embedding it in a form cannot submit that form.",
+    "files": [
+      "src/PrivacyBanner.tsx"
+    ],
+    "validation": "src/test/privacy-reliability.test.tsx: does not submit a surrounding form when acknowledged"
+  },
+  {
+    "description": "Exclude all negative tabindex values from focus navigation, including tabindex on native controls.",
+    "files": [
+      "src/lib/focus.ts"
+    ],
+    "validation": "src/test/focus-reliability.test.ts: excludes every negative tabindex, including native controls"
+  },
+  {
+    "description": "Respect disabled fieldset descendants while preserving focusable controls in the first legend.",
+    "files": [
+      "src/lib/focus.ts"
+    ],
+    "validation": "src/test/focus-reliability.test.ts: excludes disabled fieldset descendants while respecting its first legend"
+  },
+  {
+    "description": "Exclude hidden input fields, inert subtrees, and detached elements from dialog tab stops.",
+    "files": [
+      "src/lib/focus.ts"
+    ],
+    "validation": "src/test/focus-reliability.test.ts: excludes hidden input fields and inert descendants; excludes controls in detached roots"
+  },
+  {
+    "description": "Detect display-none ancestors and collapsed visibility while allowing explicit visible child overrides.",
+    "files": [
+      "src/lib/focus.ts"
+    ],
+    "validation": "src/test/focus-reliability.test.ts: excludes controls inside an ancestor hidden with CSS; collapsed visibility; explicit visible child overrides"
+  },
+  {
+    "description": "Use positive tabindex navigation order before ordinary DOM-order tab stops.",
+    "files": [
+      "src/lib/focus.ts"
+    ],
+    "validation": "src/test/focus-reliability.test.ts: orders positive tabindexes before normal DOM order"
+  },
+  {
+    "description": "Treat a radio group as a single tab stop while keeping groups from different forms separate.",
+    "files": [
+      "src/lib/focus.ts"
+    ],
+    "validation": "src/test/focus-reliability.test.ts: checked radio, first enabled radio, and separate form radio group regression cases"
+  },
+  {
+    "description": "Expose only the summary tab stop in closed details elements instead of their collapsed controls.",
+    "files": [
+      "src/lib/focus.ts"
+    ],
+    "validation": "src/test/focus-reliability.test.ts: includes a closed details summary while excluding its collapsed content"
+  },
+  {
+    "description": "Recognize editable surfaces as focus targets while excluding implicit nested editors.",
+    "files": [
+      "src/lib/focus.ts"
+    ],
+    "validation": "src/test/focus-reliability.test.ts: includes top-level editable surfaces but skips implicit nested editors"
+  },
+  {
+    "description": "Recover forward and reverse Tab navigation when focus begins outside the dialog.",
+    "files": [
+      "src/lib/focus.ts"
+    ],
+    "validation": "src/test/focus-reliability.test.ts: moves focus into the first tab stop from outside; reverse navigation into the last"
+  },
+  {
+    "description": "Keep focus on the dialog panel when it temporarily has no enabled tab stops.",
+    "files": [
+      "src/lib/focus.ts"
+    ],
+    "validation": "src/test/focus-reliability.test.ts: keeps focus on a dialog with no available tab stops"
+  },
+  {
+    "description": "Respect Tab events already consumed by a child control instead of overriding its keyboard behavior.",
+    "files": [
+      "src/lib/focus.ts"
+    ],
+    "validation": "src/test/focus-reliability.test.ts: does not override keyboard events already handled by a child control"
+  },
+  {
+    "description": "Block new sign-in and signup requests while sign-out is pending so successful new authentication events cannot be dropped by the logout guard.",
+    "files": [
+      "src/lib/auth.tsx",
+      "src/AuthModal.tsx"
+    ],
+    "validation": "src/test/auth-reliability.test.tsx: prevents a new sign-in or signup while sign-out is still completing"
+  }
+]

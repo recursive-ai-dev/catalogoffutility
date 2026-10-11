@@ -19,9 +19,19 @@
 }
 
 body {
+  margin: 0;
+  min-width: 320px;
   font-family: var(--font-sans);
   background-color: var(--color-background-dark);
   color: #ffffff;
+}
+
+#root { min-height: 100dvh; }
+
+.void-scroll {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 /* Text selection was only styled on the Chamber root; make it global so the
@@ -256,6 +266,12 @@ body {
  * Chamber loading spinner and the log pulse dot use them.
  * ------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
   .crt-overlay,
   .crt-scanline,
   .glitch-hover:hover,
@@ -277,4 +293,15 @@ body {
   .group img {
     transition: none;
   }
+}
+
+@media (forced-colors: active) {
+  :focus-visible { outline: 2px solid Highlight !important; }
+  button, input, select, textarea { border-color: ButtonText; }
+  [aria-pressed="true"] { outline: 2px solid Highlight; }
+  .bg-noise, .crt-overlay, .crt-scanline, .atmosphere { display: none; }
+}
+
+@media (pointer: coarse) {
+  button:not([aria-hidden="true"]), input, select { min-height: 44px; }
 }

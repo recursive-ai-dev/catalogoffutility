@@ -1,19 +1,27 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { AppEntry } from "./data";
 import { Clock, realClock } from "./lib/clock";
 import { ARCHIVE_CORRUPTION, MAX_LOGS } from "./lib/constants";
 import { trapTabFocus } from "./lib/focus";
 
-const HOTLINK_SCRIPT_TEMPLATE = `<script>
+const IFRAME_LOAD_TIMEOUT_MS = 30_000;
+
+function hotlinkScript(targetOrigin: string): string {
+  return `<script>
   document.addEventListener('click', function(e) {
-    if (e.target.tagName === 'IMG') {
+    if (e.target && e.target.tagName === 'IMG') {
       e.preventDefault();
-      // Use '*' as target origin because sandboxed iframes without 'allow-same-origin'
-      // have origin 'null', and window.location.origin would fail delivery.
-      window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.src }, '*');
+      window.parent.postMessage({ type: 'IMAGE_CLICKED', src: e.target.currentSrc || e.target.src }, ${JSON.stringify(targetOrigin)});
+    }
+  });
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !e.repeat && !e.defaultPrevented && !e.isComposing) {
+      e.preventDefault();
+      window.parent.postMessage({ type: 'CHAMBER_ESCAPE' }, ${JSON.stringify(targetOrigin)});
     }
   });
 </script>`;
+}
 
 const SAFE_DATA_URL_REGEX = /^data:image\/(png|jpeg|jpg|gif|webp|avif|bmp);base64,/i;
 
@@ -28,15 +36,23 @@ const IMAGE_CLICKED_ALLOWED_KEYS = new Set(['type', 'src']);
  * origin checking (Chain 8 / PostMessage Validation TODO).
  */
 function isValidImageClickedPayload(data: unknown): data is { type: 'IMAGE_CLICKED'; src: string } {
-  if (data === null || typeof data !== 'object') return false;
+  if (data === null || typeof data !== 'object' || Array.isArray(data)) return false;
   const d = data as Record<string, unknown>;
-  if (d['type'] !== 'IMAGE_CLICKED') return false;
-  if (typeof d['src'] !== 'string') return false;
+  const type = Object.getOwnPropertyDescriptor(d, "type");
+  const src = Object.getOwnPropertyDescriptor(d, "src");
+  if (!type || !src || !("value" in type) || !("value" in src)) return false;
+  if (type.value !== 'IMAGE_CLICKED' || typeof src.value !== 'string') return false;
   // Reject payloads with unexpected extra fields that could indicate spoofing
   for (const key of Object.keys(d)) {
     if (!IMAGE_CLICKED_ALLOWED_KEYS.has(key)) return false;
   }
   return true;
+}
+
+function isValidEscapePayload(data: unknown): boolean {
+  if (data === null || typeof data !== "object" || Array.isArray(data)) return false;
+  const type = Object.getOwnPropertyDescriptor(data, "type");
+  return type?.value === "CHAMBER_ESCAPE" && Object.keys(data).length === 1;
 }
 
 /**
@@ -47,15 +63,19 @@ function isValidImageClickedPayload(data: unknown): data is { type: 'IMAGE_CLICK
  * Enforces a 2MB length limit for data URLs and 8KB for remote URLs to guard against DoS.
  */
 function isSafeImageSrc(src: string): boolean {
-  // Enforce a length limit (2MB) for data URLs.
-  if (src.startsWith("data:")) {
-    if (src.length > 2 * 1024 * 1024) return false;
-    return SAFE_DATA_URL_REGEX.test(src);
+  const isData = /^data:/i.test(src);
+  if (src.length > (isData ? 2 * 1024 * 1024 : 8192)) return false;
+  if (src !== src.trim()) return false;
+  for (let index = 0; index < src.length; index++) {
+    const code = src.charCodeAt(index);
+    if (code < 32 || code === 127) return false;
   }
-
-  // Remote URLs (https/http) are capped at 8KB to hinder data exfiltration
-  // via massive URL parameters.
-  if (src.length > 8192) return false;
+  // Enforce a length limit (2MB) for data URLs.
+  if (isData) {
+    if (!SAFE_DATA_URL_REGEX.test(src)) return false;
+    const data = src.slice(src.indexOf(",") + 1);
+    return data.length > 0 && /^[a-z0-9+/]+={0,2}$/i.test(data);
+  }
 
   try {
     const url = new URL(src);
@@ -67,7 +87,15 @@ function isSafeImageSrc(src: string): boolean {
     if (url.protocol === "https:") return true;
     // Allow http: only for local development (localhost or 127.0.0.1)
     if (url.protocol === "http:") {
-      return url.hostname === "localhost" || url.hostname === "127.0.0.1";
+      return ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+    }
+    // Electron assets are limited to the installed application's own directory.
+    if (url.protocol === "file:" && window.location.protocol === "file:") {
+      const base = new URL(".", document.baseURI);
+      const path = decodeURIComponent(url.pathname);
+      const basePath = decodeURIComponent(base.pathname);
+      return url.host === base.host && path.startsWith(basePath) &&
+        !path.slice(basePath.length).split(/[\\/]/).includes("..");
     }
     // Note: `data:` is handled by the early return above and never reaches here.
     return false;
@@ -147,7 +175,14 @@ interface ChamberProps {
   clock?: Clock;
 }
 
-export const Chamber = React.memo(function Chamber({ app, onBack, initialError, clock }: ChamberProps) {
+export const Chamber = React.memo(function Chamber(props: ChamberProps) {
+  const { app } = props;
+  // A new artifact or source starts a fresh session, including timers and listeners.
+  const sessionKey = JSON.stringify([app.id, app.url, app.htmlContent, app.sandbox]);
+  return <ChamberSession key={sessionKey} {...props} />;
+});
+
+function ChamberSession({ app, onBack, initialError, clock }: ChamberProps) {
   const clk = clock ?? realClock;
   // Chain 7 (IframeError): initialError allows tests to start in error state
   const [isInitialized, setIsInitialized] = useState(initialError != null);
@@ -160,6 +195,29 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
   const [showLogs, setShowLogs] = useState(true);
   const [noiseEnabled, setNoiseEnabled] = useState(true);
   const [hotlinkedImage, setHotlinkedImage] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
+  const modalOpen = hotlinkedImage !== null;
+  const iframeUrl = useMemo(() => {
+    if (!app.url) return undefined;
+    if (window.location.protocol === "file:" && app.url.startsWith("/")) {
+      return new URL(app.url.slice(1), document.baseURI).href;
+    }
+    return app.url;
+  }, [app.url]);
+  const sourceError = useMemo(() => {
+    if (!iframeUrl) return app.htmlContent?.trim() ? null : "This artifact has no simulation source.";
+    try {
+      const url = new URL(iframeUrl, document.baseURI);
+      const allowed = ["https:", "http:"];
+      if (window.location.protocol === "file:") allowed.push("file:");
+      if (!allowed.includes(url.protocol) || url.username || url.password) {
+        return "The simulation source URL is unsupported.";
+      }
+      return null;
+    } catch {
+      return "The simulation source URL is invalid.";
+    }
+  }, [iframeUrl, app.htmlContent]);
   const [logs, setLogs] = useState<LogEntry[]>(() => {
     // Use clk so test runs with a fake clock produce deterministic timestamps
     // and real timestamps are never mixed with decorative hard-coded strings.
@@ -193,7 +251,9 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
   // reads the current clock without needing to re-register the listener when
   // the clock prop changes (never happens in production; may occur in tests).
   const clkRef = useRef(clk);
-  clkRef.current = clk;
+  useLayoutEffect(() => { clkRef.current = clk; }, [clk]);
+  const onBackRef = useRef(onBack);
+  useLayoutEffect(() => { onBackRef.current = onBack; }, [onBack]);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -212,8 +272,36 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
   // Chain 6 (IframeLoad): prevent duplicate listener injection across iframe load events
   const iframeDocRef = useRef<Document | null>(null);
   const iframeClickHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
+  const iframeKeyTargetRef = useRef<Window | null>(null);
+  const iframeKeyHandlerRef = useRef<((e: KeyboardEvent) => void) | null>(null);
   const modalCloseRef = useRef<HTMLButtonElement>(null);
   const modalPanelRef = useRef<HTMLDivElement>(null);
+  const fullscreenToggleRef = useRef<HTMLButtonElement>(null);
+  const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearLoadTimer = useCallback(() => {
+    if (loadTimerRef.current !== null) {
+      clearTimeout(loadTimerRef.current);
+      loadTimerRef.current = null;
+    }
+  }, []);
+
+  const detachIframeClickHandler = useCallback(() => {
+    try {
+      if (iframeDocRef.current && iframeClickHandlerRef.current) {
+        iframeDocRef.current.removeEventListener("click", iframeClickHandlerRef.current);
+      }
+      if (iframeKeyTargetRef.current && iframeKeyHandlerRef.current) {
+        iframeKeyTargetRef.current.removeEventListener("keydown", iframeKeyHandlerRef.current);
+      }
+    } catch {
+      // A frame may have navigated to a different origin before cleanup.
+    }
+    iframeDocRef.current = null;
+    iframeClickHandlerRef.current = null;
+    iframeKeyTargetRef.current = null;
+    iframeKeyHandlerRef.current = null;
+  }, []);
 
   /** Element that held focus before the asset viewer opened; restored on close. */
   const lastFocusedRef = useRef<HTMLElement | null>(null);
@@ -221,18 +309,16 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
   // Focus the close button when the hotlinked image modal opens, and remember
   // where focus came from so it can be handed back on close.
   useEffect(() => {
-    if (hotlinkedImage) {
-      const active = document.activeElement;
-      // `<body>` is not a meaningful restore target — capturing it would just
-      // re-focus the page root on close.
-      lastFocusedRef.current =
-        active instanceof HTMLElement && active !== document.body ? active : null;
-      modalCloseRef.current?.focus();
-    } else if (lastFocusedRef.current) {
-      lastFocusedRef.current.focus();
-      lastFocusedRef.current = null;
+    if (modalOpen) {
+      modalCloseRef.current?.focus({ preventScroll: true });
+      return () => {
+        const restore = lastFocusedRef.current;
+        lastFocusedRef.current = null;
+        if (restore?.isConnected) restore.focus({ preventScroll: true });
+      };
     }
-  }, [hotlinkedImage]);
+    return undefined;
+  }, [modalOpen]);
 
   /**
    * WCAG 2.1 SC 2.1.2 — constrain Tab to the modal while `aria-modal="true"`.
@@ -246,48 +332,57 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
   // Keep hotlinkedImage in a ref for the global keydown listener to avoid
   // re-registering the listener on every hotlink event (BUG-13).
   const hotlinkedImageRef = useRef(hotlinkedImage);
-  hotlinkedImageRef.current = hotlinkedImage;
+  useLayoutEffect(() => { hotlinkedImageRef.current = hotlinkedImage; }, [hotlinkedImage]);
 
   // Same treatment for fullscreen state — see the layered Escape handler below.
   const isFullscreenRef = useRef(isFullscreen);
-  isFullscreenRef.current = isFullscreen;
+  useLayoutEffect(() => { isFullscreenRef.current = isFullscreen; }, [isFullscreen]);
 
   // Global Escape listener. Dismissal is layered, innermost overlay first:
   //   1. hotlinked-image modal  2. fullscreen viewport  3. the view itself
   // Fullscreen was previously skipped, so Escape from a fullscreen session threw
   // the user out of the Chamber instead of returning them to the framed view.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || e.repeat) return;
-      if (hotlinkedImageRef.current) {
-        setHotlinkedImage(null);
-        return;
-      }
-      if (isFullscreenRef.current) {
-        setIsFullscreen(false);
-        return;
-      }
-      onBack();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onBack]);
-
-  // Cleanup injected iframe listener on Chamber unmount
-  useEffect(() => {
-    return () => {
-      if (iframeDocRef.current && iframeClickHandlerRef.current) {
-        try {
-          iframeDocRef.current.removeEventListener(
-            "click",
-            iframeClickHandlerRef.current,
-          );
-        } catch {
-          // cross-origin cleanup may throw; safe to ignore
-        }
-      }
-    };
+  const dismissCurrentLayer = useCallback(() => {
+    if (hotlinkedImageRef.current) {
+      setHotlinkedImage(null);
+      return;
+    }
+    if (isFullscreenRef.current) {
+      setIsFullscreen(false);
+      fullscreenToggleRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    onBackRef.current();
   }, []);
+
+  const handleEscapeKey = useCallback((e: KeyboardEvent) => {
+    if (e.key !== "Escape" || e.repeat || e.defaultPrevented || e.isComposing) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dismissCurrentLayer();
+  }, [dismissCurrentLayer]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleEscapeKey);
+    return () => window.removeEventListener("keydown", handleEscapeKey);
+  }, [handleEscapeKey]);
+
+  // Release listeners as soon as a failed/retried frame is removed.
+  useEffect(() => {
+    if (!isInitialized || iframeError) detachIframeClickHandler();
+    return detachIframeClickHandler;
+  }, [isInitialized, iframeError, detachIframeClickHandler]);
+
+  useEffect(() => {
+    if (!isInitialized || iframeError || !iframeLoading) return undefined;
+    loadTimerRef.current = setTimeout(() => {
+      loadTimerRef.current = null;
+      setIframeLoading(false);
+      setIframeError(true);
+      setIframeErrorDetails("The simulation did not finish loading within 30 seconds. Retry to reconnect.");
+    }, IFRAME_LOAD_TIMEOUT_MS);
+    return clearLoadTimer;
+  }, [isInitialized, iframeError, iframeLoading, clearLoadTimer]);
 
   // Chain 3 (ChamberInit): idempotent initialization — only react when transitioning to true
   useEffect(() => {
@@ -297,7 +392,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
         setLogs((prev) =>
           appendLog(prev, {
             sender: "SYSTEM_MSG",
-            time: clk.timeString(),
+            time: clkRef.current.timeString(),
             msg: "Rendering shadows...",
             type: "msg",
           }),
@@ -306,81 +401,80 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [isInitialized, app.title, clk]);
+  }, [isInitialized, app.title]);
+
+  const interceptImage = useCallback((src: string) => {
+    if (!isSafeImageSrc(src) || hotlinkedImageRef.current) return;
+    const active = document.activeElement;
+    // Capture before rendering inert background content, which may blur it.
+    lastFocusedRef.current =
+      active instanceof HTMLElement && active !== document.body ? active : null;
+    hotlinkedImageRef.current = src;
+    setImageError(false);
+    setHotlinkedImage(src);
+    setLogs((prev) => appendLog(prev, {
+      sender: "SYSTEM_MSG",
+      time: clkRef.current.timeString(),
+      msg: `Intercepted image hotlink: ${src.length > 100 ? src.substring(0, 97) + "..." : src}`,
+      type: "warn",
+    }));
+  }, []);
 
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
-      // Chain 8 (ImageHotlink): validate origin — only accept from same origin or null (srcdoc iframes)
-      const isSameOrigin = e.origin === window.location.origin || e.origin === "null";
-      if (!isSameOrigin) return;
-
-      // Verify that the message is coming from our own iframe to prevent spoofing
-      // from other windows or tabs (BUG-08b).
+      // Verify the sender before parsing the configured source or its payload.
       if (!iframeRef.current || e.source !== iframeRef.current.contentWindow) return;
+      const sourceOrigin = new URL(iframeUrl ?? document.baseURI, document.baseURI).origin;
+      const isExpectedOrigin = e.origin === sourceOrigin || e.origin === window.location.origin || e.origin === "null";
+      if (!isExpectedOrigin) return;
+
+      if (isValidEscapePayload(e.data)) {
+        dismissCurrentLayer();
+        return;
+      }
 
       // Chain 8 (ImageHotlink): secondary schema validation — reject malformed payloads
       // before any field access, providing defense-in-depth beyond origin checking.
       if (!isValidImageClickedPayload(e.data)) return;
 
       // Validate src: non-empty string with a safe image URL scheme (BUG-06)
-      const src = e.data.src;
-      if (src.trim() === "") return;
-      if (!isSafeImageSrc(src)) return;
-
-      setHotlinkedImage(src);
-      setLogs((prev) =>
-        appendLog(prev, {
-          sender: "SYSTEM_MSG",
-          // Use clkRef.current so this effect never closes over a stale clock
-          // even if the clock prop changes after the initial mount.
-          time: clkRef.current.timeString(),
-          // Truncate the URL in the log to prevent UI performance issues and DoS from massive URLs.
-          msg: `Intercepted image hotlink: ${src.length > 100 ? src.substring(0, 97) + "..." : src}`,
-          type: "warn",
-        }),
-      );
+      interceptImage(e.data.src);
     };
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [iframeUrl, interceptImage, dismissCurrentLayer]);
 
   const handleIframeLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+    if (e.currentTarget !== iframeRef.current) return;
     console.log(`[Chamber] ${app.title} iframe loaded successfully.`);
+    clearLoadTimer();
     setIframeLoading(false);
 
     if (app.url) {
       try {
-        const iframe = e.target as HTMLIFrameElement;
+        const iframe = e.currentTarget;
         const doc = iframe.contentDocument || iframe.contentWindow?.document;
         if (doc) {
           // Chain 6 (IframeLoad): remove any previously injected handler before re-injecting
           // to prevent duplicate listeners on iframe navigation / multi-load events.
-          if (iframeDocRef.current && iframeClickHandlerRef.current) {
-            iframeDocRef.current.removeEventListener(
-              "click",
-              iframeClickHandlerRef.current,
-            );
-          }
+          detachIframeClickHandler();
 
           const clickHandler = (event: MouseEvent) => {
-            const target = event.target as HTMLElement;
-            if (target.tagName === "IMG") {
+            const target = event.target as HTMLImageElement | null;
+            if (target?.tagName === "IMG") {
               event.preventDefault();
-              // Use '*' as target origin because sandboxed iframes without 'allow-same-origin'
-              // have origin 'null', and window.location.origin would fail delivery.
-              window.parent.postMessage(
-                {
-                  type: "IMAGE_CLICKED",
-                  src: (target as HTMLImageElement).src,
-                },
-                "*",
-              );
+              // This handler runs in the parent realm, so use the validated receiver
+              // directly rather than pretending the parent is the iframe sender.
+              interceptImage(target.currentSrc || target.src);
             }
           };
 
           doc.addEventListener("click", clickHandler);
           iframeDocRef.current = doc;
           iframeClickHandlerRef.current = clickHandler;
+          doc.defaultView?.addEventListener("keydown", handleEscapeKey);
+          iframeKeyTargetRef.current = doc.defaultView;
+          iframeKeyHandlerRef.current = handleEscapeKey;
         }
       } catch (err) {
         console.warn(
@@ -392,6 +486,8 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
   };
 
   const handleIframeError = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+    if (e.currentTarget !== iframeRef.current) return;
+    clearLoadTimer();
     // Browsers do not expose the actual load-failure reason for iframes via the
     // onError event. Log a correlation ID so the console entry can be matched
     // to the in-app error display without relying on unextractable browser details.
@@ -403,23 +499,23 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
   };
 
   const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-    console.log(`[Chamber] Fullscreen mode: ${!isFullscreen ? "ON" : "OFF"}`);
+    setIsFullscreen((value) => !value);
   };
 
   // Chain 13 (HTMLContentInjection): memoize so string is only built when app.htmlContent changes.
   // Template is hoisted to module scope to avoid repeated string creation.
   const htmlContentWithScript = useMemo(() => {
     if (!app.htmlContent) return "";
-    return app.htmlContent.includes("</body>")
-      ? app.htmlContent.replace("</body>", `${HOTLINK_SCRIPT_TEMPLATE}</body>`)
-      : app.htmlContent + HOTLINK_SCRIPT_TEMPLATE;
+    const script = hotlinkScript(window.location.origin === "null" ? "*" : window.location.origin);
+    return /<\/body\s*>/i.test(app.htmlContent)
+      ? app.htmlContent.replace(/<\/body\s*>/i, (closingBody) => `${script}${closingBody}`)
+      : app.htmlContent + script;
   }, [app.htmlContent]);
 
   const corruption = ARCHIVE_CORRUPTION;
 
   return (
-    <div className="font-sans bg-black text-white antialiased overflow-hidden h-screen flex flex-col selection:bg-white/20 selection:text-white relative">
+    <div className="font-sans bg-black text-white antialiased overflow-hidden h-dvh min-h-0 flex flex-col selection:bg-white/20 selection:text-white relative">
       {/* Atmospheric Background */}
       <div className="absolute inset-0 z-0 pointer-events-none atmosphere"></div>
 
@@ -428,8 +524,9 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
         className={`fixed inset-0 z-10 pointer-events-none mix-blend-overlay bg-noise transition-opacity duration-1000 ${noiseEnabled ? "opacity-10" : "opacity-0"}`}
       ></div>
 
+      <div className="contents" inert={modalOpen} aria-hidden={modalOpen ? true : undefined}>
       {/* Top Navigation */}
-      <header className="relative z-30 flex items-center justify-between whitespace-nowrap border-b border-white/10 bg-black/40 backdrop-blur-xl px-10 py-6">
+      <header className="relative z-30 flex flex-wrap gap-4 items-center justify-between border-b border-white/10 bg-black/40 backdrop-blur-xl px-4 sm:px-10 py-4 sm:py-6">
         <button
           type="button"
           className="flex items-center gap-6 text-white/70 hover:text-white cursor-pointer transition-colors group focus-visible:ring-1 focus-visible:ring-white/40 outline-none rounded-sm"
@@ -453,7 +550,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
         <div className="flex items-center gap-8">
           <button
             type="button"
-            onClick={() => setNoiseEnabled(!noiseEnabled)}
+            onClick={() => setNoiseEnabled((value) => !value)}
             aria-pressed={noiseEnabled}
             aria-label="Toggle static noise overlay"
             className={`flex items-center gap-3 text-[10px] font-mono tracking-widest uppercase px-4 py-2 rounded-full border transition-all duration-300 focus-visible:ring-1 focus-visible:ring-white/40 outline-none ${noiseEnabled ? "border-white/20 text-white bg-white/5" : "border-transparent text-white/40 hover:text-white hover:bg-white/5"}`}
@@ -485,11 +582,11 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
       </header>
 
       {/* Main Content Area */}
-      <main id="main-content" tabIndex={-1} className="flex-1 flex overflow-hidden relative z-20 outline-none">
+      <main id="main-content" tabIndex={-1} className="flex-1 min-h-0 flex flex-col md:flex-row overflow-auto md:overflow-hidden relative z-20 outline-none">
         {/* Game Viewport Area */}
         <section
           aria-label="Simulation viewport"
-          className="flex-1 flex flex-col items-center justify-center relative p-6 md:p-10 lg:p-14"
+          className="flex-1 min-h-[50dvh] md:min-h-0 flex flex-col items-center justify-center relative p-4 md:p-10 lg:p-14"
         >
           {/* Vignette */}
           <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)]"></div>
@@ -521,6 +618,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
               {isInitialized && (
                 <button
                   type="button"
+                  ref={fullscreenToggleRef}
                   onClick={toggleFullscreen}
                   className="absolute top-6 right-6 z-30 p-3 bg-black/40 hover:bg-white/10 text-white/50 hover:text-white rounded-full border border-white/10 hover:border-white/30 transition-all backdrop-blur-md cursor-pointer focus-visible:ring-1 focus-visible:ring-white/40 outline-none"
                   title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
@@ -552,8 +650,8 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                         onClick={() => {
                           // Chain 3 (ChamberInit): reset error/loading state before initializing
                           // so a re-enter after an error gets a clean slate
-                          setIframeError(false);
-                          setIframeErrorDetails(null);
+                          setIframeError(sourceError !== null);
+                          setIframeErrorDetails(sourceError);
                           setIframeLoading(true);
                           setIsInitialized(true);
                         }}
@@ -564,7 +662,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                     </div>
                   </>
                 ) : iframeError ? (
-                  <div className="text-center z-10 space-y-6 max-w-md p-8 border border-red-900/30 bg-red-950/10 rounded-2xl backdrop-blur-md">
+                  <div role="alert" className="text-center z-10 space-y-6 max-w-md p-8 border border-red-900/30 bg-red-950/10 rounded-2xl backdrop-blur-md">
                     <span className="material-symbols-outlined text-6xl text-red-500/40 font-light" aria-hidden="true">
                       error_outline
                     </span>
@@ -604,6 +702,8 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                         setIsInitialized(false);
                         setIframeError(false);
                         setIframeErrorDetails(null);
+                        setIframeLoading(true);
+                        setIsFullscreen(false);
                       }}
                       className="mt-2 px-8 py-3 bg-white/5 border border-white/10 text-white/70 hover:bg-white hover:text-black transition-all duration-300 uppercase text-[10px] font-light tracking-widest cursor-pointer rounded-full"
                     >
@@ -613,7 +713,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                 ) : (
                   <>
                     {iframeLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
+                      <div role="status" aria-live="polite" className="absolute inset-0 flex items-center justify-center bg-black z-20">
                         <div className="flex flex-col items-center gap-4">
                           <span className="material-symbols-outlined text-4xl text-primary animate-spin" aria-hidden="true">
                             sync
@@ -626,15 +726,16 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                     )}
                       <iframe
                         ref={iframeRef}
-                        src={app.url}
+                        src={iframeUrl}
                         srcDoc={app.url ? undefined : htmlContentWithScript}
                         className="w-full h-full border-none bg-black"
                         title={app.title}
+                        aria-busy={iframeLoading}
+                        tabIndex={iframeLoading ? -1 : 0}
                         referrerPolicy="no-referrer"
-                        // Default to allow-scripts and allow-same-origin (if app.url)
-                        // This allows cross-origin communication when app.url is used from the same domain.
-                        // Without allow-same-origin, some local storage or origin-based APIs may fail.
-                        // For srcDoc, allow-same-origin is generally not allowed without a specific reason as it creates a loophole.
+                        // Catalog URLs are curated application code and need storage APIs.
+                        // Inline HTML remains opaque: scripts plus same-origin would let it
+                        // access the parent and remove its sandbox.
                         sandbox={app.sandbox ?? (app.url ? "allow-scripts allow-forms allow-same-origin" : "allow-scripts")}
                         onLoad={handleIframeLoad}
                         onError={handleIframeError}
@@ -654,7 +755,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
         </section>
 
         {/* Sidebar / Control Panel */}
-        <aside className="w-80 border-l border-white/10 bg-black/40 backdrop-blur-xl flex flex-col relative z-30 shrink-0">
+        <aside className="w-full md:w-80 md:min-h-0 border-t md:border-t-0 md:border-l border-white/10 bg-black/40 backdrop-blur-xl flex flex-col relative z-30 shrink-0">
           {/* Despair Level Section */}
           <div className="p-8 border-b border-white/10 bg-white/5">
             <div className="flex items-center justify-between mb-4">
@@ -698,11 +799,13 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
               <div className="flex items-center gap-4">
                 <button
                   type="button"
-                  onClick={() => setShowLogs(!showLogs)}
+                  onClick={() => setShowLogs((value) => !value)}
                   className="text-white/40 hover:text-white transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none rounded-sm"
                   title={showLogs ? "Hide Logs" : "Show Logs"}
                   aria-label={showLogs ? "Hide logs" : "Show logs"}
                   aria-pressed={showLogs}
+                  aria-expanded={showLogs}
+                  aria-controls="chamber-void-log"
                 >
                   <span className="material-symbols-outlined text-sm font-light" aria-hidden="true">
                     {showLogs ? "visibility" : "visibility_off"}
@@ -714,6 +817,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
             {showLogs ? (
               <div
                 role="log"
+                id="chamber-void-log"
                 aria-live="polite"
                 aria-relevant="additions"
                 aria-label="Void log"
@@ -725,7 +829,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
                 <div ref={logsEndRef} />
               </div>
             ) : (
-              <div className="flex-1 flex items-center justify-center font-mono text-[10px] tracking-widest text-white/20">
+              <div id="chamber-void-log" className="flex-1 flex items-center justify-center font-mono text-[10px] tracking-widest text-white/20">
                 [LOGS_HIDDEN]
               </div>
             )}
@@ -808,6 +912,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
           <span>NOISE_LVL: -4dB</span>
         </div>
       </div>
+      </div>
 
       {/* Hotlinked Image Modal */}
       {hotlinkedImage && (
@@ -815,7 +920,7 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
           role="dialog"
           aria-modal="true"
           aria-label="Asset viewer"
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-md p-10"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 sm:p-10"
           onClick={() => setHotlinkedImage(null)}
           onKeyDown={handleModalKeyDown}
         >
@@ -839,13 +944,18 @@ export const Chamber = React.memo(function Chamber({ app, onBack, initialError, 
               </button>
             </div>
             <img
+              key={hotlinkedImage}
               src={hotlinkedImage}
+              referrerPolicy="no-referrer"
+              decoding="async"
+              onError={() => setImageError(true)}
               alt="Intercepted asset from the void"
-              className="max-w-full max-h-[75vh] object-contain rounded-lg"
+              className={`max-w-full max-h-[75vh] object-contain rounded-lg ${imageError ? "hidden" : ""}`}
             />
+            {imageError && <p role="status" className="p-4 text-white/70">This image could not be loaded.</p>}
           </div>
         </div>
       )}
     </div>
   );
-});
+}

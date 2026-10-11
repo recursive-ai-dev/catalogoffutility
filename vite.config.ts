@@ -1,7 +1,10 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import {defineConfig} from 'vitest/config';
+
+// Fix the worker timezone before any cached Intl formatter is constructed.
+if (process.env.VITEST) process.env.TZ = 'UTC';
 
 export default defineConfig(() => {
   return {
@@ -20,7 +23,7 @@ export default defineConfig(() => {
       // lists in VITE_ALLOWED_HOSTS (comma-separated).
       allowedHosts: [
         '.e2b.app',
-        ...(process.env.VITE_ALLOWED_HOSTS ?? '').split(',').filter(Boolean),
+        ...(process.env.VITE_ALLOWED_HOSTS ?? '').split(',').map(host => host.trim()).filter(Boolean),
       ],
     },
     build: {
@@ -48,9 +51,18 @@ export default defineConfig(() => {
       },
     },
     test: {
+      include: ['src/test/**/*.{test,spec}.{ts,tsx}'],
       environment: 'jsdom',
       globals: true,
       setupFiles: ['./src/test/setup.ts'],
+      clearMocks: true,
+      restoreMocks: true,
+      coverage: {
+        provider: 'v8',
+        include: ['src/**/*.{ts,tsx}'],
+        exclude: ['src/test/**', 'src/main.tsx'],
+        reporter: ['text', 'html', 'lcov'],
+      },
       env: {
         VITE_SUPABASE_URL: 'http://localhost:54321',
         VITE_SUPABASE_ANON_KEY: 'test-anon-key',

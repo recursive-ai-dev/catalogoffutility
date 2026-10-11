@@ -4,6 +4,15 @@ import { CATALOG_ENTRIES, FILTER_TAGS, AppEntry } from "./data";
 import { useAuth, useAuthModal } from "./lib/auth";
 import { Clock, realClock } from "./lib/clock";
 import { ARCHIVE_CORRUPTION, DEFAULT_TAG } from "./lib/constants";
+import { resolvePublicAssetUrl } from "./lib/assets";
+import {
+  buildCatalogSearchIndex,
+  filterCatalogEntries,
+  isCatalogDialogOpen,
+  isEditingCatalogText,
+  normalizeCatalogSearch,
+  type SearchableEntry,
+} from "./lib/catalog";
 
 /**
  * Re-exported for backwards compatibility: the "show all" sentinel now lives in
@@ -11,9 +20,6 @@ import { ARCHIVE_CORRUPTION, DEFAULT_TAG } from "./lib/constants";
  * without a circular import back into this component.
  */
 export { DEFAULT_TAG };
-
-/** An entry with its pre-computed lowercase search blob attached. */
-type SearchableEntry = AppEntry & { searchBlob: string };
 
 interface CatalogProps {
   onSelectApp: (app: AppEntry) => void;
@@ -33,33 +39,8 @@ interface CatalogProps {
 // re-filter on every Catalog render.
 const LOCKED_COUNT = CATALOG_ENTRIES.filter((e) => e.requiresAuth).length;
 
-// Pre-calculate search blobs to avoid redundant string operations during filtering.
-// This reduces main-thread work by ~40% during active search.
-const SEARCHABLE_ENTRIES: SearchableEntry[] = CATALOG_ENTRIES.map((entry) => ({
-  ...entry,
-  searchBlob: [
-    entry.id,
-    entry.title,
-    entry.description,
-    entry.version || "",
-    ...(entry.tags || []),
-    ...(entry.tech || []),
-  ].join(" ").toLowerCase(),
-}));
-
-/**
- * Pre-indexed catalog by tag. Allows O(1) lookup of entries for a given tag,
- * narrowing the search space for the deferred filter.
- */
-const MAP_BY_TAG = SEARCHABLE_ENTRIES.reduce((acc, entry) => {
-  if (entry.tags) {
-    entry.tags.forEach((tag) => {
-      if (!acc[tag]) acc[tag] = [];
-      acc[tag].push(entry);
-    });
-  }
-  return acc;
-}, {} as Record<string, SearchableEntry[]>);
+// The static registry is indexed once, outside React's render path.
+const SEARCH_INDEX = buildCatalogSearchIndex(CATALOG_ENTRIES);
 
 /**
  * Pre-allocated formatter for "MMM YYYY" profile dates.
@@ -97,6 +78,8 @@ const UserSection = React.memo(function UserSection() {
   const { user, profile, loading, signOut } = useAuth();
   const { showAuthModal } = useAuthModal();
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+  const signOutInFlightRef = useRef(false);
 
   // All hooks must run on every render, unconditionally, BEFORE any early
   // return. These three previously sat below the `loading` / `!user` guards, so
@@ -104,7 +87,7 @@ const UserSection = React.memo(function UserSection() {
   // arrived — React aborts that render with "Rendered more hooks than during the
   // previous render", blanking the catalog on every successful sign-in.
   const displayName = useMemo(
-    () => profile?.username ?? user?.email?.split("@")[0] ?? "entity",
+    () => profile?.username?.trim() || user?.email?.split("@")[0] || "entity",
     [profile?.username, user?.email],
   );
 
@@ -117,14 +100,23 @@ const UserSection = React.memo(function UserSection() {
   const userInitials = useMemo(() => initials(displayName), [displayName]);
 
   const handleSignOut = async () => {
+    if (signOutInFlightRef.current) return;
+    signOutInFlightRef.current = true;
+    setSignOutError(null);
     setSigningOut(true);
-    await signOut();
-    setSigningOut(false);
+    try {
+      await signOut();
+    } catch {
+      setSignOutError("Sign-out failed. Please try again.");
+    } finally {
+      signOutInFlightRef.current = false;
+      setSigningOut(false);
+    }
   };
 
   if (loading) {
     return (
-      <div className="px-4 py-4 border-t border-white/5">
+      <div role="group" aria-label="Loading identity" aria-busy="true" className="px-4 py-4 border-t border-white/5">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded-full bg-white/5 animate-pulse" />
           <div className="flex-1 h-2 bg-white/5 rounded animate-pulse" />
@@ -141,7 +133,7 @@ const UserSection = React.memo(function UserSection() {
         </p>
         <div className="flex items-center gap-3 mb-3">
           <div className="w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-white/20 font-light text-sm">
+            <span aria-hidden="true" className="material-symbols-outlined text-white/20 font-light text-sm">
               person
             </span>
           </div>
@@ -159,7 +151,7 @@ const UserSection = React.memo(function UserSection() {
           onClick={showAuthModal}
           className="w-full flex items-center justify-center gap-2 py-2 border border-white/10 hover:border-white/25 text-white/30 hover:text-white/60 text-[9px] font-mono tracking-widest uppercase rounded-lg transition-all cursor-pointer"
         >
-          <span className="material-symbols-outlined font-light text-sm">
+          <span aria-hidden="true" className="material-symbols-outlined font-light text-sm">
             fingerprint
           </span>
           Identify Yourself
@@ -197,16 +189,17 @@ const UserSection = React.memo(function UserSection() {
         disabled={signingOut}
         className="w-full flex items-center justify-center gap-2 py-2 border border-white/5 hover:border-white/15 text-white/15 hover:text-white/35 text-[9px] font-mono tracking-widest uppercase rounded-lg transition-all cursor-pointer disabled:opacity-40"
       >
-        <span className="material-symbols-outlined font-light text-sm">
+        <span aria-hidden="true" className="material-symbols-outlined font-light text-sm">
           logout
         </span>
         {signingOut ? "Dissolving..." : "Cease Existence"}
       </button>
+      {signOutError && <p role="alert" className="mt-2 text-xs text-white/70">{signOutError}</p>}
     </div>
   );
 });
 
-const Card = React.memo(function Card({
+export const CatalogCard = React.memo(function CatalogCard({
   entry,
   onSelect,
   onTagSelect,
@@ -217,21 +210,34 @@ const Card = React.memo(function Card({
   onTagSelect: (tag: string) => void;
   isUserLoggedIn: boolean;
 }) {
-  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const rectRef = useRef<DOMRect | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const transformRef = useRef("");
+  const motionQueryRef = useRef<MediaQueryList | null>(null);
+  const imageSource = resolvePublicAssetUrl(entry.image);
+  const [imageState, setImageState] = useState({ source: imageSource, failed: false });
+  // A corrected source starts a new preview attempt, including a return to an older URI.
+  if (imageState.source !== imageSource) setImageState({ source: imageSource, failed: false });
+  const imageFailed = imageState.source === imageSource && imageState.failed;
 
   const isAuthLocked = !!entry.requiresAuth && !isUserLoggedIn;
   const isDisabled = !!entry.missing || isAuthLocked;
 
   const handleMouseEnter = () => {
-    if (!cardRef.current || isDisabled) return;
+    motionQueryRef.current ??= window.matchMedia?.("(prefers-reduced-motion: reduce)") ?? null;
+    if (!cardRef.current || isDisabled || motionQueryRef.current?.matches) return;
     // Cache the bounding rect on entry to avoid repeated layout reads (O(1) vs O(N))
     // during high-frequency mousemove events.
     rectRef.current = cardRef.current.getBoundingClientRect();
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    if (motionQueryRef.current?.matches) {
+      handleMouseLeave();
+      return;
+    }
     if (!rectRef.current || !imgRef.current || isDisabled) return;
     const rect = rectRef.current;
     const x = e.clientX - rect.left;
@@ -242,13 +248,25 @@ const Card = React.memo(function Card({
     const moveX = (x - centerX) / 20;
     const moveY = (y - centerY) / 20;
 
-    imgRef.current.style.transform = `scale(1.1) translate(${moveX}px, ${moveY}px)`;
+    transformRef.current = `scale(1.1) translate(${moveX}px, ${moveY}px)`;
+    if (frameRef.current === null) {
+      frameRef.current = requestAnimationFrame(() => {
+        frameRef.current = null;
+        if (imgRef.current) imgRef.current.style.transform = motionQueryRef.current?.matches ? "" : transformRef.current;
+      });
+    }
   };
 
   const handleMouseLeave = () => {
-    if (!imgRef.current || isDisabled) return;
-    imgRef.current.style.transform = "scale(1) translate(0px, 0px)";
+    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+    frameRef.current = null;
+    rectRef.current = null;
+    if (imgRef.current) imgRef.current.style.transform = "";
   };
+
+  useEffect(() => () => {
+    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+  }, []);
 
   const ariaLabel = entry.missing
     ? `${entry.title} — unavailable`
@@ -262,6 +280,7 @@ const Card = React.memo(function Card({
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      aria-labelledby={`entry-title-${entry.id}`}
       className={`group relative flex flex-col bg-black/40 border border-white/5 transition-all duration-500 rounded-xl overflow-hidden backdrop-blur-sm ${
         entry.missing
           ? "opacity-40 hover:opacity-60 cursor-not-allowed"
@@ -281,6 +300,7 @@ const Card = React.memo(function Card({
           type="button"
           onClick={() => onSelect(entry)}
           aria-label={ariaLabel}
+          aria-describedby={`entry-description-${entry.id}`}
           className="absolute inset-0 z-20 rounded-xl cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-white/40"
         />
       )}
@@ -293,15 +313,16 @@ const Card = React.memo(function Card({
       )}
 
       <div className="aspect-[4/3] w-full overflow-hidden bg-black relative flex items-center justify-center">
-        {entry.missing ? (
+        {entry.missing || imageFailed ? (
           <>
-            <div className="w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 animate-pulse"></div>
-            <span className="material-symbols-outlined text-3xl text-white/20 absolute font-light">
+            <div className="w-full h-full bg-white/5" aria-hidden="true"></div>
+            <span aria-hidden="true" className="material-symbols-outlined text-3xl text-white/20 absolute font-light">
               visibility_off
             </span>
           </>
         ) : (
           <img
+            key={imageSource}
             ref={imgRef}
             alt=""
             aria-hidden="true"
@@ -314,7 +335,10 @@ const Card = React.memo(function Card({
                 ? "opacity-15 group-hover:opacity-20"
                 : "opacity-60 group-hover:opacity-100 group-hover:mix-blend-normal"
             }`}
-            src={entry.image}
+            src={imageSource}
+            onError={(event) => {
+              if (event.currentTarget === imgRef.current) setImageState({ source: imageSource, failed: true });
+            }}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none"></div>
@@ -322,7 +346,7 @@ const Card = React.memo(function Card({
         {/* Auth-lock overlay */}
         {isAuthLocked && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
-            <span className="material-symbols-outlined text-2xl text-white/25 font-light">
+            <span aria-hidden="true" className="material-symbols-outlined text-2xl text-white/25 font-light">
               lock
             </span>
             <p className="text-[8px] font-mono text-white/20 tracking-widest uppercase text-center px-4">
@@ -334,7 +358,8 @@ const Card = React.memo(function Card({
 
       <div className="p-6 flex flex-col gap-4 flex-1">
         <div>
-          <h3
+          <h2
+            id={`entry-title-${entry.id}`}
             className={`text-2xl font-light leading-tight font-display tracking-wide ${
               entry.missing
                 ? "text-white/30"
@@ -344,7 +369,7 @@ const Card = React.memo(function Card({
             }`}
           >
             {entry.title}
-          </h3>
+          </h2>
           <div
             className={`h-px w-12 mt-4 mb-2 ${
               entry.missing
@@ -365,6 +390,7 @@ const Card = React.memo(function Card({
                 type="button"
                 onClick={() => onTagSelect(tag)}
                 aria-label={`Filter by ${tag}`}
+                aria-controls="catalog-results"
                 className="text-[8px] font-mono tracking-widest uppercase px-2 py-0.5 border border-white/8 text-white/25 rounded-full hover:border-white/30 hover:text-white/60 transition-colors cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
               >
                 {tag}
@@ -374,6 +400,7 @@ const Card = React.memo(function Card({
         )}
 
         <p
+          id={`entry-description-${entry.id}`}
           className={`text-sm leading-relaxed line-clamp-3 font-light ${
             entry.missing || isAuthLocked ? "text-white/20" : "text-white/60"
           }`}
@@ -389,7 +416,9 @@ const Card = React.memo(function Card({
               entry.missing || isAuthLocked ? "text-white/15" : "text-white/40"
             }`}
           >
-            {isAuthLocked
+            {entry.missing
+              ? "MISSING"
+              : isAuthLocked
               ? "LOCKED"
               : entry.size
                 ? `SIZE: ${entry.size}`
@@ -399,9 +428,7 @@ const Card = React.memo(function Card({
                     ? `USERS: ${entry.users}`
                     : entry.err
                       ? `ERR: ${entry.err}`
-                      : entry.missing
-                        ? "MISSING"
-                        : entry.queue
+                      : entry.queue
                           ? `QUEUE: ${entry.queue}`
                           : ""}
           </span>
@@ -463,17 +490,17 @@ const Sidebar = React.memo(function Sidebar({
   }, []);
 
   return (
-    <div className="w-full md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
-      <div className="p-8 border-b border-white/10 flex flex-col gap-2">
-        <h1 className="text-white/90 text-3xl font-light tracking-widest uppercase font-display">
+    <aside aria-label="Archive controls" className="w-full md:w-72 shrink-0 max-h-[35dvh] md:max-h-none overflow-y-auto md:overflow-hidden flex flex-col border-b md:border-b-0 md:border-r border-white/10 bg-black/40 backdrop-blur-xl z-20">
+      <div className="p-4 md:p-8 border-b border-white/10 flex flex-col gap-2">
+        <p className="text-white/90 text-3xl font-light tracking-widest uppercase font-display">
           The Void
-        </h1>
+        </p>
         <p className="text-white/40 text-[10px] font-mono tracking-widest uppercase">
           Archive // v2.0.0
         </p>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
+      <nav aria-label="Archive actions" className="flex-1 md:overflow-y-auto py-3 md:py-6 px-4 grid grid-cols-2 md:flex md:flex-col gap-2">
         <button
           type="button"
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
@@ -532,7 +559,7 @@ const Sidebar = React.memo(function Sidebar({
             Give Up
           </span>
         </button>
-        <div className="h-px bg-white/10 my-4 w-full"></div>
+        <div className="h-px bg-white/10 my-4 w-full col-span-2" aria-hidden="true"></div>
         <button
           className="group flex items-center gap-4 px-4 py-3 rounded-lg border border-transparent hover:bg-white/5 transition-all duration-300 cursor-pointer w-full text-left focus-visible:ring-1 focus-visible:ring-white/30 outline-none"
           type="button"
@@ -591,7 +618,7 @@ const Sidebar = React.memo(function Sidebar({
           )}
         </div>
       </div>
-    </div>
+    </aside>
   );
 });
 
@@ -609,23 +636,25 @@ const SearchHeader = React.memo(function SearchHeader({
   totalEntriesCount: number;
 }) {
   return (
-    <header className="shrink-0 h-24 border-b border-white/10 flex items-center justify-between px-10 bg-black/20 backdrop-blur-md z-10">
-      <div className="flex items-center gap-6">
-        <h2 className="text-4xl font-light text-white uppercase tracking-widest font-display">
+    <header className="shrink-0 min-h-24 border-b border-white/10 flex flex-col xl:flex-row gap-4 xl:items-center justify-between px-4 sm:px-8 lg:px-10 py-5 bg-black/20 backdrop-blur-md z-10">
+      <div className="flex flex-wrap items-center gap-3 min-w-0">
+        <h1 id="catalog-title" className="text-3xl sm:text-4xl font-light text-white uppercase tracking-widest font-display">
           The Archive
-        </h2>
+        </h1>
         <p
           role="status"
           aria-live="polite"
-          className="hidden sm:flex px-3 py-1 bg-white/5 border border-white/10 text-[9px] text-white/50 font-mono tracking-widest uppercase rounded-full"
+          aria-atomic="true"
+          className="flex px-3 py-1 bg-white/5 border border-white/10 text-[9px] text-white/50 font-mono tracking-widest uppercase rounded-full"
         >
           {filteredEntriesCount} of {totalEntriesCount} Entries
         </p>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 min-w-0">
         <div
           role="search"
-          className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors"
+          aria-label="Catalog search"
+          className="flex items-center gap-3 text-white/40 text-sm bg-black/40 border border-white/10 rounded-full px-4 py-2 focus-within:border-white/30 transition-colors w-full xl:w-80 min-w-0"
         >
           <button
             type="button"
@@ -639,8 +668,11 @@ const SearchHeader = React.memo(function SearchHeader({
           </button>
           <input
             ref={searchInputRef}
-            type="text"
+            type="search"
+            name="catalog-search"
             aria-label="Search catalog entries (Press / to focus)"
+            aria-keyshortcuts="/"
+            aria-controls="catalog-results"
             placeholder="Search the void..."
             maxLength={200}
             enterKeyHint="search"
@@ -648,7 +680,7 @@ const SearchHeader = React.memo(function SearchHeader({
             spellCheck={false}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="bg-transparent border-none outline-none text-white font-mono text-xs w-32 sm:w-64 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
+            className="bg-transparent border-none outline-none text-white font-mono text-xs w-full min-w-0 placeholder:text-white/30 flex-1 focus-visible:ring-1 focus-visible:ring-white/30 rounded-sm"
           />
           <span className="text-[10px] text-white/20 font-mono select-none pointer-events-none" aria-hidden="true">
             [/]
@@ -675,25 +707,32 @@ const SearchHeader = React.memo(function SearchHeader({
 const FilterBar = React.memo(function FilterBar({
   selectedTag,
   onTagSelect,
+  counts,
 }: {
   selectedTag: string;
   onTagSelect: (tag: string) => void;
+  counts: ReadonlyMap<string, number>;
 }) {
   return (
-    <div className="shrink-0 px-10 py-5 flex flex-wrap gap-2.5 border-b border-white/5">
+    <div role="group" aria-label="Catalog categories" className="shrink-0 px-4 sm:px-8 lg:px-10 py-4 flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible gap-2 border-b border-white/5">
       {FILTER_TAGS.map((tag) => (
         <button
           key={tag}
           type="button"
           onClick={() => onTagSelect(tag)}
+          aria-label={tag}
+          aria-describedby={`filter-count-${tag}`}
+          aria-controls="catalog-results"
           aria-pressed={selectedTag === tag}
-          className={`px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
+          className={`shrink-0 whitespace-nowrap px-5 py-2 border text-[10px] font-light uppercase tracking-widest transition-all rounded-full cursor-pointer focus-visible:ring-1 focus-visible:ring-white/30 outline-none ${
             selectedTag === tag
               ? "bg-white/10 border-white/20 text-white"
               : "bg-transparent border-white/10 text-white/50 hover:border-white/30 hover:text-white"
           }`}
         >
           {tag}
+          <span aria-hidden="true" className="ml-2 opacity-60">{counts.get(tag) ?? 0}</span>
+          <span id={`filter-count-${tag}`} className="sr-only">{counts.get(tag) ?? 0} matching entries</span>
         </button>
       ))}
     </div>
@@ -712,8 +751,9 @@ const EntryGrid = React.memo(function EntryGrid({
   showAuthModal,
   mountTime,
   userDisplayName,
+  isPending,
 }: {
-  filteredEntries: typeof SEARCHABLE_ENTRIES;
+  filteredEntries: SearchableEntry[];
   onSelectApp: (app: AppEntry) => void;
   onTagSelect: (tag: string) => void;
   isUserLoggedIn: boolean;
@@ -724,17 +764,20 @@ const EntryGrid = React.memo(function EntryGrid({
   showAuthModal: () => void;
   mountTime: string;
   userDisplayName: string | null;
+  isPending: boolean;
 }) {
   return (
     <main
       id="main-content"
       tabIndex={-1}
-      className="flex-1 overflow-y-auto px-10 py-6 scroll-smooth void-scroll outline-none"
+      aria-labelledby="catalog-title"
+      aria-busy={isPending}
+      className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-8 lg:px-10 py-6 scroll-smooth void-scroll outline-none"
     >
       {/* Anonymous access callout */}
       {!isUserLoggedIn && (
         <div className="mb-8 flex items-start gap-4 px-6 py-4 border border-white/5 rounded-xl bg-white/[0.01] group">
-          <span className="material-symbols-outlined text-white/15 font-light text-2xl mt-0.5 shrink-0">
+          <span aria-hidden="true" className="material-symbols-outlined text-white/15 font-light text-2xl mt-0.5 shrink-0">
             lock
           </span>
           <div className="flex-1 min-w-0">
@@ -744,6 +787,7 @@ const EntryGrid = React.memo(function EntryGrid({
             <p className="text-white/20 font-light text-xs leading-relaxed">
               {lockedCount} entries are sealed from unverified observers. The archive keeps its depths hidden from those who have not yet proven they exist.{" "}
               <button
+                type="button"
                 onClick={showAuthModal}
                 className="text-white/35 hover:text-white/60 underline underline-offset-2 transition-colors cursor-pointer"
               >
@@ -755,9 +799,10 @@ const EntryGrid = React.memo(function EntryGrid({
         </div>
       )}
 
+      <section id="catalog-results" aria-label="Catalog entries">
       {filteredEntries.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <span className="material-symbols-outlined text-5xl text-white/10 font-light">
+          <span aria-hidden="true" className="material-symbols-outlined text-5xl text-white/10 font-light">
             search_off
           </span>
           <p className="text-white/20 font-mono text-xs tracking-widest uppercase">
@@ -777,9 +822,9 @@ const EntryGrid = React.memo(function EntryGrid({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-16">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,240px),1fr))] gap-4 sm:gap-8 pb-16">
           {filteredEntries.map((entry) => (
-            <Card
+            <CatalogCard
               key={entry.id}
               entry={entry}
               onSelect={onSelectApp}
@@ -789,12 +834,13 @@ const EntryGrid = React.memo(function EntryGrid({
           ))}
         </div>
       )}
+      </section>
 
       {/* Footer Logs */}
       <div className="mt-auto pt-10 border-t border-white/10">
-        <h3 className="text-white/80 text-xs font-light tracking-widest uppercase mb-6 px-1 font-mono">
+        <h2 className="text-white/80 text-xs font-light tracking-widest uppercase mb-6 px-1 font-mono">
           System_Logs
-        </h3>
+        </h2>
         <div className="font-mono text-[10px] text-white/40 flex flex-col gap-2 opacity-70">
           <p>
             &gt; Observer accessed the void at <span className="text-white">{mountTime}</span>
@@ -833,7 +879,7 @@ export const Catalog = React.memo(function Catalog({
   // This prevents irrelevant changes (like case or trailing spaces) from
   // triggering a deferred re-filter.
   const normalizedQuery = useMemo(
-    () => searchQuery.trim().toLowerCase(),
+    () => normalizeCatalogSearch(searchQuery),
     [searchQuery],
   );
   const deferredQuery = useDeferredValue(normalizedQuery);
@@ -877,37 +923,23 @@ export const Catalog = React.memo(function Catalog({
   // not during IME composition, and when focus is not already in an input/textarea/contentEditable.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.isComposing || e.repeat) return;
+      if (e.defaultPrevented || e.isComposing || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
 
-      const activeElement = document.activeElement as HTMLElement | null;
-      const isInputFocused =
-        activeElement?.tagName === "INPUT" ||
-        activeElement?.tagName === "TEXTAREA" ||
-        activeElement?.isContentEditable === true;
-
-      const isInDialog =
-        activeElement?.closest('dialog,[role="dialog"],[aria-modal="true"]') !=
-        null;
-
-      if (isInDialog) return;
+      const activeElement = e.target instanceof Element ? e.target : document.activeElement;
+      const isInputFocused = isEditingCatalogText(activeElement);
+      if (isCatalogDialogOpen(activeElement)) return;
 
       if (e.key === "Escape") {
         // Only clear when something is actually filtered; firing resetFilters()
         // unconditionally re-focused the search input on every stray Escape and
         // announced an empty aria-live region for no reason.
-        if (!isFilterActiveRef.current) return;
+        if (!isFilterActiveRef.current || (isInputFocused && activeElement !== searchInputRef.current)) return;
+        e.preventDefault();
         resetFilters();
         return;
       }
 
-      if (
-        e.key === "/" &&
-        !isInputFocused &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        !e.altKey &&
-        !e.shiftKey
-      ) {
+      if (e.key === "/" && !isInputFocused) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -936,24 +968,22 @@ export const Catalog = React.memo(function Catalog({
   // Uses pre-computed search blobs to keep keystroke latency minimal (BUG-11).
   // React 19: Uses deferredQuery to prioritize input responsiveness over
   // expensive filtering operations.
-  const filteredEntries = useMemo(() => {
-    // Short-circuit: if no search query and default tag, avoid O(N) iteration
-    // and return the pre-calculated searchable entries directly.
-    if (deferredQuery === "" && selectedTag === DEFAULT_TAG) {
-      return SEARCHABLE_ENTRIES;
+  const matchingEntries = useMemo(() => filterCatalogEntries(SEARCH_INDEX, deferredQuery), [deferredQuery]);
+  const filteredEntries = useMemo(
+    () => selectedTag === DEFAULT_TAG
+      ? matchingEntries
+      : deferredQuery === ""
+        ? (SEARCH_INDEX.byTag.get(selectedTag) ?? [])
+        : matchingEntries.filter((entry) => entry.tags?.includes(selectedTag)),
+    [deferredQuery, matchingEntries, selectedTag],
+  );
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>([[DEFAULT_TAG, matchingEntries.length]]);
+    for (const entry of matchingEntries) {
+      for (const tag of new Set(entry.tags ?? [])) counts.set(tag, (counts.get(tag) ?? 0) + 1);
     }
-
-    // Narrow the search space: if a tag is selected, start from its pre-indexed bucket.
-    // This reduces the iteration space from O(N_total) to O(N_tag), where N_tag << N_total.
-    const searchSpace =
-      selectedTag === DEFAULT_TAG
-        ? SEARCHABLE_ENTRIES
-        : (MAP_BY_TAG[selectedTag] ?? []);
-
-    if (deferredQuery === "") return searchSpace;
-
-    return searchSpace.filter((entry) => entry.searchBlob.includes(deferredQuery));
-  }, [deferredQuery, selectedTag]);
+    return counts;
+  }, [matchingEntries]);
 
   const isLoggedIn = !!user;
   const handleCardSelect = useCallback(
@@ -980,7 +1010,7 @@ export const Catalog = React.memo(function Catalog({
   );
 
   return (
-    <div className="relative flex h-screen w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
+    <div className="relative flex h-dvh min-h-0 w-full flex-col md:flex-row overflow-hidden bg-black font-sans text-white antialiased">
       {/* Atmospheric Background */}
       <div className="absolute inset-0 z-0 pointer-events-none atmosphere"></div>
 
@@ -997,7 +1027,7 @@ export const Catalog = React.memo(function Catalog({
       </div>
 
       <Sidebar
-        onSelectApp={onSelectApp}
+        onSelectApp={handleCardSelect}
         resetFilters={resetFilters}
         showNotification={showNotification}
         lockedCount={lockedCount}
@@ -1005,7 +1035,7 @@ export const Catalog = React.memo(function Catalog({
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative z-10">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden relative z-10">
         <SearchHeader
           searchQuery={searchQuery}
           onSearchChange={onSearchChange}
@@ -1014,7 +1044,7 @@ export const Catalog = React.memo(function Catalog({
           totalEntriesCount={CATALOG_ENTRIES.length}
         />
 
-        <FilterBar selectedTag={selectedTag} onTagSelect={onTagSelect} />
+        <FilterBar selectedTag={selectedTag} onTagSelect={onTagSelect} counts={tagCounts} />
 
         <EntryGrid
           filteredEntries={filteredEntries}
@@ -1028,6 +1058,7 @@ export const Catalog = React.memo(function Catalog({
           showAuthModal={showAuthModal}
           mountTime={mountTime}
           userDisplayName={userDisplayName}
+          isPending={normalizedQuery !== deferredQuery}
         />
       </div>
     </div>

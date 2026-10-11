@@ -2,10 +2,8 @@
  * Focus utilities for overlay/modal surfaces.
  *
  * Both `AuthModal` and the Chamber asset viewer are `aria-modal="true"`
- * surfaces. WCAG 2.1 SC 2.1.2 requires that keyboard focus cannot escape them
- * while open, and the standard modal pattern requires that focus be returned to
- * the element that opened them on close. This module is the single
- * implementation of both halves.
+ * surfaces. Modal navigation stays within the dialog until the user closes it.
+ * These helpers discover tab stops and keep keyboard navigation contained.
  */
 
 /**
@@ -14,69 +12,83 @@
  * tabindex.
  */
 export const FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'textarea:not([disabled])',
-  'select:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
+  "a[href]",
+  "area[href]",
+  "button",
+  'input:not([type="hidden"])',
+  "textarea",
+  "select",
+  "summary",
+  "audio[controls]",
+  "video[controls]",
+  '[contenteditable]:not([contenteditable="false"])',
+  "[tabindex]",
 ].join(", ");
 
-/**
- * Visibility test for focus-trap purposes.
- *
- * Deliberately does NOT use `offsetParent === null`: that is always null in
- * jsdom (so the trap is untestable) and is also null for any
- * `position: fixed` element in real browsers (so the trap silently no-ops on
- * fixed overlays — which is exactly what both modals here are).
- */
 function isRendered(el: HTMLElement): boolean {
-  if (el.hidden || el.closest("[hidden]") !== null) return false;
-  const style = el.ownerDocument.defaultView?.getComputedStyle(el);
-  if (!style) return true;
-  return style.display !== "none" && style.visibility !== "hidden";
+  if (!el.isConnected || el.closest("[hidden], [inert]") !== null) return false;
+  const view = el.ownerDocument.defaultView;
+  const ownStyle = view?.getComputedStyle(el);
+  if (ownStyle?.visibility === "hidden" || ownStyle?.visibility === "collapse") return false;
+  // display:none on an ancestor does not change the child's computed display.
+  for (let ancestor: HTMLElement | null = el; ancestor; ancestor = ancestor.parentElement) {
+    const style = view?.getComputedStyle(ancestor);
+    if (style?.display === "none") return false;
+    if (ancestor instanceof HTMLDetailsElement && !ancestor.open) {
+      const summary = ancestor.querySelector(":scope > summary");
+      if (!summary?.contains(el)) return false;
+    }
+  }
+  return true;
 }
 
-/**
- * Returns the focusable descendants of `root`, in DOM order, excluding anything
- * not currently rendered.
- */
+/** Returns the rendered tab stops in the order used by keyboard navigation. */
 export function getFocusableElements(root: HTMLElement | null): HTMLElement[] {
   if (!root) return [];
-  const result: HTMLElement[] = [];
-  root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR).forEach((el) => {
-    if (isRendered(el)) result.push(el);
+  const elements = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+    .filter((element) => !element.matches(":disabled") &&
+      (element.tabIndex >= 0 || (
+        element.hasAttribute("contenteditable") &&
+        element.getAttribute("contenteditable") !== "false" &&
+        !element.hasAttribute("tabindex") &&
+        !element.parentElement?.closest('[contenteditable]:not([contenteditable="false"])')
+      )) && isRendered(element));
+  // Only the checked radio (or first enabled radio) is a tab stop in its group.
+  const tabStops = elements.filter((element) => {
+    if (!(element instanceof HTMLInputElement) || element.type !== "radio" || !element.name) return true;
+    const group = elements.filter((candidate): candidate is HTMLInputElement =>
+      candidate instanceof HTMLInputElement && candidate.type === "radio" &&
+      candidate.name === element.name && candidate.form === element.form);
+    return element === (group.find((radio) => radio.checked) ?? group[0]);
   });
-  return result;
+  return tabStops.sort((a, b) => {
+    const aOrder = a.tabIndex > 0 ? a.tabIndex : Number.MAX_SAFE_INTEGER;
+    const bOrder = b.tabIndex > 0 ? b.tabIndex : Number.MAX_SAFE_INTEGER;
+    return aOrder - bOrder;
+  });
 }
 
-/**
- * Wraps a `Tab` / `Shift+Tab` keydown at the boundary of `root`, moving focus
- * from the last focusable element back to the first (and vice versa).
- *
- * Returns `true` when the event was handled and its default prevented, so
- * callers can tell whether the trap engaged.
- */
+/** Keeps Tab navigation in a dialog, including when focus starts outside it. */
 export function trapTabFocus(
-  e: { key: string; shiftKey: boolean; preventDefault: () => void },
+  e: { key: string; shiftKey: boolean; defaultPrevented?: boolean; preventDefault: () => void },
   root: HTMLElement | null,
   activeElement: Element | null,
 ): boolean {
-  if (e.key !== "Tab") return false;
+  if (e.key !== "Tab" || e.defaultPrevented || !root) return false;
   const focusable = getFocusableElements(root);
-  if (focusable.length === 0) return false;
+  if (focusable.length === 0) {
+    e.preventDefault();
+    if (!root.hasAttribute("tabindex")) root.tabIndex = -1;
+    root.focus({ preventScroll: true });
+    return true;
+  }
 
   const first = focusable[0];
   const last = focusable[focusable.length - 1];
-
-  if (e.shiftKey && activeElement === first) {
+  const outsideTabStops = !focusable.some((element) => element === activeElement);
+  if (outsideTabStops || (e.shiftKey ? activeElement === first : activeElement === last)) {
     e.preventDefault();
-    last.focus();
-    return true;
-  }
-  if (!e.shiftKey && activeElement === last) {
-    e.preventDefault();
-    first.focus();
+    (e.shiftKey ? last : first).focus({ preventScroll: true });
     return true;
   }
   return false;

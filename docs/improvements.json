@@ -1,0 +1,2560 @@
+{
+  "total_implemented": 258,
+  "batches": [
+    {
+      "area": "Platform, navigation, metadata, desktop shell, maintenance tooling and dependencies",
+      "count": 73,
+      "inventory": "docs/platform-improvements.json",
+      "improvements": [
+        {
+          "description": "Recover navigation when starting a browser view transition throws.",
+          "files": [
+            "src/lib/navigation.ts"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-001",
+          "status": "implemented"
+        },
+        {
+          "description": "Commit navigation exactly once when the update or animation promise rejects.",
+          "files": [
+            "src/lib/navigation.ts"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-002",
+          "status": "implemented"
+        },
+        {
+          "description": "Prevent an older delayed browser transition from overwriting a newer navigation request.",
+          "files": [
+            "src/lib/navigation.ts"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-003",
+          "status": "implemented"
+        },
+        {
+          "description": "Cancel the prior browser animation before requesting the next view.",
+          "files": [
+            "src/lib/navigation.ts"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-004",
+          "status": "implemented"
+        },
+        {
+          "description": "Suppress handled ready and finished rejections when a transition is skipped.",
+          "files": [
+            "src/lib/navigation.ts"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-005",
+          "status": "implemented"
+        },
+        {
+          "description": "Respect reduced motion and hidden documents when deciding whether to animate navigation.",
+          "files": [
+            "src/lib/navigation.ts"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-006",
+          "status": "implemented"
+        },
+        {
+          "description": "Synchronize navigation state refs after committed layout instead of leaving a passive-effect window.",
+          "files": [
+            "src/App.tsx"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-007",
+          "status": "implemented"
+        },
+        {
+          "description": "Recheck authentication at transition commit time before showing a gated product.",
+          "files": [
+            "src/App.tsx"
+          ],
+          "validation": "Navigation tests and auth review",
+          "id": "IMP-008",
+          "status": "implemented"
+        },
+        {
+          "description": "Recheck selection, availability, and authentication at transition commit time before launching a Chamber.",
+          "files": [
+            "src/App.tsx"
+          ],
+          "validation": "Existing chain navigation tests and auth review",
+          "id": "IMP-009",
+          "status": "implemented"
+        },
+        {
+          "description": "Focus the destination main landmark when the active view or selected entry changes.",
+          "files": [
+            "src/App.tsx"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-010",
+          "status": "implemented"
+        },
+        {
+          "description": "Restore the archive scroll position when returning from an entry.",
+          "files": [
+            "src/App.tsx"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-011",
+          "status": "implemented"
+        },
+        {
+          "description": "Reset archive scroll when selecting a different category from an entry.",
+          "files": [
+            "src/App.tsx"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-012",
+          "status": "implemented"
+        },
+        {
+          "description": "Select product category destinations directly instead of toggling an already active category off.",
+          "files": [
+            "src/App.tsx"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-013",
+          "status": "implemented"
+        },
+        {
+          "description": "Make the skip link focus the main landmark without adding a misleading navigation hash.",
+          "files": [
+            "src/App.tsx"
+          ],
+          "validation": "src/test/navigation.test.tsx",
+          "id": "IMP-014",
+          "status": "implemented"
+        },
+        {
+          "description": "Remount product and Chamber sessions when the selected entry ID changes.",
+          "files": [
+            "src/App.tsx"
+          ],
+          "validation": "Existing chain tests and Chamber session-reset tests",
+          "id": "IMP-015",
+          "status": "implemented"
+        },
+        {
+          "description": "Recreate absent owned metadata tags instead of silently leaving previews incomplete.",
+          "files": [
+            "src/lib/metadata.ts"
+          ],
+          "validation": "src/test/metadata-reliability.test.ts",
+          "id": "IMP-016",
+          "status": "implemented"
+        },
+        {
+          "description": "Update all duplicated owned metadata tags consistently.",
+          "files": [
+            "src/lib/metadata.ts"
+          ],
+          "validation": "src/test/metadata-reliability.test.ts",
+          "id": "IMP-017",
+          "status": "implemented"
+        },
+        {
+          "description": "Move social image previews with the selected entry and restore the archive image on return.",
+          "files": [
+            "src/lib/constants.ts",
+            "src/lib/metadata.ts",
+            "src/App.tsx"
+          ],
+          "validation": "src/test/metadata-reliability.test.ts",
+          "id": "IMP-018",
+          "status": "implemented"
+        },
+        {
+          "description": "Resolve registry thumbnail paths into absolute HTTPS URLs for social previews.",
+          "files": [
+            "src/lib/metadata.ts"
+          ],
+          "validation": "src/test/metadata-reliability.test.ts",
+          "id": "IMP-019",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject credential-bearing and nonpublic social image schemes in favor of the archive preview.",
+          "files": [
+            "src/lib/metadata.ts"
+          ],
+          "validation": "src/test/metadata-reliability.test.ts",
+          "id": "IMP-020",
+          "status": "implemented"
+        },
+        {
+          "description": "Allow metadata helpers to run outside a browser without accessing an absent document.",
+          "files": [
+            "src/lib/metadata.ts"
+          ],
+          "validation": "src/test/metadata-reliability.test.ts",
+          "id": "IMP-021",
+          "status": "implemented"
+        },
+        {
+          "description": "Normalize arbitrary thrown values, including null and hostile objects, into recoverable errors.",
+          "files": [
+            "src/ErrorBoundary.tsx"
+          ],
+          "validation": "src/test/recovery-reliability.test.tsx",
+          "id": "IMP-022",
+          "status": "implemented"
+        },
+        {
+          "description": "Focus and label the recovery main landmark when a view throws.",
+          "files": [
+            "src/ErrorBoundary.tsx"
+          ],
+          "validation": "src/test/recovery-reliability.test.tsx",
+          "id": "IMP-023",
+          "status": "implemented"
+        },
+        {
+          "description": "Announce recovery errors and constrain long diagnostics to a wrapped, scrollable panel.",
+          "files": [
+            "src/ErrorBoundary.tsx"
+          ],
+          "validation": "Recovery regression tests and source/layout review",
+          "id": "IMP-024",
+          "status": "implemented"
+        },
+        {
+          "description": "Report a missing React mount point with an actionable bootstrap error.",
+          "files": [
+            "src/main.tsx"
+          ],
+          "validation": "Typecheck and production build",
+          "id": "IMP-025",
+          "status": "implemented"
+        },
+        {
+          "description": "Resolve favicon and manifest links relative to the packaged HTML entry.",
+          "files": [
+            "index.html"
+          ],
+          "validation": "Existing site tests and production build",
+          "id": "IMP-026",
+          "status": "implemented"
+        },
+        {
+          "description": "Explain the JavaScript requirement when scripting is disabled.",
+          "files": [
+            "index.html"
+          ],
+          "validation": "HTML source review",
+          "id": "IMP-027",
+          "status": "implemented"
+        },
+        {
+          "description": "Use CommonJS Electron entry and preload extensions compatible with the ESM package.",
+          "files": [
+            "main.cjs",
+            "preload.cjs",
+            "package.json"
+          ],
+          "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs",
+          "id": "IMP-028",
+          "status": "implemented"
+        },
+        {
+          "description": "Validate external URLs with the URL parser and reject credentials and non-HTTP schemes.",
+          "files": [
+            "electron-policy.cjs",
+            "main.cjs"
+          ],
+          "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs",
+          "id": "IMP-029",
+          "status": "implemented"
+        },
+        {
+          "description": "Handle rejected OS browser launches without an unhandled promise.",
+          "files": [
+            "main.cjs"
+          ],
+          "validation": "Shell source review and tooling checks",
+          "id": "IMP-030",
+          "status": "implemented"
+        },
+        {
+          "description": "Validate development server configuration before constructing the desktop renderer.",
+          "files": [
+            "electron-policy.cjs",
+            "main.cjs"
+          ],
+          "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs",
+          "id": "IMP-031",
+          "status": "implemented"
+        },
+        {
+          "description": "Block replacement of the top-level app document while permitting its hash navigation.",
+          "files": [
+            "electron-policy.cjs",
+            "main.cjs"
+          ],
+          "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs",
+          "id": "IMP-032",
+          "status": "implemented"
+        },
+        {
+          "description": "Encode packaged entry paths safely, including directories containing spaces.",
+          "files": [
+            "electron-policy.cjs",
+            "main.cjs"
+          ],
+          "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs",
+          "id": "IMP-033",
+          "status": "implemented"
+        },
+        {
+          "description": "Disable webview tags and cancel attempts to attach webviews.",
+          "files": [
+            "main.cjs"
+          ],
+          "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs",
+          "id": "IMP-034",
+          "status": "implemented"
+        },
+        {
+          "description": "Deny device permission requests and permission checks for embedded content.",
+          "files": [
+            "main.cjs"
+          ],
+          "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs",
+          "id": "IMP-035",
+          "status": "implemented"
+        },
+        {
+          "description": "Keep a single desktop instance and restore/focus its existing window on a second launch.",
+          "files": [
+            "main.cjs"
+          ],
+          "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs",
+          "id": "IMP-036",
+          "status": "implemented"
+        },
+        {
+          "description": "Handle startup and entry load failures without an unhandled rejection or permanently hidden window.",
+          "files": [
+            "main.cjs"
+          ],
+          "validation": "Shell error-path source review and tooling tests",
+          "id": "IMP-037",
+          "status": "implemented"
+        },
+        {
+          "description": "Set usable desktop minimum dimensions so controls cannot be reduced to a clipped window.",
+          "files": [
+            "main.cjs"
+          ],
+          "validation": "Desktop options source review",
+          "id": "IMP-038",
+          "status": "implemented"
+        },
+        {
+          "description": "Package the built archive and required shell modules into a dedicated ignored release directory.",
+          "files": [
+            "package.json",
+            ".gitignore"
+          ],
+          "validation": "Build configuration review and production build",
+          "id": "IMP-039",
+          "status": "implemented"
+        },
+        {
+          "description": "Make PR preview the default and require explicit execution plus repository-specific terminal confirmation.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-040",
+          "status": "implemented"
+        },
+        {
+          "description": "Use the Python standard library for PR operations instead of an undeclared requests dependency.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-041",
+          "status": "implemented"
+        },
+        {
+          "description": "Apply network timeouts and bounded retries to safe GitHub reads.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-042",
+          "status": "implemented"
+        },
+        {
+          "description": "Never retry a merge with an uncertain network result.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-043",
+          "status": "implemented"
+        },
+        {
+          "description": "Abort failed pagination instead of returning a partial PR list for merging.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-044",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject malformed or repeated PR records during pagination.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-045",
+          "status": "implemented"
+        },
+        {
+          "description": "Exclude draft PRs from proposed merge batches and recheck draft state before execution.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-046",
+          "status": "implemented"
+        },
+        {
+          "description": "Require an unchanged reviewed head SHA when checking mergeability.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-047",
+          "status": "implemented"
+        },
+        {
+          "description": "Pin each merge request to its reviewed head SHA to reject changes after the check.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-048",
+          "status": "implemented"
+        },
+        {
+          "description": "Require an explicit merged=true response instead of assuming HTTP success means a merge occurred.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-049",
+          "status": "implemented"
+        },
+        {
+          "description": "Remove the unsupported delete_branch merge payload property.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-050",
+          "status": "implemented"
+        },
+        {
+          "description": "Return nonzero status for API failures, aborted execution, and skipped merge batches.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-051",
+          "status": "implemented"
+        },
+        {
+          "description": "Validate owner/repository arguments before constructing GitHub API paths.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-052",
+          "status": "implemented"
+        },
+        {
+          "description": "Report sanitized API failures without printing response bodies or tokens.",
+          "files": [
+            "bulk_merge_prs.py"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-053",
+          "status": "implemented"
+        },
+        {
+          "description": "Describe category ordering accurately instead of claiming dependency resolution.",
+          "files": [
+            "bulk_merge_prs.py",
+            "README.md"
+          ],
+          "validation": "tests/test_bulk_merge_prs.py",
+          "id": "IMP-054",
+          "status": "implemented"
+        },
+        {
+          "description": "Provide proportional keyboard focus and remove atmospheric overlays in forced-color mode.",
+          "files": [
+            "src/index.css"
+          ],
+          "validation": "CSS review and desktop/mobile Chromium smoke",
+          "id": "IMP-055",
+          "status": "implemented"
+        },
+        {
+          "description": "Respect reduced motion for all transitions and smooth scrolling, including future utility classes.",
+          "files": [
+            "src/index.css"
+          ],
+          "validation": "Existing reduced-motion tests and Chromium smoke",
+          "id": "IMP-056",
+          "status": "implemented"
+        },
+        {
+          "description": "Provide touch-sized minimum controls on coarse pointers.",
+          "files": [
+            "src/index.css"
+          ],
+          "validation": "Mobile Chromium layout smoke",
+          "id": "IMP-057",
+          "status": "implemented"
+        },
+        {
+          "description": "Add Firefox scrollbar styling and contain scroll chaining in archive scroll panels.",
+          "files": [
+            "src/index.css"
+          ],
+          "validation": "CSS source review",
+          "id": "IMP-058",
+          "status": "implemented"
+        },
+        {
+          "description": "Replace shell-specific cleanup with script-relative cross-platform removal of generated output.",
+          "files": [
+            "scripts/clean.mjs",
+            "package.json"
+          ],
+          "validation": "Cleanup source review and Node syntax checks",
+          "id": "IMP-059",
+          "status": "implemented"
+        },
+        {
+          "description": "Enable the repository CI workflow with tooling regressions and fail missing build-artifact uploads.",
+          "files": [
+            ".github/workflows/ci.yml"
+          ],
+          "validation": "Workflow source review; npm run check",
+          "id": "IMP-060",
+          "status": "implemented"
+        },
+        {
+          "description": "Lint authored Electron and tooling modules instead of excluding the desktop entrypoints.",
+          "files": [
+            "eslint.config.js"
+          ],
+          "validation": "npm run lint",
+          "id": "IMP-061",
+          "status": "implemented"
+        },
+        {
+          "description": "Keep Node tooling tests out of the jsdom/Vitest application test runner.",
+          "files": [
+            "vite.config.ts"
+          ],
+          "validation": "npm run check",
+          "id": "IMP-062",
+          "status": "implemented"
+        },
+        {
+          "description": "Initialize a deterministic test timezone before cached Intl formatters are imported.",
+          "files": [
+            "vite.config.ts"
+          ],
+          "validation": "Existing clock chain and new clock tests",
+          "id": "IMP-063",
+          "status": "implemented"
+        },
+        {
+          "description": "Restore test mocks automatically and scope coverage to application source with HTML and lcov reports.",
+          "files": [
+            "vite.config.ts"
+          ],
+          "validation": "Vitest regression and coverage runs",
+          "id": "IMP-064",
+          "status": "implemented"
+        },
+        {
+          "description": "Trim operator-configured development allowed hosts so comma-separated values work with whitespace.",
+          "files": [
+            "vite.config.ts"
+          ],
+          "validation": "Configuration source review",
+          "id": "IMP-065",
+          "status": "implemented"
+        },
+        {
+          "description": "Include offline tooling tests in the complete check command without repeating typechecking at build.",
+          "files": [
+            "package.json"
+          ],
+          "validation": "npm run check",
+          "id": "IMP-066",
+          "status": "implemented"
+        },
+        {
+          "description": "Use lockfile-based installs on Vercel and in setup instructions.",
+          "files": [
+            "vercel.json",
+            "README.md"
+          ],
+          "validation": "npm ci and configuration review",
+          "id": "IMP-067",
+          "status": "implemented"
+        },
+        {
+          "description": "Document the actual Node requirements, desktop workflow, environment fallback, and supported entry flags.",
+          "files": [
+            "README.md",
+            ".env.example",
+            "package.json"
+          ],
+          "validation": "Documentation checked against package/config/source",
+          "id": "IMP-068",
+          "status": "implemented"
+        },
+        {
+          "description": "Upgrade Vite to the patched 6.4 release while preserving existing build configuration.",
+          "files": [
+            "package.json",
+            "package-lock.json",
+            "README.md"
+          ],
+          "validation": "npm run check; npm audit; Chromium production smoke; Electron runtime smoke for the desktop update",
+          "id": "IMP-069",
+          "status": "implemented"
+        },
+        {
+          "description": "Upgrade Vitest and its V8 coverage provider together to patched, compatible 4.1 releases.",
+          "files": [
+            "package.json",
+            "package-lock.json",
+            "README.md"
+          ],
+          "validation": "npm run check; npm audit; Chromium production smoke; Electron runtime smoke for the desktop update",
+          "id": "IMP-070",
+          "status": "implemented"
+        },
+        {
+          "description": "Upgrade Electron to a patched 41.10 release and align the supported Node version.",
+          "files": [
+            "package.json",
+            "package-lock.json",
+            "README.md"
+          ],
+          "validation": "npm run check; npm audit; Chromium production smoke; Electron runtime smoke for the desktop update",
+          "id": "IMP-071",
+          "status": "implemented"
+        },
+        {
+          "description": "Remove the unused bundled Vercel CLI and load deployment tooling on demand instead of installing its unused dependency tree for every contributor.",
+          "files": [
+            "package.json",
+            "package-lock.json",
+            "README.md"
+          ],
+          "validation": "Dependency tree shrank by 235 packages; package-lock review; npm run check",
+          "id": "IMP-072",
+          "status": "implemented"
+        },
+        {
+          "description": "Refresh compatible transitive build and test dependencies to address audited parser, network-client, and source-map vulnerabilities.",
+          "files": [
+            "package-lock.json"
+          ],
+          "validation": "Final npm audit reports zero high/critical advisories; npm run check",
+          "id": "IMP-073",
+          "status": "implemented"
+        }
+      ]
+    },
+    {
+      "area": "Authentication, configuration, dialog behavior, privacy and focus",
+      "count": 65,
+      "inventory": "docs/auth-improvements.json",
+      "improvements": [
+        {
+          "description": "Trim environment credentials so accidental surrounding whitespace does not break service configuration.",
+          "files": [
+            "src/lib/supabase.ts"
+          ],
+          "validation": "src/test/supabase-reliability.test.ts: normalizes whitespace in environment credentials",
+          "id": "IMP-074",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject malformed, unsupported, credential-bearing, query-bearing, and fragment-bearing Supabase URLs before client initialization.",
+          "files": [
+            "src/lib/supabase.ts"
+          ],
+          "validation": "src/test/supabase-reliability.test.ts: invalid service URL parameterized regression cases",
+          "id": "IMP-075",
+          "status": "implemented"
+        },
+        {
+          "description": "Keep the archive available in production when authentication credentials are missing instead of crashing during import.",
+          "files": [
+            "src/lib/supabase.ts"
+          ],
+          "validation": "src/test/supabase-reliability.test.ts: keeps the archive importable in production with no credentials",
+          "id": "IMP-076",
+          "status": "implemented"
+        },
+        {
+          "description": "Disable storage persistence, refresh requests, and URL session detection on the unconfigured fallback authentication client.",
+          "files": [
+            "src/lib/supabase.ts"
+          ],
+          "validation": "src/test/supabase-reliability.test.ts: disables session storage, background refresh, and URL token detection",
+          "id": "IMP-077",
+          "status": "implemented"
+        },
+        {
+          "description": "Defer profile database queries until the synchronous auth listener has released the Supabase authentication lock.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: defers database queries until after the auth callback releases its lock",
+          "id": "IMP-078",
+          "status": "implemented"
+        },
+        {
+          "description": "Clear the previous account profile immediately when the authenticated user changes.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: clears the former profile immediately when a different account arrives",
+          "id": "IMP-079",
+          "status": "implemented"
+        },
+        {
+          "description": "Ignore stale profile results after a different account signs in.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: ignores a late profile result belonging to the previous account",
+          "id": "IMP-080",
+          "status": "implemented"
+        },
+        {
+          "description": "Invalidate pending profile synchronization when signing out so late results cannot restore a signed-out profile.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: does not recreate an identity from a profile that completes after sign-out",
+          "id": "IMP-081",
+          "status": "implemented"
+        },
+        {
+          "description": "Avoid duplicate profile writes on token refresh and repeated sign-in notifications for the same account.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: does not repeat profile writes for token refresh or repeated sign-in events",
+          "id": "IMP-082",
+          "status": "implemented"
+        },
+        {
+          "description": "Distinguish a failed profile update from an absent row and avoid inserting after transport or permission errors.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: does not attempt a profile insert after an update error",
+          "id": "IMP-083",
+          "status": "implemented"
+        },
+        {
+          "description": "Contain thrown profile-query failures so they cannot reject auth notifications or revoke authentication.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: contains rejected profile requests without losing authentication",
+          "id": "IMP-084",
+          "status": "implemented"
+        },
+        {
+          "description": "Recover concurrent profile creation conflicts by reading the existing row without overwriting its customized username.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: recovers a concurrent insert by reading the existing custom username",
+          "id": "IMP-085",
+          "status": "implemented"
+        },
+        {
+          "description": "Create a nonempty initial profile username for authenticated users without an email address.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: gives an email-less user a nonempty initial username",
+          "id": "IMP-086",
+          "status": "implemented"
+        },
+        {
+          "description": "Select only public profile fields instead of retrieving every database column.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "Targeted ESLint and global TypeScript check; profile queries explicitly select id,username,created_at,last_seen_at.",
+          "id": "IMP-087",
+          "status": "implemented"
+        },
+        {
+          "description": "Verify returned profile IDs before attaching database rows to the current identity.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: rejects a database row belonging to another identity",
+          "id": "IMP-088",
+          "status": "implemented"
+        },
+        {
+          "description": "Cancel queued profile work, startup deadlines, and authentication subscriptions when the provider unmounts.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: cancels queued profile synchronization and subscription on unmount",
+          "id": "IMP-089",
+          "status": "implemented"
+        },
+        {
+          "description": "Reset profile request identity during Strict Mode teardown so a resubscription can load the restored profile correctly.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: survives Strict Mode resubscription and fetches the restored profile once",
+          "id": "IMP-090",
+          "status": "implemented"
+        },
+        {
+          "description": "End a stalled authentication initialization after ten seconds and recover when a later session notification arrives.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: leaves loading after a stalled initialization and recovers when a session later arrives",
+          "id": "IMP-091",
+          "status": "implemented"
+        },
+        {
+          "description": "Short-circuit sign-in, signup, and sign-out network operations when authentication is unconfigured.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "Targeted ESLint and global TypeScript check; unavailable-provider guards precede all authentication service operations.",
+          "id": "IMP-092",
+          "status": "implemented"
+        },
+        {
+          "description": "Normalize email input and reject empty credentials at the provider boundary, including nonmodal consumers.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: trims email addresses at the provider boundary; rejects empty credentials without a network request",
+          "id": "IMP-093",
+          "status": "implemented"
+        },
+        {
+          "description": "Keep failed sign-in and signup requests retryable instead of permanently replacing the authentication form with a connection failure screen.",
+          "files": [
+            "src/lib/auth.tsx",
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: keeps a transient sign-in rejection retryable; src/test/auth-modal-reliability.test.tsx: keeps a connection warning retryable in the form",
+          "id": "IMP-094",
+          "status": "implemented"
+        },
+        {
+          "description": "Require an actual browser session after signup even when a returned user has historical email confirmation metadata.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: requires a session even if signup returns old confirmation metadata",
+          "id": "IMP-095",
+          "status": "implemented"
+        },
+        {
+          "description": "Handle returned sign-out errors, restore the still-active identity when credentials were not removed, and reject with a safe error so consumers can show retry controls.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: restores a still-active identity when Supabase returns a sign-out error",
+          "id": "IMP-096",
+          "status": "implemented"
+        },
+        {
+          "description": "Prevent concurrent sign-out operations from racing with authentication notifications.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "Targeted ESLint and global TypeScript check; signingOutRef guards duplicate operations and ignores nonnull session callbacks while sign-out is pending.",
+          "id": "IMP-097",
+          "status": "implemented"
+        },
+        {
+          "description": "Present generic subscription setup errors without exposing infrastructure details.",
+          "files": [
+            "src/lib/auth.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: contains subscription setup exceptions without exposing server details",
+          "id": "IMP-098",
+          "status": "implemented"
+        },
+        {
+          "description": "Prevent duplicate authentication submissions with a synchronous in-flight guard.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: prevents duplicate submissions and freezes credentials and mode during a request",
+          "id": "IMP-099",
+          "status": "implemented"
+        },
+        {
+          "description": "Disable credential edits, password visibility changes, and mode switches while authentication is pending.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: prevents duplicate submissions and freezes credentials and mode during a request",
+          "id": "IMP-100",
+          "status": "implemented"
+        },
+        {
+          "description": "Catch unexpected sign-in or signup promise rejections and restore an actionable form error.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: catches an unexpected rejection and makes the form usable again",
+          "id": "IMP-101",
+          "status": "implemented"
+        },
+        {
+          "description": "Invalidate dismissed modal requests so late success responses cannot close a newly opened dialog.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: does not close a later dialog when a request resolves after this one was dismissed",
+          "id": "IMP-102",
+          "status": "implemented"
+        },
+        {
+          "description": "Validate the form before invoking authentication, including programmatic submission events.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: enforces signup length without calling the service for an invalid form",
+          "id": "IMP-103",
+          "status": "implemented"
+        },
+        {
+          "description": "Apply signup password-length limits only to signup so legacy sign-in passwords remain usable.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: allows a previously configured short password during sign-in",
+          "id": "IMP-104",
+          "status": "implemented"
+        },
+        {
+          "description": "Announce signup email confirmation and move focus to the replacement confirmation surface.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: announces and focuses confirmation after signup",
+          "id": "IMP-105",
+          "status": "implemented"
+        },
+        {
+          "description": "Clear the stored passphrase and visibility state after a signup enters email confirmation.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "Targeted ESLint; confirmation success explicitly clears password and showPassword before replacing the form.",
+          "id": "IMP-106",
+          "status": "implemented"
+        },
+        {
+          "description": "Give each dialog and its fields unique IDs with a descriptive relationship for assistive technology.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: gives the dialog a description and email entry stable password-manager metadata",
+          "id": "IMP-107",
+          "status": "implemented"
+        },
+        {
+          "description": "Connect authentication errors to both credential fields and expose their invalid state to assistive technology.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: connects an auth error to the fields and clears it when credentials change",
+          "id": "IMP-108",
+          "status": "implemented"
+        },
+        {
+          "description": "Clear stale form errors as users correct their credentials.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: connects an auth error to the fields and clears it when credentials change",
+          "id": "IMP-109",
+          "status": "implemented"
+        },
+        {
+          "description": "Recognize email rate-limit errors before the generic malformed-email mapping and instruct the user to wait.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: reports rate-limited email requests before the generic email error",
+          "id": "IMP-110",
+          "status": "implemented"
+        },
+        {
+          "description": "Explain unconfirmed email separately from malformed email.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: describes unconfirmed email accurately instead of calling it malformed",
+          "id": "IMP-111",
+          "status": "implemented"
+        },
+        {
+          "description": "Lock background scrolling while the auth dialog is open and restore the prior overflow value on close.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: prevents background scrolling and restores its original overflow on close",
+          "id": "IMP-112",
+          "status": "implemented"
+        },
+        {
+          "description": "Contain programmatic focus attempts behind the authentication dialog.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: contains programmatic focus attempts behind the modal",
+          "id": "IMP-113",
+          "status": "implemented"
+        },
+        {
+          "description": "Restore focus only to a connected opener and avoid scrolling the document during focus transitions.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: restores the connected opener after unmount",
+          "id": "IMP-114",
+          "status": "implemented"
+        },
+        {
+          "description": "Focus the first available dialog control when the email form is absent, including service-unavailable states.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "Targeted ESLint; mount focus falls back from emailInputRef to available tab stops and panelRef.",
+          "id": "IMP-115",
+          "status": "implemented"
+        },
+        {
+          "description": "Ignore Escape during input-method composition so text entry is not dismissed accidentally.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: ignores Escape during input-method composition",
+          "id": "IMP-116",
+          "status": "implemented"
+        },
+        {
+          "description": "Consume a locally handled Escape event so parent keyboard handlers do not also navigate away.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: handles Escape locally so outer keyboard handlers do not also run",
+          "id": "IMP-117",
+          "status": "implemented"
+        },
+        {
+          "description": "Constrain the auth panel to the dynamic viewport and allow its contents to scroll on short mobile displays.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "Targeted ESLint; dialog has max-h-[calc(100dvh-1rem)] and overflow-y-auto.",
+          "id": "IMP-118",
+          "status": "implemented"
+        },
+        {
+          "description": "Place the authentication dialog above the privacy notice so the notice cannot cover modal controls.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "Targeted ESLint; auth overlay uses z-[80], above PrivacyBanner z-[70].",
+          "id": "IMP-119",
+          "status": "implemented"
+        },
+        {
+          "description": "Provide explicit email/password field names, email capitalization suppression, and spellcheck suppression for credential entry.",
+          "files": [
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-modal-reliability.test.tsx: gives the dialog a description and email entry stable password-manager metadata",
+          "id": "IMP-120",
+          "status": "implemented"
+        },
+        {
+          "description": "Treat only the recognized saved acknowledgment value as a dismissed privacy notice.",
+          "files": [
+            "src/PrivacyBanner.tsx"
+          ],
+          "validation": "src/test/privacy-reliability.test.tsx: accepts only the recognized acknowledgment value",
+          "id": "IMP-121",
+          "status": "implemented"
+        },
+        {
+          "description": "Show the privacy notice when storage reads are blocked instead of silently treating failure as acknowledgment.",
+          "files": [
+            "src/PrivacyBanner.tsx"
+          ],
+          "validation": "src/test/privacy-reliability.test.tsx: still explains external requests when storage access is denied",
+          "id": "IMP-122",
+          "status": "implemented"
+        },
+        {
+          "description": "Synchronize privacy acknowledgment and clearing between browser tabs while ignoring unrelated storage events.",
+          "files": [
+            "src/PrivacyBanner.tsx"
+          ],
+          "validation": "src/test/privacy-reliability.test.tsx: dismisses when another tab acknowledges; shows after clearing; ignores unrelated storage keys and session-storage events",
+          "id": "IMP-123",
+          "status": "implemented"
+        },
+        {
+          "description": "Represent the nonmodal privacy notice as a labeled, described region without misleading dialog semantics.",
+          "files": [
+            "src/PrivacyBanner.tsx"
+          ],
+          "validation": "src/test/privacy-reliability.test.tsx: shows a labeled region on the first render when no preference exists",
+          "id": "IMP-124",
+          "status": "implemented"
+        },
+        {
+          "description": "Explain when third-party requests occur and distinguish notice acknowledgment from browser privacy settings.",
+          "files": [
+            "src/PrivacyBanner.tsx"
+          ],
+          "validation": "src/test/privacy-reliability.test.tsx: labeled region accessible description; notice explicitly describes content-load requests and stored preference.",
+          "id": "IMP-125",
+          "status": "implemented"
+        },
+        {
+          "description": "Make privacy acknowledgment a non-submit button so embedding it in a form cannot submit that form.",
+          "files": [
+            "src/PrivacyBanner.tsx"
+          ],
+          "validation": "src/test/privacy-reliability.test.tsx: does not submit a surrounding form when acknowledged",
+          "id": "IMP-126",
+          "status": "implemented"
+        },
+        {
+          "description": "Exclude all negative tabindex values from focus navigation, including tabindex on native controls.",
+          "files": [
+            "src/lib/focus.ts"
+          ],
+          "validation": "src/test/focus-reliability.test.ts: excludes every negative tabindex, including native controls",
+          "id": "IMP-127",
+          "status": "implemented"
+        },
+        {
+          "description": "Respect disabled fieldset descendants while preserving focusable controls in the first legend.",
+          "files": [
+            "src/lib/focus.ts"
+          ],
+          "validation": "src/test/focus-reliability.test.ts: excludes disabled fieldset descendants while respecting its first legend",
+          "id": "IMP-128",
+          "status": "implemented"
+        },
+        {
+          "description": "Exclude hidden input fields, inert subtrees, and detached elements from dialog tab stops.",
+          "files": [
+            "src/lib/focus.ts"
+          ],
+          "validation": "src/test/focus-reliability.test.ts: excludes hidden input fields and inert descendants; excludes controls in detached roots",
+          "id": "IMP-129",
+          "status": "implemented"
+        },
+        {
+          "description": "Detect display-none ancestors and collapsed visibility while allowing explicit visible child overrides.",
+          "files": [
+            "src/lib/focus.ts"
+          ],
+          "validation": "src/test/focus-reliability.test.ts: excludes controls inside an ancestor hidden with CSS; collapsed visibility; explicit visible child overrides",
+          "id": "IMP-130",
+          "status": "implemented"
+        },
+        {
+          "description": "Use positive tabindex navigation order before ordinary DOM-order tab stops.",
+          "files": [
+            "src/lib/focus.ts"
+          ],
+          "validation": "src/test/focus-reliability.test.ts: orders positive tabindexes before normal DOM order",
+          "id": "IMP-131",
+          "status": "implemented"
+        },
+        {
+          "description": "Treat a radio group as a single tab stop while keeping groups from different forms separate.",
+          "files": [
+            "src/lib/focus.ts"
+          ],
+          "validation": "src/test/focus-reliability.test.ts: checked radio, first enabled radio, and separate form radio group regression cases",
+          "id": "IMP-132",
+          "status": "implemented"
+        },
+        {
+          "description": "Expose only the summary tab stop in closed details elements instead of their collapsed controls.",
+          "files": [
+            "src/lib/focus.ts"
+          ],
+          "validation": "src/test/focus-reliability.test.ts: includes a closed details summary while excluding its collapsed content",
+          "id": "IMP-133",
+          "status": "implemented"
+        },
+        {
+          "description": "Recognize editable surfaces as focus targets while excluding implicit nested editors.",
+          "files": [
+            "src/lib/focus.ts"
+          ],
+          "validation": "src/test/focus-reliability.test.ts: includes top-level editable surfaces but skips implicit nested editors",
+          "id": "IMP-134",
+          "status": "implemented"
+        },
+        {
+          "description": "Recover forward and reverse Tab navigation when focus begins outside the dialog.",
+          "files": [
+            "src/lib/focus.ts"
+          ],
+          "validation": "src/test/focus-reliability.test.ts: moves focus into the first tab stop from outside; reverse navigation into the last",
+          "id": "IMP-135",
+          "status": "implemented"
+        },
+        {
+          "description": "Keep focus on the dialog panel when it temporarily has no enabled tab stops.",
+          "files": [
+            "src/lib/focus.ts"
+          ],
+          "validation": "src/test/focus-reliability.test.ts: keeps focus on a dialog with no available tab stops",
+          "id": "IMP-136",
+          "status": "implemented"
+        },
+        {
+          "description": "Respect Tab events already consumed by a child control instead of overriding its keyboard behavior.",
+          "files": [
+            "src/lib/focus.ts"
+          ],
+          "validation": "src/test/focus-reliability.test.ts: does not override keyboard events already handled by a child control",
+          "id": "IMP-137",
+          "status": "implemented"
+        },
+        {
+          "description": "Block new sign-in and signup requests while sign-out is pending so successful new authentication events cannot be dropped by the logout guard.",
+          "files": [
+            "src/lib/auth.tsx",
+            "src/AuthModal.tsx"
+          ],
+          "validation": "src/test/auth-reliability.test.tsx: prevents a new sign-in or signup while sign-out is still completing",
+          "id": "IMP-138",
+          "status": "implemented"
+        }
+      ]
+    },
+    {
+      "area": "Catalog, products, search, image recovery and registry validation",
+      "count": 62,
+      "inventory": "docs/catalog-improvements.json",
+      "improvements": [
+        {
+          "description": "Validate malformed runtime catalog records without crashing or skipping later entries.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: malformed record regression",
+          "id": "IMP-139",
+          "status": "implemented"
+        },
+        {
+          "description": "Require nonblank string IDs, titles, descriptions and thumbnail paths.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: required field table",
+          "id": "IMP-140",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject IDs that cannot safely serve as route identifiers and DOM IDs.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: unsafe identifier table",
+          "id": "IMP-141",
+          "status": "implemented"
+        },
+        {
+          "description": "Validate optional descriptive and technical metadata types and blank values.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: malformed metadata regression",
+          "id": "IMP-142",
+          "status": "implemented"
+        },
+        {
+          "description": "Require boolean missing and authentication flags instead of accepting truthy strings.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: non-boolean flag table",
+          "id": "IMP-143",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject executable, insecure, protocol-relative and credential-bearing catalog asset URLs.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: unsafe source, thumbnail and URL tables",
+          "id": "IMP-144",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject raw and encoded path traversal and encoded path separator smuggling.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: traversal and encoded separator cases",
+          "id": "IMP-145",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject malformed percent encodings, control characters and backslashes in asset paths.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: malformed URL cases",
+          "id": "IMP-146",
+          "status": "implemented"
+        },
+        {
+          "description": "Validate tag and technology collections before iterating their contents.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: malformed collection and element regression",
+          "id": "IMP-147",
+          "status": "implemented"
+        },
+        {
+          "description": "Report duplicate tags and technologies before duplicate React keys or inflated counts reach the UI.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: duplicate collection cases",
+          "id": "IMP-148",
+          "status": "implemented"
+        },
+        {
+          "description": "Treat blank source strings as absent and reject invalid inline HTML fields.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: nonblank source regression",
+          "id": "IMP-149",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject simultaneous URL and inline HTML sources with ambiguous execution precedence.",
+          "files": [
+            "src/data.ts"
+          ],
+          "validation": "data-validation.test.ts: conflicting source regression",
+          "id": "IMP-150",
+          "status": "implemented"
+        },
+        {
+          "description": "Find catalog entries regardless of accents or Unicode compatibility forms.",
+          "files": [
+            "src/lib/catalog.ts",
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: cafe search regression",
+          "id": "IMP-151",
+          "status": "implemented"
+        },
+        {
+          "description": "Normalize repeated whitespace and typographic quotes and dashes consistently in searches and indexed text.",
+          "files": [
+            "src/lib/catalog.ts",
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: whitespace and typography regression",
+          "id": "IMP-152",
+          "status": "implemented"
+        },
+        {
+          "description": "Match independent search words across fields in any order.",
+          "files": [
+            "src/lib/catalog.ts",
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: multiword cross-field search",
+          "id": "IMP-153",
+          "status": "implemented"
+        },
+        {
+          "description": "Include detailed entry notes in the search index.",
+          "files": [
+            "src/lib/catalog.ts"
+          ],
+          "validation": "catalog-reliability.test.tsx: classified note search",
+          "id": "IMP-154",
+          "status": "implemented"
+        },
+        {
+          "description": "Replace object category buckets with a Map so inherited names cannot crash filtering.",
+          "files": [
+            "src/lib/catalog.ts",
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: __proto__ and constructor category regressions",
+          "id": "IMP-155",
+          "status": "implemented"
+        },
+        {
+          "description": "Index each entry only once per category even if a duplicate category reaches the index.",
+          "files": [
+            "src/lib/catalog.ts"
+          ],
+          "validation": "catalog-reliability.test.tsx: duplicate category indexing",
+          "id": "IMP-156",
+          "status": "implemented"
+        },
+        {
+          "description": "Give the archive its main heading and name the sidebar and action navigation landmarks.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: accessible main and sidebar names; existing heading regressions",
+          "id": "IMP-157",
+          "status": "implemented"
+        },
+        {
+          "description": "Expose the search field as a native searchbox with its keyboard shortcut and a named search landmark.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: searchbox shortcut and control association",
+          "id": "IMP-158",
+          "status": "implemented"
+        },
+        {
+          "description": "Associate search and category controls with a named catalog results region.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: aria-controls regression",
+          "id": "IMP-159",
+          "status": "implemented"
+        },
+        {
+          "description": "Show and describe query-specific category result counts without changing existing button names.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: category count accessible description; existing filter regressions",
+          "id": "IMP-160",
+          "status": "implemented"
+        },
+        {
+          "description": "Keep the atomic result count available to mobile users and screen readers.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "Existing a11y count live-region regression; mobile visibility inspected in markup",
+          "id": "IMP-161",
+          "status": "implemented"
+        },
+        {
+          "description": "Mark results busy while deferred filtering displays the previous query.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "Typecheck and aria-busy state review",
+          "id": "IMP-162",
+          "status": "implemented"
+        },
+        {
+          "description": "Preserve previously consumed, modified and composing keyboard events in catalog and product navigation.",
+          "files": [
+            "src/Catalog.tsx",
+            "src/ProductPage.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx and product-reliability.test.tsx: keyboard event ownership regressions",
+          "id": "IMP-163",
+          "status": "implemented"
+        },
+        {
+          "description": "Protect select fields, textboxes and descendants of editable regions from global shortcuts.",
+          "files": [
+            "src/lib/catalog.ts",
+            "src/Catalog.tsx",
+            "src/ProductPage.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: nested editable/select regression; product-reliability.test.tsx: editor Escape regression",
+          "id": "IMP-164",
+          "status": "implemented"
+        },
+        {
+          "description": "Protect open modal dialogs from background shortcuts even before focus enters the modal.",
+          "files": [
+            "src/lib/catalog.ts",
+            "src/Catalog.tsx",
+            "src/ProductPage.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx and product-reliability.test.tsx: pre-focus modal keyboard regressions",
+          "id": "IMP-165",
+          "status": "implemented"
+        },
+        {
+          "description": "Cancel the native Escape action when resetting catalog search and restore its keyboard focus.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: search Escape reset and focus regression",
+          "id": "IMP-166",
+          "status": "implemented"
+        },
+        {
+          "description": "Give each card its heading as a name and its activation control the visible entry description.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: card accessible name and description",
+          "id": "IMP-167",
+          "status": "implemented"
+        },
+        {
+          "description": "Hide decorative identity, lock and missing-image icon text from accessible names.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: sign-out action accessible name; existing a11y card regressions",
+          "id": "IMP-168",
+          "status": "implemented"
+        },
+        {
+          "description": "Replace broken catalog and product preview images without removing entry information or actions.",
+          "files": [
+            "src/Catalog.tsx",
+            "src/ProductPage.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx and product-reliability.test.tsx: image error recovery",
+          "id": "IMP-169",
+          "status": "implemented"
+        },
+        {
+          "description": "Remove the external texture request from missing-card placeholders.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "Source review: placeholder uses local CSS background",
+          "id": "IMP-170",
+          "status": "implemented"
+        },
+        {
+          "description": "Honor reduced motion for JavaScript thumbnail transforms, including preference changes during hover.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: reduced-motion parallax regression",
+          "id": "IMP-171",
+          "status": "implemented"
+        },
+        {
+          "description": "Batch thumbnail pointer updates into one animation frame using the latest pointer position.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: frame batching regression",
+          "id": "IMP-172",
+          "status": "implemented"
+        },
+        {
+          "description": "Cancel queued thumbnail frames and clear cached hover geometry when leaving a card or unmounting.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: frame cancellation regression",
+          "id": "IMP-173",
+          "status": "implemented"
+        },
+        {
+          "description": "Show a missing entry's availability state before its size or other metadata.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "Source review: missing status precedes metadata branches",
+          "id": "IMP-174",
+          "status": "implemented"
+        },
+        {
+          "description": "Trim profile usernames and fall back to the email name when a profile name is blank.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: blank profile username regression",
+          "id": "IMP-175",
+          "status": "implemented"
+        },
+        {
+          "description": "Recover the sign-out action after rejection and announce its retryable failure.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: rejected sign-out recovery",
+          "id": "IMP-176",
+          "status": "implemented"
+        },
+        {
+          "description": "Prevent concurrent sign-out actions before the disabled button rerenders.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx: duplicate pending sign-out regression",
+          "id": "IMP-177",
+          "status": "implemented"
+        },
+        {
+          "description": "Use dynamic viewport heights and explicit flex minimums so browser chrome changes do not clip catalog or product content.",
+          "files": [
+            "src/Catalog.tsx",
+            "src/ProductPage.tsx"
+          ],
+          "validation": "Typecheck and responsive layout markup review",
+          "id": "IMP-178",
+          "status": "implemented"
+        },
+        {
+          "description": "Cap and scroll the mobile sidebar so archive controls cannot push the catalog offscreen.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "Responsive sidebar maximum-height and main scrolling review",
+          "id": "IMP-179",
+          "status": "implemented"
+        },
+        {
+          "description": "Keep mobile category filters in a horizontal scroll row to preserve vertical space for results.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "Responsive filter overflow and nonshrinking button review",
+          "id": "IMP-180",
+          "status": "implemented"
+        },
+        {
+          "description": "Allow the archive heading and search input to wrap and shrink within narrow content panels.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "Responsive search/header width review; existing search regressions",
+          "id": "IMP-181",
+          "status": "implemented"
+        },
+        {
+          "description": "Choose catalog grid columns from available panel width instead of viewport breakpoints.",
+          "files": [
+            "src/Catalog.tsx"
+          ],
+          "validation": "Container-adaptive grid CSS review and Vite build",
+          "id": "IMP-182",
+          "status": "implemented"
+        },
+        {
+          "description": "Make product headers, long identifiers, titles, margins and technical columns adapt to small screens.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "Responsive wrapping/word-break/grid review; product content regressions",
+          "id": "IMP-183",
+          "status": "implemented"
+        },
+        {
+          "description": "Expose pending clipboard writes and prevent overlapping copy operations.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: overlapping clipboard write regression",
+          "id": "IMP-184",
+          "status": "implemented"
+        },
+        {
+          "description": "Clear previous copy-success styling before a subsequent copy attempt can fail.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: success followed by clipboard denial",
+          "id": "IMP-185",
+          "status": "implemented"
+        },
+        {
+          "description": "Reset product-local reveal, image and clipboard state when the selected entry changes.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: selected product change regression",
+          "id": "IMP-186",
+          "status": "implemented"
+        },
+        {
+          "description": "Ignore stale clipboard completions after a product is removed, preventing incorrect status and orphaned timers.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: stale clipboard completion and timer cleanup",
+          "id": "IMP-187",
+          "status": "implemented"
+        },
+        {
+          "description": "Keep the exact entry ID selectable for manual copying when the clipboard API is unavailable.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: unavailable clipboard and selectable ID",
+          "id": "IMP-188",
+          "status": "implemented"
+        },
+        {
+          "description": "Split Windows-style note paragraphs and remove whitespace-only paragraphs.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: CRLF and blank paragraph regression",
+          "id": "IMP-189",
+          "status": "implemented"
+        },
+        {
+          "description": "Preserve repeated note paragraphs without React key collisions.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: repeated paragraph rendering and console-key regression",
+          "id": "IMP-190",
+          "status": "implemented"
+        },
+        {
+          "description": "Use labelled note and manifest sections and definition-list pairs for technical labels and values.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: named technical section and dt/dd pairs",
+          "id": "IMP-191",
+          "status": "implemented"
+        },
+        {
+          "description": "Display temperature, observer, queue and error metadata in the detailed technical manifest.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: supplementary manifest metrics",
+          "id": "IMP-192",
+          "status": "implemented"
+        },
+        {
+          "description": "Omit empty technical manifests instead of rendering an empty section.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: empty manifest regression",
+          "id": "IMP-193",
+          "status": "implemented"
+        },
+        {
+          "description": "Name the product main landmark from the current entry title.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: main accessible name",
+          "id": "IMP-194",
+          "status": "implemented"
+        },
+        {
+          "description": "Reveal product content without the delay or slide when reduced motion is requested.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: reduced-motion reveal",
+          "id": "IMP-195",
+          "status": "implemented"
+        },
+        {
+          "description": "Lazy-load the desktop-only hero image so hidden mobile decoration does not force a download.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "Hero loading attribute review and product rendering regressions",
+          "id": "IMP-196",
+          "status": "implemented"
+        },
+        {
+          "description": "Disable chamber entry for missing entries, absent sources and unsafe source URLs.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "product-reliability.test.tsx: unavailable and executable source cases",
+          "id": "IMP-197",
+          "status": "implemented"
+        },
+        {
+          "description": "Group product category controls and explain that selecting one returns to a filtered archive.",
+          "files": [
+            "src/ProductPage.tsx"
+          ],
+          "validation": "Existing product-tag navigation regression; labelled group and destination tooltip review",
+          "id": "IMP-198",
+          "status": "implemented"
+        },
+        {
+          "description": "Resolve public preview images beside the packaged Electron entry point while preserving normal website paths.",
+          "files": [
+            "src/lib/assets.ts",
+            "src/Catalog.tsx",
+            "src/ProductPage.tsx"
+          ],
+          "validation": "assets.test.ts file-URL path table plus catalog and product actual image-src regressions",
+          "id": "IMP-199",
+          "status": "implemented"
+        },
+        {
+          "description": "Retry corrected previews for unchanged entry IDs and ignore obsolete image errors or loads after source replacement.",
+          "files": [
+            "src/Catalog.tsx",
+            "src/ProductPage.tsx"
+          ],
+          "validation": "catalog-reliability.test.tsx and product-reliability.test.tsx: same-ID corrected-source and stale-image event regressions",
+          "id": "IMP-200",
+          "status": "implemented"
+        }
+      ]
+    },
+    {
+      "area": "Chamber sessions, iframe communication, accessibility, clocks and math",
+      "count": 58,
+      "inventory": "docs/chamber-improvements.json",
+      "improvements": [
+        {
+          "description": "Reset all Chamber session state and release effects when the artifact, iframe source, inline source, or sandbox changes.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "session-reset regression tests",
+          "id": "IMP-201",
+          "status": "implemented"
+        },
+        {
+          "description": "Resolve root-relative catalog iframe URLs relative to the packaged document for Electron file URLs.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "packaged file:// JSDOM integration",
+          "id": "IMP-202",
+          "status": "implemented"
+        },
+        {
+          "description": "Report absent simulation sources before creating an empty iframe.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "absent-source regression",
+          "id": "IMP-203",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject unsupported, malformed, or credential-bearing iframe URLs before loading them.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "parameterized unsafe-source regressions",
+          "id": "IMP-204",
+          "status": "implemented"
+        },
+        {
+          "description": "Turn indefinitely stalled iframe loads into a retryable error after 30 seconds.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "fake-timer timeout and retry regression",
+          "id": "IMP-205",
+          "status": "implemented"
+        },
+        {
+          "description": "Cancel pending load deadlines on completion, failure, retry, and unmount.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "successful-load and timer teardown regressions",
+          "id": "IMP-206",
+          "status": "implemented"
+        },
+        {
+          "description": "Detach injected click handlers when iframe documents are removed, and clear retained document references.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "session replacement listener teardown regression",
+          "id": "IMP-207",
+          "status": "implemented"
+        },
+        {
+          "description": "Read the current clock when the initialization timer fires without restarting the timer on clock changes.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "pending initialization clock replacement regression",
+          "id": "IMP-208",
+          "status": "implemented"
+        },
+        {
+          "description": "Send same-origin iframe image clicks directly through the safe receiver instead of posting from the wrong window.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "same-origin iframe image interception regression",
+          "id": "IMP-209",
+          "status": "implemented"
+        },
+        {
+          "description": "Preview the selected responsive image currentSrc rather than the fallback src.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "responsive iframe image regression",
+          "id": "IMP-210",
+          "status": "implemented"
+        },
+        {
+          "description": "Insert the inline iframe image bridge before closing body tags regardless of case or trailing whitespace.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "inline bridge source regression",
+          "id": "IMP-211",
+          "status": "implemented"
+        },
+        {
+          "description": "Address inline image messages to the actual parent origin, using wildcard only for opaque file origins.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "inline bridge target origin regression",
+          "id": "IMP-212",
+          "status": "implemented"
+        },
+        {
+          "description": "Accept verified messages from the configured external iframe origin.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "configured external-origin regression",
+          "id": "IMP-213",
+          "status": "implemented"
+        },
+        {
+          "description": "Require own payload fields and reject array-shaped image messages.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "inherited and array payload regressions",
+          "id": "IMP-214",
+          "status": "implemented"
+        },
+        {
+          "description": "Validate payload data descriptors without invoking untrusted getters.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "accessor payload regression",
+          "id": "IMP-215",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject image URLs with leading or trailing whitespace or embedded control characters.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "parameterized ambiguous URL regressions",
+          "id": "IMP-216",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject empty raster data and non-base64 characters or misplaced padding in image data URLs.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "parameterized malformed data regressions",
+          "id": "IMP-217",
+          "status": "implemented"
+        },
+        {
+          "description": "Recognize safe data image schemes and media types case-insensitively.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "uppercase data image regression",
+          "id": "IMP-218",
+          "status": "implemented"
+        },
+        {
+          "description": "Support safe HTTP image previews on IPv6 loopback for local development.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "IPv6 loopback regression",
+          "id": "IMP-219",
+          "status": "implemented"
+        },
+        {
+          "description": "Allow packaged image files only below the application directory and reject encoded path traversal.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "packaged internal/external/traversal image integration",
+          "id": "IMP-220",
+          "status": "implemented"
+        },
+        {
+          "description": "Keep the current asset viewer stable and suppress duplicate logs during repeated or replacement image messages.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "duplicate/replacement message and opener regression",
+          "id": "IMP-221",
+          "status": "implemented"
+        },
+        {
+          "description": "Make content behind the asset dialog inert and hide it from the accessibility tree.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "background interaction and accessibility regression",
+          "id": "IMP-222",
+          "status": "implemented"
+        },
+        {
+          "description": "Capture the modal opener before applying inert content, restore connected targets without scrolling, and avoid refocus on image updates.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "modal opener restoration regression",
+          "id": "IMP-223",
+          "status": "implemented"
+        },
+        {
+          "description": "Prevent extracted image requests from disclosing the parent URL as a referrer.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "image referrer policy regression",
+          "id": "IMP-224",
+          "status": "implemented"
+        },
+        {
+          "description": "Show an accessible failure message when an extracted image cannot load.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "image error regression",
+          "id": "IMP-225",
+          "status": "implemented"
+        },
+        {
+          "description": "Announce iframe loading progress as a live status.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "loading status and retry regressions",
+          "id": "IMP-226",
+          "status": "implemented"
+        },
+        {
+          "description": "Expose iframe loading with aria-busy and defer keyboard focus until loading completes.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "successful load busy and tabindex regression",
+          "id": "IMP-227",
+          "status": "implemented"
+        },
+        {
+          "description": "Announce simulation load failures with an alert role.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "timeout and unsupported source alert regressions",
+          "id": "IMP-228",
+          "status": "implemented"
+        },
+        {
+          "description": "Honor consumed Escape events and ignore Escape during input-method composition.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "consumed Escape and composition regression",
+          "id": "IMP-229",
+          "status": "implemented"
+        },
+        {
+          "description": "Return keyboard focus to the fullscreen toggle when Escape exits fullscreen.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "fullscreen focus regression",
+          "id": "IMP-230",
+          "status": "implemented"
+        },
+        {
+          "description": "Use functional updates for fullscreen, noise, and log visibility toggles to avoid stale-state updates.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "existing fullscreen/noise/log interaction suites",
+          "id": "IMP-231",
+          "status": "implemented"
+        },
+        {
+          "description": "Synchronize clock, modal, and fullscreen refs only after committed renders.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "targeted ESLint refs rule and interaction regressions",
+          "id": "IMP-232",
+          "status": "implemented"
+        },
+        {
+          "description": "Expose log expansion state and keep its aria-controls target valid in both visibility states.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "hidden log control relationship regression",
+          "id": "IMP-233",
+          "status": "implemented"
+        },
+        {
+          "description": "Stack the Chamber sidebar on narrow screens, allow main content to scroll, and wrap the header controls.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "responsive classes reviewed; existing small-control accessibility regression",
+          "id": "IMP-234",
+          "status": "implemented"
+        },
+        {
+          "description": "Use dynamic viewport height and explicit minimum-height constraints so mobile browser chrome does not clip the Chamber.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "responsive layout classes reviewed; production build",
+          "id": "IMP-235",
+          "status": "implemented"
+        },
+        {
+          "description": "Place the asset dialog above the privacy banner and use responsive padding on small screens.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "overlay stacking classes reviewed; existing modal interaction suite",
+          "id": "IMP-236",
+          "status": "implemented"
+        },
+        {
+          "description": "Format midnight as 00:00:00 with an explicit h23 hour cycle.",
+          "files": [
+            "src/lib/clock.ts",
+            "src/test/clock.test.ts"
+          ],
+          "validation": "midnight regression",
+          "id": "IMP-237",
+          "status": "implemented"
+        },
+        {
+          "description": "Make frozen clock replay independent of the machine timezone by defaulting to UTC.",
+          "files": [
+            "src/lib/clock.ts",
+            "src/test/clock.test.ts"
+          ],
+          "validation": "UTC seed replay regression",
+          "id": "IMP-238",
+          "status": "implemented"
+        },
+        {
+          "description": "Allow callers to select an explicit timezone for frozen clock displays.",
+          "files": [
+            "src/lib/clock.ts",
+            "src/test/clock.test.ts"
+          ],
+          "validation": "America/Moncton daylight-saving regression",
+          "id": "IMP-239",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject invalid frozen clock seeds with a useful RangeError.",
+          "files": [
+            "src/lib/clock.ts",
+            "src/test/clock.test.ts"
+          ],
+          "validation": "invalid Date regression",
+          "id": "IMP-240",
+          "status": "implemented"
+        },
+        {
+          "description": "Freeze live and fake clock providers to prevent accidental mutation of their methods.",
+          "files": [
+            "src/lib/clock.ts",
+            "src/test/clock.test.ts"
+          ],
+          "validation": "provider immutability regression",
+          "id": "IMP-241",
+          "status": "implemented"
+        },
+        {
+          "description": "Treat nonfinite field coordinates as an empty field instead of propagating NaN.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "invalid coordinate regressions",
+          "id": "IMP-242",
+          "status": "implemented"
+        },
+        {
+          "description": "Support missing or non-array source collections as empty fields.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "absent source collection regressions",
+          "id": "IMP-243",
+          "status": "implemented"
+        },
+        {
+          "description": "Skip malformed source entries and negative or nonfinite strengths and radii.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "malformed and negative source regression",
+          "id": "IMP-244",
+          "status": "implemented"
+        },
+        {
+          "description": "Use hypot for potential distances so squared coordinates cannot overflow prematurely.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "faraway finite coordinate regression",
+          "id": "IMP-245",
+          "status": "implemented"
+        },
+        {
+          "description": "Divide potential source terms before multiplication to avoid overflowing mass products.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "extreme source strength regression",
+          "id": "IMP-246",
+          "status": "implemented"
+        },
+        {
+          "description": "Compute gradients with normalized directions and saturate extreme components without making perpendicular zero components NaN.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "large and axis-aligned gradient regressions",
+          "id": "IMP-247",
+          "status": "implemented"
+        },
+        {
+          "description": "Set the gradient to zero inside the constant-potential softened core.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "finite-difference derivative regression",
+          "id": "IMP-248",
+          "status": "implemented"
+        },
+        {
+          "description": "Clamp singular and out-of-domain potential values in curvature and Shapiro delay calculations.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "parameterized singular potential regressions",
+          "id": "IMP-249",
+          "status": "implemented"
+        },
+        {
+          "description": "Reject nonfinite ray velocity and gradient inputs before calculating curvature.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "invalid ray input regression",
+          "id": "IMP-250",
+          "status": "implemented"
+        },
+        {
+          "description": "Scale curvature determinants to preserve cancellation and signed symmetry for extreme inputs.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "extreme cancellation and reversed velocity regression",
+          "id": "IMP-251",
+          "status": "implemented"
+        },
+        {
+          "description": "Support absent frequency dictionaries and ignore inherited or invalid frequency values.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "missing, inherited, negative, string and nonfinite frequency regressions",
+          "id": "IMP-252",
+          "status": "implemented"
+        },
+        {
+          "description": "Convert fractional word frequencies into complete prior occurrence counts.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "fractional frequency regression",
+          "id": "IMP-253",
+          "status": "implemented"
+        },
+        {
+          "description": "Fall back to default repetition parameters when multipliers or escalation are negative or nonfinite.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "invalid repetition parameter regressions",
+          "id": "IMP-254",
+          "status": "implemented"
+        },
+        {
+          "description": "Saturate per-word and total entropy costs at safe integers to prevent overflow.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "safe-integer cost saturation regressions",
+          "id": "IMP-255",
+          "status": "implemented"
+        },
+        {
+          "description": "Treat invalid text or words as empty input without throwing.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "invalid word and text regressions",
+          "id": "IMP-256",
+          "status": "implemented"
+        },
+        {
+          "description": "Use a null-prototype, lazily populated repetition map so constructor-like tokens count correctly and large dictionaries are not copied for every keystroke.",
+          "files": [
+            "public/math-physics.js",
+            "src/test/math-reliability.test.ts"
+          ],
+          "validation": "constructor repetition and immutable input regressions",
+          "id": "IMP-257",
+          "status": "implemented"
+        },
+        {
+          "description": "Handle Escape from focused same-origin or inline iframes through verified bridges, retaining layered modal/fullscreen dismissal and releasing keyboard listeners.",
+          "files": [
+            "src/Chamber.tsx",
+            "src/test/chamber-reliability.test.tsx"
+          ],
+          "validation": "iframe Escape, latest callback, verified bridge and keyboard teardown regressions",
+          "id": "IMP-258",
+          "status": "implemented"
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "passed",
+    "validated_at_utc": "2026-10-11T00:48:42.979408+00:00",
+    "command": "npm run check",
+    "application_tests_passed": 402,
+    "tooling_tests_passed": 30,
+    "total_tests_passed": 432,
+    "lint": "passed",
+    "typecheck": "passed",
+    "production_build": "passed",
+    "diff_whitespace_check": "passed",
+    "coverage": {
+      "command": "npm run test:coverage",
+      "statements_percent": 92.31,
+      "branches_percent": 87.72,
+      "functions_percent": 96.01,
+      "lines_percent": 94.53
+    },
+    "browser_smoke": {
+      "engine": "Chromium",
+      "viewports": [
+        "1440x900",
+        "390x844"
+      ],
+      "builds": [
+        "development",
+        "production"
+      ],
+      "flows": [
+        "search",
+        "product focus",
+        "chamber initialization",
+        "iframe loading",
+        "Escape/back",
+        "search retention",
+        "auth modal focus",
+        "mobile layout without horizontal overflow"
+      ],
+      "uncaught_errors": 0
+    },
+    "electron_smoke": {
+      "version": "41.10.7",
+      "modes": [
+        "development HTTP",
+        "production file://"
+      ],
+      "flows": [
+        "preload diagnostics",
+        "decoded catalog thumbnail",
+        "decoded product hero",
+        "iframe initialization",
+        "entropy input logic",
+        "focused-iframe Escape",
+        "search retention"
+      ],
+      "renderer_errors": 0,
+      "failed_file_requests": 0
+    },
+    "dependency_audit": {
+      "baseline": {
+        "info": 0,
+        "low": 2,
+        "moderate": 21,
+        "high": 37,
+        "critical": 3,
+        "total": 63
+      },
+      "final": {
+        "info": 0,
+        "low": 0,
+        "moderate": 8,
+        "high": 0,
+        "critical": 0,
+        "total": 8
+      },
+      "production": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "remaining_packages": [
+        "@electron/get",
+        "app-builder-lib",
+        "dmg-builder",
+        "electron-builder",
+        "electron-builder-squirrel-windows",
+        "global-agent",
+        "roarr",
+        "sprintf-js"
+      ],
+      "remaining_scope": "Development-only desktop packaging dependency chain; no production dependency findings. No unsupported major dependency overrides were introduced."
+    },
+    "limits": [
+      "Supabase behavior was verified with deterministic mocked service responses; no live account was created or changed.",
+      "Electron production-file behavior was exercised with an isolated bootstrap; distributable installers were not built.",
+      "GitHub API tooling tests were offline; no PRs were merged.",
+      "The CI workflow was validated locally; no workflow run was triggered remotely."
+    ],
+    "reproducible_install": {
+      "command": "ELECTRON_SKIP_BINARY_DOWNLOAD=1 npm ci --no-audit --no-fund",
+      "npm_version": "10.9.8",
+      "status": "passed",
+      "installed_packages": 554,
+      "lockfile_metadata": "matches package.json"
+    }
+  }
+}

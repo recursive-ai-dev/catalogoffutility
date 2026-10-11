@@ -16,10 +16,15 @@ export default tseslint.config(
   {
     // Build output, vendored single-file apps, and the Electron entrypoints are
     // not authored under the same rules as the React source.
-    ignores: ["dist/**", "coverage/**", "node_modules/**", "public/**", "main.js", "preload.js"],
+    ignores: ["dist/**", "release/**", "coverage/**", "node_modules/**", "public/**"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    files: ["*.cjs", "scripts/*.mjs"],
+    languageOptions: { globals: globals.node },
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
   {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {

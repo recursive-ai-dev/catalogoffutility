@@ -1,0 +1,535 @@
+[
+  {
+    "description": "Recover navigation when starting a browser view transition throws.",
+    "files": [
+      "src/lib/navigation.ts"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Commit navigation exactly once when the update or animation promise rejects.",
+    "files": [
+      "src/lib/navigation.ts"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Prevent an older delayed browser transition from overwriting a newer navigation request.",
+    "files": [
+      "src/lib/navigation.ts"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Cancel the prior browser animation before requesting the next view.",
+    "files": [
+      "src/lib/navigation.ts"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Suppress handled ready and finished rejections when a transition is skipped.",
+    "files": [
+      "src/lib/navigation.ts"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Respect reduced motion and hidden documents when deciding whether to animate navigation.",
+    "files": [
+      "src/lib/navigation.ts"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Synchronize navigation state refs after committed layout instead of leaving a passive-effect window.",
+    "files": [
+      "src/App.tsx"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Recheck authentication at transition commit time before showing a gated product.",
+    "files": [
+      "src/App.tsx"
+    ],
+    "validation": "Navigation tests and auth review"
+  },
+  {
+    "description": "Recheck selection, availability, and authentication at transition commit time before launching a Chamber.",
+    "files": [
+      "src/App.tsx"
+    ],
+    "validation": "Existing chain navigation tests and auth review"
+  },
+  {
+    "description": "Focus the destination main landmark when the active view or selected entry changes.",
+    "files": [
+      "src/App.tsx"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Restore the archive scroll position when returning from an entry.",
+    "files": [
+      "src/App.tsx"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Reset archive scroll when selecting a different category from an entry.",
+    "files": [
+      "src/App.tsx"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Select product category destinations directly instead of toggling an already active category off.",
+    "files": [
+      "src/App.tsx"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Make the skip link focus the main landmark without adding a misleading navigation hash.",
+    "files": [
+      "src/App.tsx"
+    ],
+    "validation": "src/test/navigation.test.tsx"
+  },
+  {
+    "description": "Remount product and Chamber sessions when the selected entry ID changes.",
+    "files": [
+      "src/App.tsx"
+    ],
+    "validation": "Existing chain tests and Chamber session-reset tests"
+  },
+  {
+    "description": "Recreate absent owned metadata tags instead of silently leaving previews incomplete.",
+    "files": [
+      "src/lib/metadata.ts"
+    ],
+    "validation": "src/test/metadata-reliability.test.ts"
+  },
+  {
+    "description": "Update all duplicated owned metadata tags consistently.",
+    "files": [
+      "src/lib/metadata.ts"
+    ],
+    "validation": "src/test/metadata-reliability.test.ts"
+  },
+  {
+    "description": "Move social image previews with the selected entry and restore the archive image on return.",
+    "files": [
+      "src/lib/constants.ts",
+      "src/lib/metadata.ts",
+      "src/App.tsx"
+    ],
+    "validation": "src/test/metadata-reliability.test.ts"
+  },
+  {
+    "description": "Resolve registry thumbnail paths into absolute HTTPS URLs for social previews.",
+    "files": [
+      "src/lib/metadata.ts"
+    ],
+    "validation": "src/test/metadata-reliability.test.ts"
+  },
+  {
+    "description": "Reject credential-bearing and nonpublic social image schemes in favor of the archive preview.",
+    "files": [
+      "src/lib/metadata.ts"
+    ],
+    "validation": "src/test/metadata-reliability.test.ts"
+  },
+  {
+    "description": "Allow metadata helpers to run outside a browser without accessing an absent document.",
+    "files": [
+      "src/lib/metadata.ts"
+    ],
+    "validation": "src/test/metadata-reliability.test.ts"
+  },
+  {
+    "description": "Normalize arbitrary thrown values, including null and hostile objects, into recoverable errors.",
+    "files": [
+      "src/ErrorBoundary.tsx"
+    ],
+    "validation": "src/test/recovery-reliability.test.tsx"
+  },
+  {
+    "description": "Focus and label the recovery main landmark when a view throws.",
+    "files": [
+      "src/ErrorBoundary.tsx"
+    ],
+    "validation": "src/test/recovery-reliability.test.tsx"
+  },
+  {
+    "description": "Announce recovery errors and constrain long diagnostics to a wrapped, scrollable panel.",
+    "files": [
+      "src/ErrorBoundary.tsx"
+    ],
+    "validation": "Recovery regression tests and source/layout review"
+  },
+  {
+    "description": "Report a missing React mount point with an actionable bootstrap error.",
+    "files": [
+      "src/main.tsx"
+    ],
+    "validation": "Typecheck and production build"
+  },
+  {
+    "description": "Resolve favicon and manifest links relative to the packaged HTML entry.",
+    "files": [
+      "index.html"
+    ],
+    "validation": "Existing site tests and production build"
+  },
+  {
+    "description": "Explain the JavaScript requirement when scripting is disabled.",
+    "files": [
+      "index.html"
+    ],
+    "validation": "HTML source review"
+  },
+  {
+    "description": "Use CommonJS Electron entry and preload extensions compatible with the ESM package.",
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "package.json"
+    ],
+    "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs"
+  },
+  {
+    "description": "Validate external URLs with the URL parser and reject credentials and non-HTTP schemes.",
+    "files": [
+      "electron-policy.cjs",
+      "main.cjs"
+    ],
+    "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs"
+  },
+  {
+    "description": "Handle rejected OS browser launches without an unhandled promise.",
+    "files": [
+      "main.cjs"
+    ],
+    "validation": "Shell source review and tooling checks"
+  },
+  {
+    "description": "Validate development server configuration before constructing the desktop renderer.",
+    "files": [
+      "electron-policy.cjs",
+      "main.cjs"
+    ],
+    "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs"
+  },
+  {
+    "description": "Block replacement of the top-level app document while permitting its hash navigation.",
+    "files": [
+      "electron-policy.cjs",
+      "main.cjs"
+    ],
+    "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs"
+  },
+  {
+    "description": "Encode packaged entry paths safely, including directories containing spaces.",
+    "files": [
+      "electron-policy.cjs",
+      "main.cjs"
+    ],
+    "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs"
+  },
+  {
+    "description": "Disable webview tags and cancel attempts to attach webviews.",
+    "files": [
+      "main.cjs"
+    ],
+    "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs"
+  },
+  {
+    "description": "Deny device permission requests and permission checks for embedded content.",
+    "files": [
+      "main.cjs"
+    ],
+    "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs"
+  },
+  {
+    "description": "Keep a single desktop instance and restore/focus its existing window on a second launch.",
+    "files": [
+      "main.cjs"
+    ],
+    "validation": "scripts/electron-policy.test.mjs and scripts/electron-shell.test.mjs"
+  },
+  {
+    "description": "Handle startup and entry load failures without an unhandled rejection or permanently hidden window.",
+    "files": [
+      "main.cjs"
+    ],
+    "validation": "Shell error-path source review and tooling tests"
+  },
+  {
+    "description": "Set usable desktop minimum dimensions so controls cannot be reduced to a clipped window.",
+    "files": [
+      "main.cjs"
+    ],
+    "validation": "Desktop options source review"
+  },
+  {
+    "description": "Package the built archive and required shell modules into a dedicated ignored release directory.",
+    "files": [
+      "package.json",
+      ".gitignore"
+    ],
+    "validation": "Build configuration review and production build"
+  },
+  {
+    "description": "Make PR preview the default and require explicit execution plus repository-specific terminal confirmation.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Use the Python standard library for PR operations instead of an undeclared requests dependency.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Apply network timeouts and bounded retries to safe GitHub reads.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Never retry a merge with an uncertain network result.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Abort failed pagination instead of returning a partial PR list for merging.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Reject malformed or repeated PR records during pagination.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Exclude draft PRs from proposed merge batches and recheck draft state before execution.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Require an unchanged reviewed head SHA when checking mergeability.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Pin each merge request to its reviewed head SHA to reject changes after the check.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Require an explicit merged=true response instead of assuming HTTP success means a merge occurred.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Remove the unsupported delete_branch merge payload property.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Return nonzero status for API failures, aborted execution, and skipped merge batches.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Validate owner/repository arguments before constructing GitHub API paths.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Report sanitized API failures without printing response bodies or tokens.",
+    "files": [
+      "bulk_merge_prs.py"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Describe category ordering accurately instead of claiming dependency resolution.",
+    "files": [
+      "bulk_merge_prs.py",
+      "README.md"
+    ],
+    "validation": "tests/test_bulk_merge_prs.py"
+  },
+  {
+    "description": "Provide proportional keyboard focus and remove atmospheric overlays in forced-color mode.",
+    "files": [
+      "src/index.css"
+    ],
+    "validation": "CSS review and desktop/mobile Chromium smoke"
+  },
+  {
+    "description": "Respect reduced motion for all transitions and smooth scrolling, including future utility classes.",
+    "files": [
+      "src/index.css"
+    ],
+    "validation": "Existing reduced-motion tests and Chromium smoke"
+  },
+  {
+    "description": "Provide touch-sized minimum controls on coarse pointers.",
+    "files": [
+      "src/index.css"
+    ],
+    "validation": "Mobile Chromium layout smoke"
+  },
+  {
+    "description": "Add Firefox scrollbar styling and contain scroll chaining in archive scroll panels.",
+    "files": [
+      "src/index.css"
+    ],
+    "validation": "CSS source review"
+  },
+  {
+    "description": "Replace shell-specific cleanup with script-relative cross-platform removal of generated output.",
+    "files": [
+      "scripts/clean.mjs",
+      "package.json"
+    ],
+    "validation": "Cleanup source review and Node syntax checks"
+  },
+  {
+    "description": "Enable the repository CI workflow with tooling regressions and fail missing build-artifact uploads.",
+    "files": [
+      ".github/workflows/ci.yml"
+    ],
+    "validation": "Workflow source review; npm run check"
+  },
+  {
+    "description": "Lint authored Electron and tooling modules instead of excluding the desktop entrypoints.",
+    "files": [
+      "eslint.config.js"
+    ],
+    "validation": "npm run lint"
+  },
+  {
+    "description": "Keep Node tooling tests out of the jsdom/Vitest application test runner.",
+    "files": [
+      "vite.config.ts"
+    ],
+    "validation": "npm run check"
+  },
+  {
+    "description": "Initialize a deterministic test timezone before cached Intl formatters are imported.",
+    "files": [
+      "vite.config.ts"
+    ],
+    "validation": "Existing clock chain and new clock tests"
+  },
+  {
+    "description": "Restore test mocks automatically and scope coverage to application source with HTML and lcov reports.",
+    "files": [
+      "vite.config.ts"
+    ],
+    "validation": "Vitest regression and coverage runs"
+  },
+  {
+    "description": "Trim operator-configured development allowed hosts so comma-separated values work with whitespace.",
+    "files": [
+      "vite.config.ts"
+    ],
+    "validation": "Configuration source review"
+  },
+  {
+    "description": "Include offline tooling tests in the complete check command without repeating typechecking at build.",
+    "files": [
+      "package.json"
+    ],
+    "validation": "npm run check"
+  },
+  {
+    "description": "Use lockfile-based installs on Vercel and in setup instructions.",
+    "files": [
+      "vercel.json",
+      "README.md"
+    ],
+    "validation": "npm ci and configuration review"
+  },
+  {
+    "description": "Document the actual Node requirements, desktop workflow, environment fallback, and supported entry flags.",
+    "files": [
+      "README.md",
+      ".env.example",
+      "package.json"
+    ],
+    "validation": "Documentation checked against package/config/source"
+  },
+  {
+    "description": "Upgrade Vite to the patched 6.4 release while preserving existing build configuration.",
+    "files": [
+      "package.json",
+      "package-lock.json",
+      "README.md"
+    ],
+    "validation": "npm run check; npm audit; Chromium production smoke; Electron runtime smoke for the desktop update"
+  },
+  {
+    "description": "Upgrade Vitest and its V8 coverage provider together to patched, compatible 4.1 releases.",
+    "files": [
+      "package.json",
+      "package-lock.json",
+      "README.md"
+    ],
+    "validation": "npm run check; npm audit; Chromium production smoke; Electron runtime smoke for the desktop update"
+  },
+  {
+    "description": "Upgrade Electron to a patched 41.10 release and align the supported Node version.",
+    "files": [
+      "package.json",
+      "package-lock.json",
+      "README.md"
+    ],
+    "validation": "npm run check; npm audit; Chromium production smoke; Electron runtime smoke for the desktop update"
+  },
+  {
+    "description": "Remove the unused bundled Vercel CLI and load deployment tooling on demand instead of installing its unused dependency tree for every contributor.",
+    "files": [
+      "package.json",
+      "package-lock.json",
+      "README.md"
+    ],
+    "validation": "Dependency tree shrank by 235 packages; package-lock review; npm run check"
+  },
+  {
+    "description": "Refresh compatible transitive build and test dependencies to address audited parser, network-client, and source-map vulnerabilities.",
+    "files": [
+      "package-lock.json"
+    ],
+    "validation": "Final npm audit reports zero high/critical advisories; npm run check"
+  }
+]

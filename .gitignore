@@ -2,6 +2,9 @@ node_modules/
 build/
 dist/
 coverage/
+release/
+__pycache__/
+*.pyc
 .DS_Store
 *.log
 .env*

@@ -1,24 +1,38 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
-export const supabaseAvailable = !!(supabaseUrl && supabaseAnonKey);
+function isValidServiceUrl(value: string | undefined): value is string {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return (
+      (url.protocol === "https:" || url.protocol === "http:") &&
+      !url.username && !url.password && !url.search && !url.hash
+    );
+  } catch {
+    return false;
+  }
+}
+
+export const supabaseAvailable = isValidServiceUrl(supabaseUrl) && !!supabaseAnonKey;
 
 if (!supabaseAvailable) {
-  if (import.meta.env.PROD) {
-    throw new Error(
-      "[void] Supabase credentials missing. The archive cannot initialize in production.",
-    );
-  }
-  console.error(
-    "[void] Supabase credentials missing. The archive cannot remember you.",
+  console.warn(
+    "[void] Supabase configuration is missing or invalid. Authentication is disabled.",
   );
 }
 
 export const supabase = createClient(
-  supabaseUrl ?? "http://localhost:54321",
-  supabaseAnonKey ?? "placeholder-anon-key",
+  supabaseAvailable ? supabaseUrl! : "http://localhost:54321",
+  supabaseAvailable ? supabaseAnonKey! : "placeholder-anon-key",
+  // A disabled client must not restore old credentials or start refresh requests.
+  { auth: {
+    persistSession: supabaseAvailable,
+    autoRefreshToken: supabaseAvailable,
+    detectSessionInUrl: supabaseAvailable,
+  } },
 );
 
 export interface Profile {

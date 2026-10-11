@@ -37,8 +37,8 @@
     "public",
     "dist",
     "node_modules",
-    "main.js",
-    "preload.js"
+    "main.cjs",
+    "preload.cjs"
   ],
   "include": [
     "src",

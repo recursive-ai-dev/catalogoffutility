@@ -391,32 +391,103 @@ export const FILTER_TAGS: readonly string[] = [DEFAULT_TAG, ...TAG_VOCABULARY];
  * malformed entry surfaces in the console immediately rather than presenting as
  * a filter that silently matches nothing.
  */
-export function validateCatalog(entries: readonly AppEntry[] = CATALOG_ENTRIES): string[] {
+/** Public assets are root-relative; remote assets must use HTTPS without credentials. */
+export function isSafeCatalogUrl(value: string): boolean {
+  // eslint-disable-next-line no-control-regex -- reject control characters in asset URLs.
+  if (!value || /[\u0000-\u0020\u007f\\]/.test(value) || value.startsWith("//")) return false;
+  try {
+    const url = new URL(value, "https://catalog.invalid");
+    if (!value.startsWith("/") && !value.startsWith("https://")) return false;
+    if (url.protocol !== "https:" || url.username || url.password) return false;
+    // Inspect the input before URL normalizes away dot segments.
+    const rawPath = value.startsWith("/") ? value.split(/[?#]/)[0] : value.replace(/^https:\/\/[^/]+/, "").split(/[?#]/)[0];
+    return rawPath.split("/").every((part) => {
+      const decoded = decodeURIComponent(part);
+      // eslint-disable-next-line no-control-regex -- reject decoded controls and separator smuggling.
+      return decoded !== "." && decoded !== ".." && !/[\\/\u0000-\u001f\u007f]/.test(decoded);
+    });
+  } catch {
+    return false;
+  }
+}
+
+export function validateCatalog(entries: readonly unknown[] = CATALOG_ENTRIES): string[] {
   const defects: string[] = [];
   const seen = new Set<string>();
 
-  for (const entry of entries) {
-    if (seen.has(entry.id)) defects.push(`duplicate id "${entry.id}"`);
-    seen.add(entry.id);
+  for (const [index, candidate] of entries.entries()) {
+    if (typeof candidate !== "object" || candidate === null || Array.isArray(candidate)) {
+      defects.push(`entry ${index} must be an object`);
+      continue;
+    }
+    const entry = candidate as Record<string, unknown>;
+    const label = typeof entry.id === "string" ? entry.id : `entry ${index}`;
+    for (const key of ["id", "title", "description", "image"] as const) {
+      if (typeof entry[key] !== "string" || !(entry[key] as string).trim()) {
+        defects.push(`"${label}" requires non-empty ${key}`);
+      }
+    }
+    if (typeof entry.id === "string") {
+      if (!/^[a-z0-9][a-z0-9-]*$/.test(entry.id)) defects.push(`invalid id "${entry.id}"`);
+      if (seen.has(entry.id)) defects.push(`duplicate id "${entry.id}"`);
+      seen.add(entry.id);
+    }
+    for (const key of ["version", "longDescription", "size", "temp", "users", "err", "queue", "sandbox"] as const) {
+      if (entry[key] !== undefined && (typeof entry[key] !== "string" || !(entry[key] as string).trim())) {
+        defects.push(`"${label}" has invalid ${key}`);
+      }
+    }
+    for (const key of ["requiresAuth", "missing"] as const) {
+      if (entry[key] !== undefined && typeof entry[key] !== "boolean") defects.push(`"${label}" has invalid ${key} flag`);
+    }
+    for (const key of ["image", "url"] as const) {
+      if (entry[key] !== undefined && (typeof entry[key] !== "string" || !isSafeCatalogUrl(entry[key] as string))) {
+        defects.push(`"${label}" has unsafe ${key}`);
+      }
+    }
 
-    const tags = entry.tags ?? [];
+    const readStringList = (key: "tags" | "tech"): string[] => {
+      if (entry[key] === undefined) return [];
+      if (!Array.isArray(entry[key])) {
+        defects.push(`"${label}" has invalid ${key} list`);
+        return [];
+      }
+      const values: string[] = [];
+      for (const value of entry[key]) {
+        if (typeof value !== "string" || !value.trim() || value !== value.trim()) {
+          defects.push(`"${label}" has invalid ${key} value`);
+          continue;
+        }
+        if (values.includes(value)) defects.push(`"${label}" has duplicate ${key} value "${value}"`);
+        values.push(value);
+      }
+      return values;
+    };
+    const tags = readStringList("tags");
+    readStringList("tech");
 
     if (tags.length > MAX_TAGS_PER_ENTRY) {
-      defects.push(`"${entry.id}" has ${tags.length} tags (max ${MAX_TAGS_PER_ENTRY})`);
+      defects.push(`"${label}" has ${tags.length} tags (max ${MAX_TAGS_PER_ENTRY})`);
     }
     for (const tag of tags) {
       if (!TAG_VOCABULARY.includes(tag as CatalogTag)) {
-        defects.push(`"${entry.id}" uses unknown tag "${tag}"`);
+        defects.push(`"${label}" uses unknown tag "${tag}"`);
       }
     }
     for (const [a, b] of CONTRADICTORY_TAG_PAIRS) {
       if (tags.includes(a) && tags.includes(b)) {
-        defects.push(`"${entry.id}" combines contradictory tags ${a} + ${b}`);
+        defects.push(`"${label}" combines contradictory tags ${a} + ${b}`);
       }
     }
-    if (!entry.url && !entry.htmlContent && !entry.missing) {
-      defects.push(`"${entry.id}" has neither url nor htmlContent`);
+    if (entry.htmlContent !== undefined && (typeof entry.htmlContent !== "string" || !entry.htmlContent.trim())) {
+      defects.push(`"${label}" has invalid htmlContent`);
     }
+    const hasUrl = typeof entry.url === "string" && entry.url.trim().length > 0;
+    const hasHtml = typeof entry.htmlContent === "string" && entry.htmlContent.trim().length > 0;
+    if (!hasUrl && !hasHtml && entry.missing !== true) {
+      defects.push(`"${label}" has neither url nor htmlContent`);
+    }
+    if (hasUrl && hasHtml) defects.push(`"${label}" has conflicting url and htmlContent sources`);
   }
 
   return defects;

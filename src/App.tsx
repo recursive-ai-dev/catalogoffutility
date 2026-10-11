@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { flushSync } from "react-dom";
+import React, { useState, useEffect, useCallback, useLayoutEffect } from "react";
 import { Catalog, DEFAULT_TAG } from "./Catalog";
 import { Chamber } from "./Chamber";
 import { ProductPage } from "./ProductPage";
@@ -10,21 +9,9 @@ import { PrivacyBanner } from "./PrivacyBanner";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { resetDocumentMeta, setDocumentMeta } from "./lib/metadata";
 import { SITE_TITLE, chamberTitle, productTitle } from "./lib/constants";
+import { withViewTransition } from "./lib/navigation";
 
 type View = "catalog" | "product" | "chamber";
-
-/** Wraps a state update in the View Transitions API when available, falling back gracefully. */
-function withViewTransition(update: () => void): void {
-  if (typeof document !== "undefined" && "startViewTransition" in document) {
-    (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
-      flushSync(() => {
-        update();
-      });
-    });
-  } else {
-    update();
-  }
-}
 
 /**
  * Manages in-app navigation and selected application state for the catalog, product, and chamber screens.
@@ -51,8 +38,9 @@ function AppInner() {
   const viewRef = React.useRef(view);
   const selectedAppRef = React.useRef(selectedApp);
   const isLoggedInRef = React.useRef(isLoggedIn);
+  const catalogScrollRef = React.useRef(0);
 
-  React.useEffect(() => {
+  useLayoutEffect(() => {
     viewRef.current = view;
     selectedAppRef.current = selectedApp;
     isLoggedInRef.current = isLoggedIn;
@@ -61,8 +49,10 @@ function AppInner() {
   const handleTagSelect = useCallback(
     (tag: string) => {
       const update = () => {
-        // Toggle tag: if the same tag is selected again, revert to DEFAULT_TAG.
-        setSelectedTag((prev) => (prev === tag ? DEFAULT_TAG : tag));
+        catalogScrollRef.current = 0;
+        // A product tag is a destination; toggling only applies to catalog chips.
+        const browsing = viewRef.current === "catalog";
+        setSelectedTag((prev) => (browsing && prev === tag ? DEFAULT_TAG : tag));
         if (viewRef.current !== "catalog" || selectedAppRef.current !== null) {
           setView("catalog");
           setSelectedApp(null);
@@ -97,6 +87,12 @@ function AppInner() {
         return;
       }
       withViewTransition(() => {
+        // Auth can change while the browser prepares its transition snapshot.
+        if (app.requiresAuth && !isLoggedInRef.current) {
+          showAuthModal();
+          return;
+        }
+        catalogScrollRef.current = document.getElementById("main-content")?.scrollTop ?? 0;
         setSelectedApp(app);
         setView("product");
       });
@@ -107,7 +103,11 @@ function AppInner() {
   const handleEnterChamber = useCallback(() => {
     // Chain 9 (EnterChamber): invariant — can only enter chamber when an app is selected
     if (!selectedAppRef.current) return;
-    withViewTransition(() => setView("chamber"));
+    withViewTransition(() => {
+      const app = selectedAppRef.current;
+      if (!app || app.missing || (app.requiresAuth && !isLoggedInRef.current)) return;
+      setView("chamber");
+    });
   }, []);
 
   const handleBackToCatalog = useCallback(() => {
@@ -131,15 +131,25 @@ function AppInner() {
   // flashing before the useEffect runs.
   const isUnauthorized = !isLoggedIn && selectedApp?.requiresAuth;
   const effectiveView = isUnauthorized ? "catalog" : view;
+  const pageIdentity = `${effectiveView}:${effectiveView === "catalog" ? "" : selectedApp?.id}`;
+  const previousPage = React.useRef(pageIdentity);
+
+  useLayoutEffect(() => {
+    if (previousPage.current === pageIdentity) return;
+    previousPage.current = pageIdentity;
+    const main = document.getElementById("main-content");
+    main?.focus({ preventScroll: true });
+    if (main) main.scrollTop = effectiveView === "catalog" ? catalogScrollRef.current : 0;
+  }, [pageIdentity, effectiveView]);
 
   // Dynamic metadata. Routed through lib/metadata so the og:/twitter: tags move
   // with the view too — previously they stayed pinned to the generic catalog
   // copy, so sharing a specific entry always previewed as the archive root.
   useEffect(() => {
     if (effectiveView === "product" && selectedApp) {
-      setDocumentMeta(productTitle(selectedApp.title), selectedApp.description);
+      setDocumentMeta(productTitle(selectedApp.title), selectedApp.description, selectedApp.image);
     } else if (effectiveView === "chamber" && selectedApp) {
-      setDocumentMeta(chamberTitle(selectedApp.title), selectedApp.description);
+      setDocumentMeta(chamberTitle(selectedApp.title), selectedApp.description, selectedApp.image);
     } else {
       resetDocumentMeta(SITE_TITLE);
     }
@@ -168,15 +178,23 @@ function AppInner() {
       {/* Accessibility: Skip to main content link — globalized for all views */}
       <a
         href="#main-content"
+        onClick={(event) => {
+          const main = document.getElementById("main-content");
+          if (main) {
+            event.preventDefault();
+            main.focus({ preventScroll: true });
+          }
+        }}
         className="sr-only focus:not-sr-only fixed top-4 left-4 z-[100] px-6 py-3 bg-white text-black font-mono text-xs tracking-widest uppercase rounded-full shadow-2xl transition-all"
       >
         Skip to main content
       </a>
 
       {effectiveView === "chamber" && selectedApp ? (
-        <Chamber app={selectedApp} onBack={handleBackToProduct} />
+        <Chamber key={selectedApp.id} app={selectedApp} onBack={handleBackToProduct} />
       ) : effectiveView === "product" && selectedApp ? (
         <ProductPage
+          key={selectedApp.id}
           app={selectedApp}
           onBack={handleBackToCatalog}
           onEnter={handleEnterChamber}

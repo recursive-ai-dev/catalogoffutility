@@ -5,6 +5,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase, supabaseAvailable, Profile } from "./supabase";
@@ -89,143 +90,209 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       : "Authentication service is unavailable. Non-gated entries remain accessible.",
   );
 
-  const fetchProfile = useCallback(async (userId: string, email: string) => {
+  const mountedRef = useRef(false);
+  const currentUserIdRef = useRef<string | null>(null);
+  const profileGenerationRef = useRef(0);
+  const signingOutRef = useRef(false);
+
+  const fetchProfile = useCallback(async (
+    userId: string,
+    email: string,
+    isCurrent: () => boolean,
+  ) => {
     const now = new Date().toISOString();
+    const columns = "id,username,created_at,last_seen_at";
+    try {
+      const { data: updated, error: updateError } = await supabase
+        .from("profiles")
+        .update({ last_seen_at: now })
+        .eq("id", userId)
+        .select(columns)
+        .maybeSingle();
+      if (!isCurrent()) return;
+      // A failed update does not mean the row is absent. Do not insert over a
+      // permission, transport, or database error.
+      if (updateError) {
+        console.warn("[void] Profile synchronization is unavailable.");
+        return;
+      }
+      if (updated) {
+        if (updated.id === userId) setProfile(updated as Profile);
+        return;
+      }
 
-    // Attempt a targeted update of last_seen_at only.
-    // This preserves any server-side username customisation the user may have
-    // made; the upsert path that always overwrote `username` with the email
-    // prefix was a data-integrity hazard (BUG-03).
-    const { data: updated } = await supabase
-      .from("profiles")
-      .update({ last_seen_at: now })
-      .eq("id", userId)
-      .select()
-      .maybeSingle();
-
-    if (updated) {
-      setProfile(updated as Profile);
-      return;
+      const { data: inserted, error } = await supabase
+        .from("profiles")
+        .insert({
+          id: userId,
+          username: email.split("@")[0].slice(0, 32) || `observer-${userId.slice(0, 8)}`,
+          last_seen_at: now,
+        })
+        .select(columns)
+        .single();
+      if (!isCurrent()) return;
+      if (error?.code === "23505") {
+        // Another tab (or the signup trigger) may have created this row while
+        // the first update was in flight. Read it without overwriting its name.
+        const { data: existing } = await supabase
+          .from("profiles")
+          .select(columns)
+          .eq("id", userId)
+          .maybeSingle();
+        if (isCurrent() && existing?.id === userId) setProfile(existing as Profile);
+      } else if (error) {
+        console.warn("[void] Profile synchronization is unavailable.");
+      } else if (inserted?.id === userId) {
+        setProfile(inserted as Profile);
+      }
+    } catch {
+      // Profile failures must never reject an auth callback or revoke access.
+      if (isCurrent()) console.warn("[void] Profile synchronization is unavailable.");
     }
-
-    // Row does not exist yet — insert with email-derived initial username.
-    const { data: inserted, error } = await supabase
-      .from("profiles")
-      .insert({
-        id: userId,
-        username: email.split("@")[0].slice(0, 32),
-        last_seen_at: now,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      // Profile sync failure is non-fatal: the user remains authenticated and
-      // retains full access. Degrade gracefully and surface to the console only.
-      console.warn("[void] Profile sync failed — continuing with degraded profile.", error.message);
-      return;
-    }
-    if (inserted) setProfile(inserted as Profile);
   }, []);
 
   useEffect(() => {
-    // If Supabase is not configured, degrade gracefully — auth is unavailable
-    // but the rest of the app (non-gated entries) remains fully functional.
-    // `loading` and `connectionError` were already seeded to the correct values,
-    // so there is nothing to assign here.
+    mountedRef.current = true;
+    let active = true;
     if (!supabaseAvailable) {
-      return undefined;
+      return () => { mountedRef.current = false; };
     }
 
-    // In Supabase v2, onAuthStateChange fires INITIAL_SESSION on subscribe,
-    // making a separate getSession() call redundant. Using both causes fetchProfile
-    // to be invoked twice concurrently on every session restore (LC-A). This single
-    // listener is the sole authoritative source for session and profile state.
     let subscription: { unsubscribe: () => void } | null = null;
+    let profileTimer: ReturnType<typeof setTimeout> | undefined;
+    const startupTimer = setTimeout(() => {
+      if (!active) return;
+      setConnectionError("Authentication is taking longer than expected. Please try again.");
+      setLoading(false);
+    }, 10_000);
+
     try {
-      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchProfile(session.user.id, session.user.email ?? "");
-        } else {
-          setProfile(null);
-        }
+      const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+        if (!active || (signingOutRef.current && nextSession)) return;
+        clearTimeout(startupTimer);
+        const nextUser = nextSession?.user ?? null;
+        const changedUser = currentUserIdRef.current !== (nextUser?.id ?? null);
+        setSession(nextSession);
+        setUser(nextUser);
         setConnectionError(null);
         setLoading(false);
+
+        if (changedUser || !nextUser) {
+          currentUserIdRef.current = nextUser?.id ?? null;
+          profileGenerationRef.current += 1;
+          setProfile(null);
+          clearTimeout(profileTimer);
+        }
+        if (nextUser && (changedUser || event === "USER_UPDATED")) {
+          const generation = ++profileGenerationRef.current;
+          clearTimeout(profileTimer);
+          // Supabase invokes auth listeners while holding its auth lock. Defer
+          // queries to a new task so restoring a session cannot deadlock them.
+          profileTimer = setTimeout(() => {
+            const isCurrent = () => active &&
+              profileGenerationRef.current === generation &&
+              currentUserIdRef.current === nextUser.id;
+            if (isCurrent()) void fetchProfile(nextUser.id, nextUser.email ?? "", isCurrent);
+          }, 0);
+        }
       });
       subscription = data.subscription;
-    } catch (err) {
-      // Supabase client threw during subscription setup — surface as a recoverable error.
-      const msg = err instanceof Error ? err.message : "Unknown connection error";
-      console.error("[void] Auth subscription failed:", msg);
-      /* eslint-disable react-hooks/set-state-in-effect -- error path of an
-         external-system subscription. It cannot run on a normal mount, and no
-         render-time state can represent "the subscription call threw". */
-      setConnectionError(`Authentication service connection failed: ${msg}`);
+    } catch {
+      clearTimeout(startupTimer);
+      /* eslint-disable react-hooks/set-state-in-effect -- subscription setup failure is an external-system error. */
+      setConnectionError("Authentication service connection failed. Please try again.");
       setLoading(false);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
 
-    return () => subscription?.unsubscribe();
+    return () => {
+      active = false;
+      mountedRef.current = false;
+      profileGenerationRef.current += 1;
+      // Strict Mode resubscribes on the same instance: permit its new initial
+      // session to fetch a profile after the first subscription was cancelled.
+      currentUserIdRef.current = null;
+      clearTimeout(startupTimer);
+      clearTimeout(profileTimer);
+      subscription?.unsubscribe();
+    };
   }, [fetchProfile]);
 
-  const signIn = useCallback(
-    async (
-      email: string,
-      password: string,
-    ): Promise<{ error: string | null }> => {
-      try {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) return { error: error.message };
-        return { error: null };
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Connection failed";
-        setConnectionError(`Sign-in failed: ${msg}`);
-        return { error: "Authentication service is unreachable. Please try again later." };
-      }
-    },
-    [],
-  );
+  const signIn = useCallback(async (
+    email: string,
+    password: string,
+  ): Promise<{ error: string | null }> => {
+    if (!supabaseAvailable) return { error: "Authentication service is unavailable." };
+    if (signingOutRef.current) return { error: "Sign-out is still completing. Please try again." };
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail || !password) return { error: "Email and password are required." };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+      if (mountedRef.current) setConnectionError(null);
+      return { error: error?.message ?? null };
+    } catch {
+      // This operation can be retried immediately; the service is not known to
+      // be permanently unavailable just because one request failed.
+      return { error: "Authentication service is unreachable. Please try again." };
+    }
+  }, []);
 
-  const signUp = useCallback(
-    async (
-      email: string,
-      password: string,
-    ): Promise<{ error: string | null; needsConfirmation: boolean }> => {
-      try {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) return { error: error.message, needsConfirmation: false };
-        // If email confirmation is required, identities will be empty
-        const needsConfirmation =
-          !data.session && !data.user?.confirmed_at;
-        return { error: null, needsConfirmation };
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Connection failed";
-        setConnectionError(`Sign-up failed: ${msg}`);
-        return { error: "Authentication service is unreachable. Please try again later.", needsConfirmation: false };
-      }
-    },
-    [],
-  );
+  const signUp = useCallback(async (
+    email: string,
+    password: string,
+  ): Promise<{ error: string | null; needsConfirmation: boolean }> => {
+    if (!supabaseAvailable) {
+      return { error: "Authentication service is unavailable.", needsConfirmation: false };
+    }
+    if (signingOutRef.current) {
+      return { error: "Sign-out is still completing. Please try again.", needsConfirmation: false };
+    }
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail || !password) {
+      return { error: "Email and password are required.", needsConfirmation: false };
+    }
+    try {
+      const { data, error } = await supabase.auth.signUp({ email: normalizedEmail, password });
+      if (mountedRef.current) setConnectionError(null);
+      if (error) return { error: error.message, needsConfirmation: false };
+      // Only an actual session authenticates the browser. Confirmation metadata
+      // on a returned user alone is not evidence of a signed-in session.
+      return { error: null, needsConfirmation: !data.session };
+    } catch {
+      return { error: "Authentication service is unreachable. Please try again.", needsConfirmation: false };
+    }
+  }, []);
 
   const signOut = useCallback(async () => {
-    // Clear local identity first: if the network call throws, the session token
-    // is still being discarded locally and the UI must not keep claiming a
-    // signed-in observer.
+    if (signingOutRef.current) return;
+    signingOutRef.current = true;
+    profileGenerationRef.current += 1;
+    currentUserIdRef.current = null;
     setProfile(null);
     setUser(null);
     setSession(null);
+    setLoading(false);
+    const restoreIdentity = () => {
+      if (!mountedRef.current || currentUserIdRef.current !== null) return;
+      currentUserIdRef.current = user?.id ?? null;
+      setUser(user);
+      setSession(session);
+      setProfile(profile);
+      setConnectionError("Sign-out could not be completed. Please try again.");
+    };
     try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Connection failed";
-      console.warn("[void] Sign-out could not reach the archive:", msg);
+      if (!supabaseAvailable) return;
+      const { error } = await supabase.auth.signOut({ scope: "local" });
+      // Supabase returns most failures as values rather than rejected promises.
+      if (error) throw error;
+    } catch {
+      restoreIdentity();
+      // Consumers need a rejected operation to expose their retry controls.
+      throw new Error("Sign-out could not be completed. Please try again.");
+    } finally {
+      signingOutRef.current = false;
     }
-  }, []);
+  }, [user, session, profile]);
 
   // Memoize the context value — contains only auth state, no modal fields,
   // so toggling the modal no longer triggers re-renders of all auth consumers.

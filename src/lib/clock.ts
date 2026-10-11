@@ -1,50 +1,39 @@
-/**
- * Clock — Determinism Provider
- *
- * Abstracts all reads of the system clock so that components that embed
- * timestamps in log entries can be driven by a fake clock in tests, giving
- * full seed-control and replay determinism.
- *
- * Production code uses `realClock` (the default when no clock prop is given).
- * Tests pass `makeFakeClock(fixed)` to freeze time at a known instant.
- */
-
-/**
- * Pre-allocated formatter for consistent HH:MM:SS (24-hour) formatting.
- * Benchmarked ~105x faster than repeated toLocaleTimeString calls.
- * Explicitly setting 2-digit for all fields ensures consistent leading zeros.
- */
-const TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: false,
-});
-
+/** A clock can be supplied to replay log timestamps deterministically. */
 export interface Clock {
-  /** Current time formatted as HH:MM:SS (24-hour, en-US locale). */
+  /** Current time formatted as HH:MM:SS using the clock's time zone. */
   timeString(): string;
-  /** Current instant as a Date object. */
+  /** Current instant as an independent Date object. */
   now(): Date;
 }
 
-/** Live wall-clock; used by default in all production renders. */
-export const realClock: Clock = {
-  timeString: () => TIME_FORMATTER.format(new Date()),
-  now: () => new Date(),
-};
+function formatter(timeZone?: string): Intl.DateTimeFormat {
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    // h23 renders midnight as 00 rather than the locale's possible 24.
+    hourCycle: "h23",
+    ...(timeZone ? { timeZone } : {}),
+  });
+}
 
-/**
- * Returns a deterministic Clock permanently frozen at `fixed`.
- * All calls to `timeString()` and `now()` return the same value, so any
- * sequence of actions that reads the clock produces bit-identical output
- * when replayed with the same seed.
- */
-export function makeFakeClock(fixed: Date): Clock {
+const liveFormatter = formatter();
+
+/** Live wall clock in the user's local time zone. */
+export const realClock: Readonly<Clock> = Object.freeze({
+  timeString: () => liveFormatter.format(new Date()),
+  now: () => new Date(),
+});
+
+/** Frozen clocks default to UTC so replay does not depend on the host's zone. */
+export function makeFakeClock(fixed: Date, timeZone = "UTC"): Readonly<Clock> {
   const fixedMs = fixed.getTime();
-  const ts = TIME_FORMATTER.format(new Date(fixedMs));
-  return {
-    timeString: () => ts,
+  if (!Number.isFinite(fixedMs)) {
+    throw new RangeError("A fake clock requires a valid Date.");
+  }
+  const time = formatter(timeZone).format(new Date(fixedMs));
+  return Object.freeze({
+    timeString: () => time,
     now: () => new Date(fixedMs),
-  };
+  });
 }

@@ -24,13 +24,23 @@ interface ErrorBoundaryState {
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   override state: ErrorBoundaryState = { error: null };
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(thrown: unknown): ErrorBoundaryState {
+    // JavaScript can throw null, strings or objects; the recovery view still
+    // needs an Error rather than a falsy sentinel or an invalid React child.
+    let error: Error;
+    if (thrown instanceof Error) error = thrown;
+    else {
+      let message = "Unknown fault";
+      try { if (thrown != null) message = String(thrown); } catch { /* Hostile toString. */ }
+      error = new Error(message);
+    }
     return { error };
   }
 
   override componentDidCatch(error: Error, info: React.ErrorInfo): void {
     // Correlatable with the console entry a developer will actually see.
     console.error(`[${SITE_TITLE}] View render failed.`, error, info.componentStack);
+    document.getElementById("main-content")?.focus({ preventScroll: true });
   }
 
   private handleReset = (): void => {
@@ -45,7 +55,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       <main
         id="main-content"
         tabIndex={-1}
-        className="flex min-h-screen w-full flex-col items-center justify-center gap-6 bg-black px-6 text-center font-sans text-white antialiased outline-none"
+        aria-labelledby="recovery-heading"
+        className="relative flex min-h-screen w-full flex-col items-center justify-center gap-6 bg-black px-6 text-center font-sans text-white antialiased outline-none"
       >
         <div className="absolute inset-0 pointer-events-none atmosphere" aria-hidden="true" />
         <span
@@ -55,7 +66,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           error_outline
         </span>
         <div className="flex flex-col gap-3">
-          <h1 className="font-display text-3xl font-light uppercase tracking-widest text-white/80">
+          <h1 id="recovery-heading" className="font-display text-3xl font-light uppercase tracking-widest text-white/80">
             The render collapsed
           </h1>
           <p className="max-w-md text-sm font-light leading-relaxed text-white/40">
@@ -63,7 +74,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             below; nothing you did caused it.
           </p>
         </div>
-        <pre className="max-w-xl overflow-auto rounded-xl border border-red-900/30 bg-red-950/10 p-4 text-left font-mono text-[10px] leading-relaxed text-red-300/60">
+        <pre role="alert" className="max-h-48 w-full max-w-xl overflow-auto whitespace-pre-wrap break-words rounded-xl border border-red-900/30 bg-red-950/10 p-4 text-left font-mono text-[10px] leading-relaxed text-red-300/60">
           {error.message || "Unknown fault"}
         </pre>
         <div className="flex flex-wrap items-center justify-center gap-3">

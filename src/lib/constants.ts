@@ -21,6 +21,7 @@ export const MAX_LOGS = 100;
 
 /** Document title used for the catalog (root) view. */
 export const SITE_TITLE = "Catalog of Futility";
+export const SITE_IMAGE = "https://github.com/user-attachments/assets/0aa67016-6eaf-4554-a0b5-a7a51a8e05ce";
 
 /**
  * Canonical default meta description. `index.html` and `App.tsx` must agree;

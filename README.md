@@ -24,10 +24,10 @@ A brutalist web application for hosting and curating single-file HTML apps and g
 | Technology | Version |
 |------------|---------|
 | React | ^19.0.0 |
-| Vite | ^6.4.1 |
+| Vite | ^6.4.4 |
 | TypeScript | ~5.8.2 (strict) |
 | Tailwind CSS | ^4.1.14 |
-| Vitest | ^4.0.18 |
+| Vitest | ^4.1.11 |
 | ESLint | ^10 (flat config, `react-hooks`) |
 | Lucide React | ^0.546.0 |
 
@@ -37,7 +37,7 @@ A brutalist web application for hosting and curating single-file HTML apps and g
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22.13+ (CI uses Node 22.23.3)
 - npm (the repository is locked with `package-lock.json`)
 
 ### Installation
@@ -50,7 +50,7 @@ A brutalist web application for hosting and curating single-file HTML apps and g
 
 2. **Install dependencies**
    ```bash
-   npm install
+   npm ci
    ```
 
 3. **Configure environment variables (optional)**
@@ -115,7 +115,6 @@ catalogoffutility/
 ├── index.html                 # HTML template
 ├── vite.config.ts             # Vite configuration
 ├── tsconfig.json              # TypeScript configuration
-├── tailwind.config.ts         # Tailwind configuration
 ├── vercel.json                # Vercel deployment config
 └── package.json
 ```
@@ -173,6 +172,7 @@ Provide the raw HTML string directly in the `htmlContent` property:
 | `tech` | string[] | ✗ | Technologies used (e.g., `["HTML", "Canvas"]`) |
 | `longDescription` | string | ✗ | Extended description for product page |
 | `missing` | boolean | ✗ | Shows locked state if `true` |
+| `requiresAuth` | boolean | ✗ | Requires an authenticated browser session to launch |
 
 > **Note:** For security reasons, users cannot upload HTML files through the UI. All apps must be added by editing `src/data.ts` and placing files in `public/`.
 
@@ -191,27 +191,37 @@ Provide the raw HTML string directly in the `htmlContent` property:
 | `npm run test` | Run the Vitest suite once |
 | `npm run test:watch` | Run the Vitest suite in watch mode |
 | `npm run test:coverage` | Run tests with coverage |
-| `npm run check` | Lint + typecheck + test + build (what CI runs) |
-| `npm run clean` | Remove `dist/` and `coverage/` |
+| `npm run check` | Lint, typecheck, app tests, tooling tests, and production build |
+| `npm run test:tooling` | Offline Electron URL-policy and Python merger regression tests (requires Python 3.10+) |
+| `npm run clean` | Remove `dist/`, `coverage/`, and `release/` from any platform |
 | `npm run electron:start` | Run the Electron shell against the dev server |
+| `npm run electron:build` | Build the archive and package the desktop shell into `release/` |
 
 ---
 
 ## Continuous Integration
 
-A GitHub Actions workflow covering `lint → typecheck → test → build` ships in
-[`docs/ci.workflow.yml`](docs/ci.workflow.yml).
+The workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs lint,
+typechecking, application and tooling regression tests, and the production build
+on pushes and pull requests. It installs dependencies with `npm ci` and skips the
+Electron binary download. The same checks run locally with `npm run check`.
 
-It is **not active** in that location — GitHub only runs workflows from
-`.github/workflows/`, and adding a file there requires the `workflows`
-permission. To turn it on:
+Tooling tests require Python 3.10+ and use only the standard library. The PR
+utility previews changes by default:
 
 ```bash
-mkdir -p .github/workflows
-git mv docs/ci.workflow.yml .github/workflows/ci.yml
+GITHUB_TOKEN=... python3 bulk_merge_prs.py --repo owner/repository
 ```
 
-The same four steps are available locally as `npm run check`.
+Execution requires `--execute` and entering the repository name at a terminal.
+The utility sorts by category, validates each reviewed head SHA before merging,
+and stops on API failures; it does not resolve PR dependencies.
+
+For desktop development, start `npm run dev` before `npm run electron:start`.
+The CommonJS shell (`main.cjs`, `preload.cjs`) keeps renderer Node access disabled
+and validates links before opening them in the system browser. Set
+`VITE_DEV_SERVER_URL` to use a different development server. Packaged builds load
+`dist/index.html` and resolve curated app paths relative to that directory.
 
 ---
 
@@ -222,7 +232,7 @@ The same four steps are available locally as `npm run check`.
 This project includes `vercel.json` for zero-config deployment:
 
 ```bash
-vercel deploy --prod
+npx vercel deploy --prod
 ```
 
 ### Manual Build
@@ -280,7 +290,7 @@ The "Void Logs" sidebar in `Chamber.tsx` displays atmospheric messages. Customiz
 | **CODING ANTS** | Simulation, Tool, Interactive | Neural network simulation and AI development environment |
 
 Tags are a controlled vocabulary (`TAG_VOCABULARY` in `src/data.ts`). Maximum four per entry;
-`Tool` and `Pointless` may never co-occur. `validateCatalog()` reports violations on load in
+`Tool` and `Pointless` may never co-occur. `validateCatalog()` also validates required text, source exclusivity, local app paths, image URL schemes, and runtime field types. It reports violations on load in
 development and `src/test/catalog-integrity.test.ts` fails the build on them.
 
 ---
@@ -344,3 +354,5 @@ MIT
 <div align="center">
   <sub>Built with ◈ for the void</sub>
 </div>
+
+Implementation details and validation for the systematic improvement pass are recorded in [`docs/improvements.json`](docs/improvements.json).

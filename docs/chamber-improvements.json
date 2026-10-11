@@ -1,0 +1,466 @@
+[
+  {
+    "description": "Reset all Chamber session state and release effects when the artifact, iframe source, inline source, or sandbox changes.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "session-reset regression tests"
+  },
+  {
+    "description": "Resolve root-relative catalog iframe URLs relative to the packaged document for Electron file URLs.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "packaged file:// JSDOM integration"
+  },
+  {
+    "description": "Report absent simulation sources before creating an empty iframe.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "absent-source regression"
+  },
+  {
+    "description": "Reject unsupported, malformed, or credential-bearing iframe URLs before loading them.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "parameterized unsafe-source regressions"
+  },
+  {
+    "description": "Turn indefinitely stalled iframe loads into a retryable error after 30 seconds.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "fake-timer timeout and retry regression"
+  },
+  {
+    "description": "Cancel pending load deadlines on completion, failure, retry, and unmount.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "successful-load and timer teardown regressions"
+  },
+  {
+    "description": "Detach injected click handlers when iframe documents are removed, and clear retained document references.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "session replacement listener teardown regression"
+  },
+  {
+    "description": "Read the current clock when the initialization timer fires without restarting the timer on clock changes.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "pending initialization clock replacement regression"
+  },
+  {
+    "description": "Send same-origin iframe image clicks directly through the safe receiver instead of posting from the wrong window.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "same-origin iframe image interception regression"
+  },
+  {
+    "description": "Preview the selected responsive image currentSrc rather than the fallback src.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "responsive iframe image regression"
+  },
+  {
+    "description": "Insert the inline iframe image bridge before closing body tags regardless of case or trailing whitespace.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "inline bridge source regression"
+  },
+  {
+    "description": "Address inline image messages to the actual parent origin, using wildcard only for opaque file origins.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "inline bridge target origin regression"
+  },
+  {
+    "description": "Accept verified messages from the configured external iframe origin.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "configured external-origin regression"
+  },
+  {
+    "description": "Require own payload fields and reject array-shaped image messages.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "inherited and array payload regressions"
+  },
+  {
+    "description": "Validate payload data descriptors without invoking untrusted getters.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "accessor payload regression"
+  },
+  {
+    "description": "Reject image URLs with leading or trailing whitespace or embedded control characters.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "parameterized ambiguous URL regressions"
+  },
+  {
+    "description": "Reject empty raster data and non-base64 characters or misplaced padding in image data URLs.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "parameterized malformed data regressions"
+  },
+  {
+    "description": "Recognize safe data image schemes and media types case-insensitively.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "uppercase data image regression"
+  },
+  {
+    "description": "Support safe HTTP image previews on IPv6 loopback for local development.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "IPv6 loopback regression"
+  },
+  {
+    "description": "Allow packaged image files only below the application directory and reject encoded path traversal.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "packaged internal/external/traversal image integration"
+  },
+  {
+    "description": "Keep the current asset viewer stable and suppress duplicate logs during repeated or replacement image messages.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "duplicate/replacement message and opener regression"
+  },
+  {
+    "description": "Make content behind the asset dialog inert and hide it from the accessibility tree.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "background interaction and accessibility regression"
+  },
+  {
+    "description": "Capture the modal opener before applying inert content, restore connected targets without scrolling, and avoid refocus on image updates.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "modal opener restoration regression"
+  },
+  {
+    "description": "Prevent extracted image requests from disclosing the parent URL as a referrer.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "image referrer policy regression"
+  },
+  {
+    "description": "Show an accessible failure message when an extracted image cannot load.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "image error regression"
+  },
+  {
+    "description": "Announce iframe loading progress as a live status.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "loading status and retry regressions"
+  },
+  {
+    "description": "Expose iframe loading with aria-busy and defer keyboard focus until loading completes.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "successful load busy and tabindex regression"
+  },
+  {
+    "description": "Announce simulation load failures with an alert role.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "timeout and unsupported source alert regressions"
+  },
+  {
+    "description": "Honor consumed Escape events and ignore Escape during input-method composition.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "consumed Escape and composition regression"
+  },
+  {
+    "description": "Return keyboard focus to the fullscreen toggle when Escape exits fullscreen.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "fullscreen focus regression"
+  },
+  {
+    "description": "Use functional updates for fullscreen, noise, and log visibility toggles to avoid stale-state updates.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "existing fullscreen/noise/log interaction suites"
+  },
+  {
+    "description": "Synchronize clock, modal, and fullscreen refs only after committed renders.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "targeted ESLint refs rule and interaction regressions"
+  },
+  {
+    "description": "Expose log expansion state and keep its aria-controls target valid in both visibility states.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "hidden log control relationship regression"
+  },
+  {
+    "description": "Stack the Chamber sidebar on narrow screens, allow main content to scroll, and wrap the header controls.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "responsive classes reviewed; existing small-control accessibility regression"
+  },
+  {
+    "description": "Use dynamic viewport height and explicit minimum-height constraints so mobile browser chrome does not clip the Chamber.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "responsive layout classes reviewed; production build"
+  },
+  {
+    "description": "Place the asset dialog above the privacy banner and use responsive padding on small screens.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "overlay stacking classes reviewed; existing modal interaction suite"
+  },
+  {
+    "description": "Format midnight as 00:00:00 with an explicit h23 hour cycle.",
+    "files": [
+      "src/lib/clock.ts",
+      "src/test/clock.test.ts"
+    ],
+    "validation": "midnight regression"
+  },
+  {
+    "description": "Make frozen clock replay independent of the machine timezone by defaulting to UTC.",
+    "files": [
+      "src/lib/clock.ts",
+      "src/test/clock.test.ts"
+    ],
+    "validation": "UTC seed replay regression"
+  },
+  {
+    "description": "Allow callers to select an explicit timezone for frozen clock displays.",
+    "files": [
+      "src/lib/clock.ts",
+      "src/test/clock.test.ts"
+    ],
+    "validation": "America/Moncton daylight-saving regression"
+  },
+  {
+    "description": "Reject invalid frozen clock seeds with a useful RangeError.",
+    "files": [
+      "src/lib/clock.ts",
+      "src/test/clock.test.ts"
+    ],
+    "validation": "invalid Date regression"
+  },
+  {
+    "description": "Freeze live and fake clock providers to prevent accidental mutation of their methods.",
+    "files": [
+      "src/lib/clock.ts",
+      "src/test/clock.test.ts"
+    ],
+    "validation": "provider immutability regression"
+  },
+  {
+    "description": "Treat nonfinite field coordinates as an empty field instead of propagating NaN.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "invalid coordinate regressions"
+  },
+  {
+    "description": "Support missing or non-array source collections as empty fields.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "absent source collection regressions"
+  },
+  {
+    "description": "Skip malformed source entries and negative or nonfinite strengths and radii.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "malformed and negative source regression"
+  },
+  {
+    "description": "Use hypot for potential distances so squared coordinates cannot overflow prematurely.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "faraway finite coordinate regression"
+  },
+  {
+    "description": "Divide potential source terms before multiplication to avoid overflowing mass products.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "extreme source strength regression"
+  },
+  {
+    "description": "Compute gradients with normalized directions and saturate extreme components without making perpendicular zero components NaN.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "large and axis-aligned gradient regressions"
+  },
+  {
+    "description": "Set the gradient to zero inside the constant-potential softened core.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "finite-difference derivative regression"
+  },
+  {
+    "description": "Clamp singular and out-of-domain potential values in curvature and Shapiro delay calculations.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "parameterized singular potential regressions"
+  },
+  {
+    "description": "Reject nonfinite ray velocity and gradient inputs before calculating curvature.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "invalid ray input regression"
+  },
+  {
+    "description": "Scale curvature determinants to preserve cancellation and signed symmetry for extreme inputs.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "extreme cancellation and reversed velocity regression"
+  },
+  {
+    "description": "Support absent frequency dictionaries and ignore inherited or invalid frequency values.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "missing, inherited, negative, string and nonfinite frequency regressions"
+  },
+  {
+    "description": "Convert fractional word frequencies into complete prior occurrence counts.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "fractional frequency regression"
+  },
+  {
+    "description": "Fall back to default repetition parameters when multipliers or escalation are negative or nonfinite.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "invalid repetition parameter regressions"
+  },
+  {
+    "description": "Saturate per-word and total entropy costs at safe integers to prevent overflow.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "safe-integer cost saturation regressions"
+  },
+  {
+    "description": "Treat invalid text or words as empty input without throwing.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "invalid word and text regressions"
+  },
+  {
+    "description": "Use a null-prototype, lazily populated repetition map so constructor-like tokens count correctly and large dictionaries are not copied for every keystroke.",
+    "files": [
+      "public/math-physics.js",
+      "src/test/math-reliability.test.ts"
+    ],
+    "validation": "constructor repetition and immutable input regressions"
+  },
+  {
+    "description": "Handle Escape from focused same-origin or inline iframes through verified bridges, retaining layered modal/fullscreen dismissal and releasing keyboard listeners.",
+    "files": [
+      "src/Chamber.tsx",
+      "src/test/chamber-reliability.test.tsx"
+    ],
+    "validation": "iframe Escape, latest callback, verified bridge and keyboard teardown regressions"
+  }
+]

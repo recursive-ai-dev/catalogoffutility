@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 const CONSENT_KEY = "void_archive_consent_v1";
 
@@ -9,16 +9,32 @@ const CONSENT_KEY = "void_archive_consent_v1";
  */
 function readStoredConsent(): boolean {
   try {
-    return !localStorage.getItem(CONSENT_KEY);
+    return localStorage.getItem(CONSENT_KEY) !== "1";
   } catch {
-    // localStorage may be unavailable (private mode, sandboxed iframe); the
-    // banner simply stays hidden.
-    return false;
+    // Storage failures do not count as acknowledgment. Show the notice.
+    return true;
   }
 }
 
 export function PrivacyBanner() {
   const [visible, setVisible] = useState(readStoredConsent);
+  const id = useId();
+  const titleId = `${id}-privacy-title`;
+  const descriptionId = `${id}-privacy-description`;
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      // Acknowledgment and clearing storage in another tab should agree here.
+      if (event.key === CONSENT_KEY || event.key === null) {
+        try {
+          if (event.storageArea && event.storageArea !== window.localStorage) return;
+        } catch { return; }
+        setVisible(event.key === null || event.newValue !== "1");
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const dismiss = () => {
     try {
@@ -33,28 +49,30 @@ export function PrivacyBanner() {
 
   return (
     <div
-      role="dialog"
-      aria-modal="false"
-      aria-label="Data and privacy notice"
+      role="region"
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       className="fixed bottom-0 left-0 right-0 z-[70] border-t border-white/10 bg-black/90 backdrop-blur-xl px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center gap-4"
     >
       <div className="flex-1 min-w-0">
-        <p className="text-[9px] font-mono text-white/20 tracking-widest uppercase mb-1">
-          TRANSMISSION // DATA_PROTOCOL
+        <p id={titleId} className="text-[9px] font-mono text-white/20 tracking-widest uppercase mb-1">
+          Data and privacy notice
         </p>
-        <p className="text-white/50 font-light text-xs leading-relaxed">
+        <p id={descriptionId} className="text-white/50 font-light text-xs leading-relaxed">
           The archive uses{" "}
           <span className="text-white/70">Supabase</span> for identity
           persistence,{" "}
           <span className="text-white/70">Google Fonts</span> for typography,
-          and may reference images from third-party sources. By continuing, you
-          acknowledge these external transmissions.{" "}
-          <span className="text-white/30">No advertising. No tracking beyond session identity.</span>
+          and may reference images from third-party sources. These services receive
+          network requests when their content loads. Acknowledging this notice
+          saves your preference on this device.{" "}
+          <span className="text-white/30">No advertising. This notice does not change your browser’s privacy settings.</span>
         </p>
       </div>
       <button
+        type="button"
         onClick={dismiss}
-        className="shrink-0 px-5 py-2 border border-white/15 hover:border-white/40 text-white/40 hover:text-white text-[9px] font-mono tracking-widest uppercase transition-all rounded-full cursor-pointer"
+        className="shrink-0 px-5 py-2 border border-white/15 hover:border-white/40 text-white/40 hover:text-white text-[9px] font-mono tracking-widest uppercase transition-all rounded-full cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/60"
       >
         Acknowledge
       </button>
